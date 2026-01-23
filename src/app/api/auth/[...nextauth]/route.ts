@@ -1,0 +1,16 @@
+/**
+ * CBAHI NextAuth API Route
+ *
+ * Handles all authentication requests including:
+ * - Magic link email sending
+ * - Email verification
+ * - Session management
+ */
+
+import NextAuth from "next-auth";
+
+import { authOptions } from "@/lib/auth";
+
+const handler = NextAuth(authOptions);
+
+export { handler as GET, handler as POST };

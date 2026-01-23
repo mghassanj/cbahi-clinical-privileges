@@ -1,0 +1,468 @@
+{
+  "common": {
+    "appName": "CBAHI Privileging System",
+    "tagline": "Healthcare Professional Privileging Management",
+    "navigation": {
+      "dashboard": "Dashboard",
+      "requests": "My Requests",
+      "approvals": "Approvals",
+      "profile": "Profile",
+      "admin": "Administration",
+      "settings": "Settings",
+      "logout": "Logout",
+      "help": "Help"
+    },
+    "actions": {
+      "submit": "Submit",
+      "save": "Save",
+      "saveDraft": "Save as Draft",
+      "cancel": "Cancel",
+      "delete": "Delete",
+      "approve": "Approve",
+      "reject": "Reject",
+      "edit": "Edit",
+      "view": "View",
+      "download": "Download",
+      "upload": "Upload",
+      "search": "Search",
+      "filter": "Filter",
+      "reset": "Reset",
+      "next": "Next",
+      "previous": "Previous",
+      "back": "Back",
+      "close": "Close",
+      "confirm": "Confirm",
+      "continue": "Continue",
+      "refresh": "Refresh",
+      "print": "Print",
+      "export": "Export"
+    },
+    "status": {
+      "draft": "Draft",
+      "pending": "Pending",
+      "in_review": "In Review",
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "cancelled": "Cancelled",
+      "expired": "Expired",
+      "active": "Active",
+      "inactive": "Inactive",
+      "completed": "Completed"
+    },
+    "time": {
+      "today": "Today",
+      "yesterday": "Yesterday",
+      "daysAgo": "{{count}} days ago",
+      "hoursAgo": "{{count}} hours ago",
+      "minutesAgo": "{{count}} minutes ago",
+      "justNow": "Just now",
+      "thisWeek": "This week",
+      "thisMonth": "This month",
+      "lastMonth": "Last month"
+    },
+    "messages": {
+      "loading": "Loading...",
+      "noData": "No data available",
+      "noResults": "No results found",
+      "confirmDelete": "Are you sure you want to delete this item?",
+      "unsavedChanges": "You have unsaved changes. Are you sure you want to leave?",
+      "success": "Operation completed successfully",
+      "error": "An error occurred"
+    },
+    "pagination": {
+      "showing": "Showing {{from}} to {{to}} of {{total}} results",
+      "itemsPerPage": "Items per page",
+      "page": "Page {{current}} of {{total}}"
+    }
+  },
+  "auth": {
+    "login": {
+      "title": "Sign In",
+      "subtitle": "Access the CBAHI Privileging System",
+      "emailLabel": "Email Address",
+      "emailPlaceholder": "Enter your email address",
+      "sendMagicLink": "Send Magic Link",
+      "sendingLink": "Sending link...",
+      "checkEmail": "Check Your Email",
+      "checkEmailMessage": "We've sent a sign-in link to {{email}}. Click the link in the email to access your account.",
+      "resendLink": "Resend Link",
+      "resendIn": "Resend in {{seconds}}s",
+      "differentEmail": "Use a different email",
+      "linkSent": "Magic link sent successfully",
+      "welcomeBack": "Welcome back!",
+      "signInSuccess": "You have been signed in successfully"
+    },
+    "errors": {
+      "invalidEmail": "Please enter a valid email address",
+      "userNotFound": "No account found with this email address",
+      "linkExpired": "This sign-in link has expired. Please request a new one.",
+      "linkInvalid": "This sign-in link is invalid. Please request a new one.",
+      "tooManyAttempts": "Too many attempts. Please try again later.",
+      "networkError": "Network error. Please check your connection.",
+      "unauthorized": "You are not authorized to access this system"
+    },
+    "session": {
+      "expired": "Your session has expired. Please sign in again.",
+      "signedOut": "You have been signed out"
+    }
+  },
+  "dashboard": {
+    "welcome": "Welcome, {{name}}",
+    "overview": "Overview",
+    "pendingApprovals": "Pending Approvals",
+    "recentActivity": "Recent Activity",
+    "quickActions": "Quick Actions",
+    "newRequest": "New Privilege Request",
+    "viewAllRequests": "View All Requests",
+    "viewAllApprovals": "View All Approvals",
+    "statistics": {
+      "totalRequests": "Total Requests",
+      "pendingRequests": "Pending Requests",
+      "approvedRequests": "Approved Requests",
+      "rejectedRequests": "Rejected Requests",
+      "averageProcessingTime": "Avg. Processing Time",
+      "daysToProcess": "{{days}} days"
+    },
+    "charts": {
+      "requestsByMonth": "Requests by Month",
+      "requestsByStatus": "Requests by Status",
+      "requestsByDepartment": "Requests by Department"
+    },
+    "notifications": {
+      "title": "Notifications",
+      "markAllRead": "Mark all as read",
+      "viewAll": "View all notifications",
+      "noNotifications": "No new notifications"
+    }
+  },
+  "request": {
+    "title": "Privilege Request",
+    "newRequest": "New Privilege Request",
+    "editRequest": "Edit Request",
+    "viewRequest": "View Request",
+    "steps": {
+      "personalInfo": "Personal Information",
+      "applicationType": "Application Type",
+      "selectPrivileges": "Select Privileges",
+      "uploadDocuments": "Upload Documents",
+      "reviewSubmit": "Review & Submit"
+    },
+    "form": {
+      "personalInfo": {
+        "title": "Personal Information",
+        "description": "Please verify your personal information",
+        "fullName": "Full Name",
+        "fullNameAr": "Full Name (Arabic)",
+        "employeeCode": "Employee Code",
+        "department": "Department",
+        "jobTitle": "Job Title",
+        "email": "Email Address",
+        "phone": "Phone Number",
+        "scfhsNumber": "SCFHS License Number",
+        "scfhsExpiry": "SCFHS Expiry Date",
+        "specialization": "Specialization",
+        "classification": "Classification"
+      },
+      "applicationType": {
+        "title": "Application Type",
+        "description": "Select the type of privilege application",
+        "initial": "Initial Privileging",
+        "initialDesc": "First-time privilege request for new practitioners",
+        "renewal": "Renewal",
+        "renewalDesc": "Renew existing privileges before expiration",
+        "expansion": "Expansion of Privileges",
+        "expansionDesc": "Request additional privileges to current scope",
+        "temporary": "Temporary Privileges",
+        "temporaryDesc": "Short-term privileges for specific purposes"
+      },
+      "privileges": {
+        "title": "Select Privileges",
+        "description": "Choose the clinical privileges you are requesting",
+        "searchPrivileges": "Search privileges...",
+        "selectedCount": "{{count}} privileges selected",
+        "selectAll": "Select All",
+        "deselectAll": "Deselect All",
+        "expandAll": "Expand All",
+        "collapseAll": "Collapse All",
+        "categories": {
+          "core": "Core Privileges",
+          "restorative": "Restorative Dentistry",
+          "pediatric": "Pediatric Dentistry",
+          "orthodontics": "Orthodontics",
+          "endodontics": "Endodontics",
+          "periodontics": "Periodontics",
+          "prosthodontics": "Prosthodontics",
+          "oralSurgery": "Oral Surgery",
+          "oralMedicine": "Oral Medicine",
+          "maxillofacial": "Maxillofacial Surgery",
+          "diagnostics": "Diagnostics & Imaging",
+          "sedation": "Sedation & Anesthesia",
+          "emergency": "Emergency Procedures"
+        }
+      },
+      "documents": {
+        "title": "Upload Documents",
+        "description": "Upload required supporting documents",
+        "dragDrop": "Drag and drop files here",
+        "or": "or",
+        "browseFiles": "Browse Files",
+        "supportedFormats": "Supported formats: PDF, JPG, PNG (max {{size}}MB)",
+        "uploadProgress": "Uploading... {{progress}}%",
+        "uploadComplete": "Upload complete",
+        "uploadFailed": "Upload failed",
+        "removeFile": "Remove file",
+        "required": "Required",
+        "optional": "Optional",
+        "types": {
+          "scfhsLicense": "SCFHS License",
+          "boardCertificate": "Board Certificate",
+          "diploma": "Diploma/Degree",
+          "experience": "Experience Letter",
+          "cme": "CME Certificates",
+          "bls": "BLS Certificate",
+          "acls": "ACLS Certificate",
+          "other": "Other Documents"
+        }
+      },
+      "review": {
+        "title": "Review & Submit",
+        "description": "Review your application before submitting",
+        "applicationSummary": "Application Summary",
+        "personalInfoSummary": "Personal Information",
+        "privilegesSummary": "Selected Privileges",
+        "documentsSummary": "Uploaded Documents",
+        "declaration": "Declaration",
+        "declarationText": "I hereby declare that all information provided is true and accurate to the best of my knowledge. I understand that any false information may result in the rejection of my application or revocation of privileges.",
+        "agreeTerms": "I agree to the terms and conditions",
+        "submitApplication": "Submit Application",
+        "saveDraft": "Save as Draft"
+      }
+    },
+    "validation": {
+      "required": "This field is required",
+      "invalidEmail": "Please enter a valid email address",
+      "invalidPhone": "Please enter a valid phone number",
+      "invalidScfhs": "Please enter a valid SCFHS number",
+      "scfhsExpired": "SCFHS license has expired",
+      "scfhsExpiringSoon": "SCFHS license is expiring soon",
+      "selectPrivileges": "Please select at least one privilege",
+      "uploadRequired": "Please upload the required documents",
+      "agreeToTerms": "You must agree to the terms and conditions",
+      "fileTooLarge": "File size exceeds the maximum limit of {{size}}MB",
+      "invalidFileType": "Invalid file type. Allowed types: {{types}}"
+    },
+    "status": {
+      "draftSaved": "Draft saved successfully",
+      "submitted": "Application submitted successfully",
+      "submissionFailed": "Failed to submit application"
+    }
+  },
+  "approvals": {
+    "title": "Approvals",
+    "queue": "Approval Queue",
+    "pending": "Pending Approvals",
+    "history": "Approval History",
+    "myApprovals": "My Approvals",
+    "filters": {
+      "all": "All",
+      "pending": "Pending",
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "byDepartment": "By Department",
+      "byDate": "By Date",
+      "byApplicant": "By Applicant"
+    },
+    "actions": {
+      "approve": "Approve",
+      "reject": "Reject",
+      "requestModifications": "Request Modifications",
+      "returnToApplicant": "Return to Applicant",
+      "escalate": "Escalate",
+      "delegate": "Delegate"
+    },
+    "form": {
+      "decision": "Your Decision",
+      "comments": "Comments",
+      "commentsPlaceholder": "Enter your comments or feedback...",
+      "commentsRequired": "Please provide comments for your decision",
+      "signature": "Digital Signature",
+      "signatureRequired": "Signature is required to complete the approval",
+      "clearSignature": "Clear Signature",
+      "confirmApproval": "Confirm Approval",
+      "confirmRejection": "Confirm Rejection"
+    },
+    "details": {
+      "applicantInfo": "Applicant Information",
+      "requestDetails": "Request Details",
+      "requestedPrivileges": "Requested Privileges",
+      "supportingDocuments": "Supporting Documents",
+      "approvalWorkflow": "Approval Workflow",
+      "currentStep": "Current Step",
+      "previousApprovals": "Previous Approvals",
+      "timeline": "Timeline"
+    },
+    "messages": {
+      "approved": "Request has been approved",
+      "rejected": "Request has been rejected",
+      "returned": "Request has been returned to the applicant",
+      "escalated": "Request has been escalated",
+      "delegated": "Request has been delegated"
+    }
+  },
+  "admin": {
+    "title": "Administration",
+    "userManagement": {
+      "title": "User Management",
+      "users": "Users",
+      "addUser": "Add User",
+      "editUser": "Edit User",
+      "deleteUser": "Delete User",
+      "roles": "Roles",
+      "permissions": "Permissions",
+      "userDetails": "User Details",
+      "assignRole": "Assign Role",
+      "deactivateUser": "Deactivate User",
+      "activateUser": "Activate User",
+      "resetPassword": "Reset Password",
+      "lastLogin": "Last Login",
+      "status": "Status"
+    },
+    "systemSettings": {
+      "title": "System Settings",
+      "general": "General Settings",
+      "security": "Security Settings",
+      "notifications": "Notification Settings",
+      "workflow": "Workflow Settings",
+      "appearance": "Appearance",
+      "language": "Language",
+      "timezone": "Timezone",
+      "dateFormat": "Date Format"
+    },
+    "sync": {
+      "title": "Sync Management",
+      "lastSync": "Last Sync",
+      "syncNow": "Sync Now",
+      "syncStatus": "Sync Status",
+      "syncHistory": "Sync History",
+      "syncSuccess": "Sync completed successfully",
+      "syncFailed": "Sync failed",
+      "syncInProgress": "Sync in progress..."
+    },
+    "integrations": {
+      "title": "Integrations",
+      "jisr": {
+        "title": "Jisr Integration",
+        "description": "Sync employee data from Jisr HR system",
+        "apiKey": "API Key",
+        "endpoint": "API Endpoint",
+        "syncEmployees": "Sync Employees",
+        "syncDepartments": "Sync Departments",
+        "lastSync": "Last Sync",
+        "status": "Connection Status",
+        "connected": "Connected",
+        "disconnected": "Disconnected",
+        "testConnection": "Test Connection"
+      },
+      "email": {
+        "title": "Email Configuration",
+        "provider": "Email Provider",
+        "smtpServer": "SMTP Server",
+        "smtpPort": "SMTP Port",
+        "username": "Username",
+        "password": "Password",
+        "fromEmail": "From Email",
+        "fromName": "From Name",
+        "encryption": "Encryption",
+        "testEmail": "Send Test Email"
+      },
+      "google": {
+        "title": "Google Integration",
+        "description": "Connect with Google services",
+        "driveIntegration": "Google Drive Integration",
+        "sheetsIntegration": "Google Sheets Integration",
+        "calendarIntegration": "Google Calendar Integration",
+        "clientId": "Client ID",
+        "clientSecret": "Client Secret",
+        "redirectUri": "Redirect URI",
+        "authorize": "Authorize",
+        "revoke": "Revoke Access"
+      }
+    },
+    "audit": {
+      "title": "Audit Log",
+      "action": "Action",
+      "user": "User",
+      "timestamp": "Timestamp",
+      "details": "Details",
+      "ipAddress": "IP Address",
+      "exportLog": "Export Log"
+    }
+  },
+  "notifications": {
+    "email": {
+      "subjects": {
+        "requestSubmitted": "Privilege Request Submitted",
+        "requestApproved": "Your Privilege Request has been Approved",
+        "requestRejected": "Your Privilege Request has been Rejected",
+        "requestReturned": "Your Privilege Request Requires Modifications",
+        "pendingApproval": "New Request Pending Your Approval",
+        "reminderApproval": "Reminder: Request Pending Your Approval",
+        "privilegeExpiring": "Your Privileges are Expiring Soon",
+        "magicLink": "Your Sign-In Link for CBAHI System"
+      },
+      "greeting": "Dear {{name}},",
+      "closing": "Best regards,",
+      "team": "CBAHI Privileging Team",
+      "footer": "This is an automated message. Please do not reply directly to this email.",
+      "viewRequest": "View Request",
+      "signIn": "Sign In"
+    }
+  },
+  "errors": {
+    "generic": {
+      "title": "Something went wrong",
+      "message": "An unexpected error occurred. Please try again.",
+      "tryAgain": "Try Again",
+      "goHome": "Go to Homepage"
+    },
+    "network": {
+      "title": "Network Error",
+      "message": "Unable to connect to the server. Please check your internet connection.",
+      "offline": "You appear to be offline"
+    },
+    "notFound": {
+      "title": "Page Not Found",
+      "message": "The page you are looking for does not exist or has been moved."
+    },
+    "forbidden": {
+      "title": "Access Denied",
+      "message": "You do not have permission to access this resource."
+    },
+    "serverError": {
+      "title": "Server Error",
+      "message": "The server encountered an error. Please try again later."
+    },
+    "validation": {
+      "required": "{{field}} is required",
+      "minLength": "{{field}} must be at least {{min}} characters",
+      "maxLength": "{{field}} must not exceed {{max}} characters",
+      "pattern": "{{field}} format is invalid",
+      "email": "Please enter a valid email address",
+      "phone": "Please enter a valid phone number",
+      "date": "Please enter a valid date",
+      "number": "Please enter a valid number"
+    }
+  },
+  "profile": {
+    "title": "My Profile",
+    "personalInfo": "Personal Information",
+    "contactInfo": "Contact Information",
+    "credentials": "Credentials",
+    "preferences": "Preferences",
+    "editProfile": "Edit Profile",
+    "changePhoto": "Change Photo",
+    "notificationPreferences": "Notification Preferences",
+    "emailNotifications": "Email Notifications",
+    "systemNotifications": "System Notifications"
+  }
+}
