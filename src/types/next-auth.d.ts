@@ -6,7 +6,7 @@
 
 import { UserRole, UserStatus } from "@prisma/client";
 import "next-auth";
-import { JWT } from "next-auth/jwt";
+import "next-auth/jwt";
 
 declare module "next-auth" {
   /**

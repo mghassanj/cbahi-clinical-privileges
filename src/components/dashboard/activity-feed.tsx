@@ -3,7 +3,6 @@
 import * as React from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { cn, formatDate } from "@/lib/utils";
-import { Avatar } from "@/components/ui/avatar";
 import {
   LiquidGlassCard,
   LiquidGlassCardContent,
@@ -11,7 +10,6 @@ import {
   LiquidGlassCardTitle,
 } from "@/components/custom/liquid-glass-card";
 import {
-  FileText,
   CheckCircle,
   XCircle,
   Clock,

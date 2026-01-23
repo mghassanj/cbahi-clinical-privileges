@@ -13,7 +13,6 @@ import {
   RequestStatus,
   UserRole,
   ApprovalLevel,
-  Prisma,
 } from "@prisma/client";
 
 // ============================================================================
@@ -142,7 +141,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     // Submit request in transaction
     const updatedRequest = await prisma.$transaction(async (tx) => {
       // Update request status
-      const updated = await tx.privilegeRequest.update({
+      await tx.privilegeRequest.update({
         where: { id },
         data: {
           status: RequestStatus.PENDING,

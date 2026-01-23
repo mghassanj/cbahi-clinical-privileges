@@ -16,7 +16,6 @@ import {
   EmailBrandConfig,
   ApprovalStep,
   Privilege,
-  BilingualText,
   EscalationLevel,
 } from './types';
 
@@ -925,7 +924,6 @@ export function generateEscalationEmail(
 
     sections.push(sectionGenerators.header(recipient, isRtl));
 
-    const alertType = escalationInfo.level === EscalationLevel.HR ? 'error' : 'warning';
     const pendingDuration = formatters.duration(escalationInfo.hoursPending, isRtl);
     const originalApproverName = isRtl
       ? escalationInfo.originalApprover.nameAr
@@ -1009,7 +1007,8 @@ export function generateEscalationEmail(
     footerActionsEn,
   });
 
-  const levelText = {
+  const levelText: Record<EscalationLevel, { ar: string; en: string }> = {
+    [EscalationLevel.NONE]: { ar: 'إشعار', en: 'Notice' },
     [EscalationLevel.REMINDER]: { ar: 'تذكير', en: 'Reminder' },
     [EscalationLevel.MANAGER]: { ar: 'تصعيد للمدير', en: 'Manager Escalation' },
     [EscalationLevel.HR]: { ar: 'تصعيد للموارد البشرية', en: 'HR Escalation' },

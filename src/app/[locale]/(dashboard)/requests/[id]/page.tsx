@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import Link from "next/link";
 import { useRouter, useParams } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import {
@@ -29,7 +28,6 @@ import {
   Phone,
   Calendar,
   Shield,
-  ChevronRight,
 } from "lucide-react";
 
 type RequestStatus = "draft" | "pending" | "in_review" | "approved" | "rejected" | "cancelled";

@@ -446,23 +446,16 @@ export class GoogleDocsService {
         throw new Error(`Table index ${tableIndex} not found. Document has ${tables.length} tables.`);
       }
 
-      const table = tables[tableIndex];
-      const requests: docs_v1.Schema$Request[] = [];
-
       // Note: Table manipulation in Google Docs API is complex.
-      // This is a simplified version that replaces cell text.
+      // This is a simplified version - actual implementation would use tables[tableIndex]
+      // to build requests for updating cell content.
       // For full table support, additional logic would be needed.
 
-      let rowIndex = data.headers ? 1 : 0; // Start after headers if present
+      const requests: docs_v1.Schema$Request[] = [];
 
-      for (const row of data.rows) {
-        for (let colIndex = 0; colIndex < row.cells.length; colIndex++) {
-          const cellText = row.cells[colIndex];
-          // Build request to update cell content
-          // This requires calculating the exact indices which is complex
-        }
-        rowIndex++;
-      }
+      // Placeholder: In production, iterate through data.rows and build requests
+      // using the table structure from tables[tableIndex]
+      void data.rows; // Mark as intentionally unused for now
 
       if (requests.length > 0) {
         await this.docs.documents.batchUpdate({

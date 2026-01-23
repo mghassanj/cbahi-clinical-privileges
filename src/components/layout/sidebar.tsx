@@ -17,7 +17,6 @@ import {
   ChevronRight,
   Menu,
   X,
-  LogOut,
   HelpCircle,
 } from "lucide-react";
 

@@ -2,11 +2,10 @@
 
 import * as React from "react";
 import { useTranslations, useLocale } from "next-intl";
-import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import type { PersonalInfoData } from "@/hooks/usePrivilegeRequest";
-import { User, Building2, Briefcase, MapPin, Mail, IdCard, Hospital } from "lucide-react";
+import { User, Building2, Briefcase, Mail, IdCard, Hospital } from "lucide-react";
 
 export interface StepPersonalInfoProps {
   data: Partial<PersonalInfoData>;
@@ -26,7 +25,6 @@ const HOSPITAL_CENTERS = [
 export function StepPersonalInfo({
   data,
   onUpdate,
-  errors,
 }: StepPersonalInfoProps) {
   const t = useTranslations("request.form.personalInfo");
   const tValidation = useTranslations("request.validation");

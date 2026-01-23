@@ -5,13 +5,10 @@ import { useTranslations, useLocale } from "next-intl";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Checkbox } from "@/components/ui/checkbox";
 import type { PrivilegeSelectionData } from "@/hooks/usePrivilegeRequest";
 import {
   Search,
   AlertTriangle,
-  CheckSquare,
-  Square,
   ChevronDown,
   ChevronUp,
 } from "lucide-react";
@@ -246,14 +243,13 @@ const PRIVILEGE_CATEGORIES = [
 export function StepPrivilegeSelection({
   data,
   onUpdate,
-  errors,
 }: StepPrivilegeSelectionProps) {
   const t = useTranslations("request.form.privileges");
   const locale = useLocale();
   const isRTL = locale === "ar";
 
   const [searchQuery, setSearchQuery] = React.useState("");
-  const [activeCategory, setActiveCategory] = React.useState(
+  const [, setActiveCategory] = React.useState(
     PRIVILEGE_CATEGORIES[0].id
   );
   const [expandedCategories, setExpandedCategories] = React.useState<string[]>(
@@ -300,9 +296,9 @@ export function StepPrivilegeSelection({
       onUpdate({ selectedPrivileges: newSelected });
     } else {
       // Select all in category
-      const newSelected = [
-        ...new Set([...selectedPrivileges, ...categoryPrivilegeIds]),
-      ];
+      const newSelected = Array.from(
+        new Set([...selectedPrivileges, ...categoryPrivilegeIds])
+      );
       onUpdate({ selectedPrivileges: newSelected });
     }
   };
@@ -538,12 +534,8 @@ function PrivilegeList({
   category,
   selectedPrivileges,
   onToggle,
-  onSelectAll,
-  searchQuery,
   filterPrivileges,
   isRTL,
-  t,
-  hideHeader = false,
 }: PrivilegeListProps) {
   const filteredPrivileges = filterPrivileges(category.privileges);
 

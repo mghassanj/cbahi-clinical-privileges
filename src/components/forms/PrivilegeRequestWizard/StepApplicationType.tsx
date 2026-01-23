@@ -72,7 +72,6 @@ const REQUEST_TYPES = [
 export function StepApplicationType({
   data,
   onUpdate,
-  errors,
 }: StepApplicationTypeProps) {
   const t = useTranslations("request.form.applicationType");
   const locale = useLocale();

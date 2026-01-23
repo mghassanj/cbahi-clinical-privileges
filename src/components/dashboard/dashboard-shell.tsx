@@ -6,7 +6,6 @@ import { usePathname } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import { Avatar } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
 import { LanguageSwitcher } from "@/components/custom/language-switcher";
 import {
   LayoutDashboard,
@@ -40,6 +39,14 @@ interface DashboardShellProps {
   user?: DashboardUser | null;
 }
 
+interface NavItem {
+  href: string;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  badge?: number;
+  children?: NavItem[];
+}
+
 const DashboardShell: React.FC<DashboardShellProps> = ({ children, user }) => {
   const t = useTranslations();
   const locale = useLocale();
@@ -58,7 +65,7 @@ const DashboardShell: React.FC<DashboardShellProps> = ({ children, user }) => {
     email: "ahmed.rashid@hospital.com",
     role: "admin",
     department: "Dental",
-    avatar: null,
+    avatar: undefined,
   };
 
   const displayName = isRTL && currentUser.nameAr ? currentUser.nameAr : currentUser.name;
@@ -74,8 +81,8 @@ const DashboardShell: React.FC<DashboardShellProps> = ({ children, user }) => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const getNavItems = () => {
-    const baseItems = [
+  const getNavItems = (): NavItem[] => {
+    const baseItems: NavItem[] = [
       {
         href: `/${locale}`,
         label: t("common.navigation.dashboard"),
@@ -88,7 +95,7 @@ const DashboardShell: React.FC<DashboardShellProps> = ({ children, user }) => {
       },
     ];
 
-    const approverItems = [
+    const approverItems: NavItem[] = [
       {
         href: `/${locale}/approvals`,
         label: t("common.navigation.approvals"),
@@ -97,13 +104,13 @@ const DashboardShell: React.FC<DashboardShellProps> = ({ children, user }) => {
       },
     ];
 
-    const profileItem = {
+    const profileItem: NavItem = {
       href: `/${locale}/profile`,
       label: t("common.navigation.profile"),
       icon: User,
     };
 
-    const adminItems = [
+    const adminItems: NavItem[] = [
       {
         href: `/${locale}/admin`,
         label: t("common.navigation.admin"),
@@ -206,13 +213,13 @@ const DashboardShell: React.FC<DashboardShellProps> = ({ children, user }) => {
               >
                 <item.icon className="h-5 w-5" />
                 <span className="flex-1">{item.label}</span>
-                {"badge" in item && item.badge && (
+                {item.badge !== undefined && (
                   <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-error-500 px-1.5 text-xs font-medium text-white">
                     {item.badge}
                   </span>
                 )}
               </Link>
-              {"children" in item && item.children && (
+              {item.children && item.children.length > 0 && (
                 <div className={cn("mt-1 space-y-1", isRTL ? "pr-4" : "pl-4")}>
                   {item.children.map((child) => (
                     <Link

@@ -34,7 +34,8 @@ interface TriggerSyncBody {
 // GET - Get Sync Status
 // ============================================================================
 
-export async function GET(request: NextRequest) {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export async function GET(_request: NextRequest) {
   try {
     const session = await getServerSession();
 
@@ -349,7 +350,7 @@ export async function POST(request: NextRequest) {
           ? "Jisr Sync Completed with Errors"
           : "Jisr Sync Completed Successfully",
         status: "PENDING",
-        metadata: { results },
+        metadata: { results: JSON.parse(JSON.stringify(results)) },
       },
     });
 
@@ -378,6 +379,7 @@ export async function POST(request: NextRequest) {
  */
 async function simulateSync(
   entityType: string,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   _jisrSlug: string
 ): Promise<{
   total: number;

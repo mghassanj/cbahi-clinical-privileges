@@ -3,7 +3,6 @@
 import * as React from "react";
 import { useTranslations, useLocale } from "next-intl";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
 import type { DocumentsData, DocumentData } from "@/hooks/usePrivilegeRequest";
 import {
   Upload,

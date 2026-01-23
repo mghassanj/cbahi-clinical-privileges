@@ -19,7 +19,6 @@ import {
   ChevronsLeft,
   ChevronsRight,
   Search,
-  Filter,
   X,
 } from "lucide-react";
 

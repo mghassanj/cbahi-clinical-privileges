@@ -9,7 +9,7 @@ import { PrismaAdapter } from "@auth/prisma-adapter";
 import { UserRole, UserStatus } from "@prisma/client";
 import type { NextAuthOptions } from "next-auth";
 import type { Adapter, AdapterUser } from "next-auth/adapters";
-import EmailProvider from "next-auth/providers/email";
+import EmailProvider, { type SendVerificationRequestParams } from "next-auth/providers/email";
 import nodemailer from "nodemailer";
 
 import { prisma } from "@/lib/db";
@@ -17,15 +17,6 @@ import { prisma } from "@/lib/db";
 // ============================================================================
 // Custom Email Sending Function
 // ============================================================================
-
-interface VerificationRequestParams {
-  identifier: string;
-  url: string;
-  provider: {
-    server: string | nodemailer.TransportOptions;
-    from: string;
-  };
-}
 
 /**
  * Custom verification request handler using our email system
@@ -35,7 +26,7 @@ async function customSendVerificationRequest({
   identifier: email,
   url,
   provider,
-}: VerificationRequestParams) {
+}: SendVerificationRequestParams) {
   // Get system settings for email configuration
   const settings = await prisma.systemSettings.findUnique({
     where: { id: "default" },
@@ -242,7 +233,7 @@ function CustomPrismaAdapter(): Adapter {
     ...baseAdapter,
 
     // Override createUser to link with existing User from Jisr
-    async createUser(data): Promise<AdapterUser> {
+    async createUser(data: Omit<AdapterUser, "id">): Promise<AdapterUser> {
       // Find the User record synced from Jisr
       const jisrUser = await prisma.user.findUnique({
         where: { email: data.email! },
@@ -259,18 +250,28 @@ function CustomPrismaAdapter(): Adapter {
         },
       });
 
-      // Return in format NextAuth expects
+      // Return in format NextAuth expects (with extended fields)
       return {
         id: authUser.id,
         email: authUser.email!,
         emailVerified: authUser.emailVerified,
-        name: authUser.name,
-        image: authUser.image,
+        name: authUser.name || jisrUser?.nameEn || "",
+        nameAr: jisrUser?.nameAr,
+        image: authUser.image || "",
+        role: jisrUser?.role || UserRole.EMPLOYEE,
+        status: jisrUser?.status || UserStatus.ACTIVE,
+        jisrEmployeeId: jisrUser?.jisrEmployeeId || 0,
+        isActive: jisrUser?.isActive ?? true,
+        departmentId: jisrUser?.departmentId,
+        departmentEn: jisrUser?.departmentEn,
+        departmentAr: jisrUser?.departmentAr,
+        jobTitleEn: jisrUser?.jobTitleEn,
+        jobTitleAr: jisrUser?.jobTitleAr,
       };
     },
 
     // Override getUser to include linked User data
-    async getUser(id): Promise<AdapterUser | null> {
+    async getUser(id: string): Promise<AdapterUser | null> {
       const authUser = await prisma.authUser.findUnique({
         where: { id },
         include: { user: true },
@@ -278,17 +279,28 @@ function CustomPrismaAdapter(): Adapter {
 
       if (!authUser) return null;
 
+      const user = authUser.user;
       return {
         id: authUser.id,
         email: authUser.email!,
         emailVerified: authUser.emailVerified,
-        name: authUser.name,
-        image: authUser.image,
+        name: authUser.name || user?.nameEn || "",
+        nameAr: user?.nameAr,
+        image: authUser.image || "",
+        role: user?.role || UserRole.EMPLOYEE,
+        status: user?.status || UserStatus.ACTIVE,
+        jisrEmployeeId: user?.jisrEmployeeId || 0,
+        isActive: user?.isActive ?? true,
+        departmentId: user?.departmentId,
+        departmentEn: user?.departmentEn,
+        departmentAr: user?.departmentAr,
+        jobTitleEn: user?.jobTitleEn,
+        jobTitleAr: user?.jobTitleAr,
       };
     },
 
     // Override getUserByEmail to include linked User data
-    async getUserByEmail(email): Promise<AdapterUser | null> {
+    async getUserByEmail(email: string): Promise<AdapterUser | null> {
       const authUser = await prisma.authUser.findUnique({
         where: { email },
         include: { user: true },
@@ -296,12 +308,23 @@ function CustomPrismaAdapter(): Adapter {
 
       if (!authUser) return null;
 
+      const user = authUser.user;
       return {
         id: authUser.id,
         email: authUser.email!,
         emailVerified: authUser.emailVerified,
-        name: authUser.name,
-        image: authUser.image,
+        name: authUser.name || user?.nameEn || "",
+        nameAr: user?.nameAr,
+        image: authUser.image || "",
+        role: user?.role || UserRole.EMPLOYEE,
+        status: user?.status || UserStatus.ACTIVE,
+        jisrEmployeeId: user?.jisrEmployeeId || 0,
+        isActive: user?.isActive ?? true,
+        departmentId: user?.departmentId,
+        departmentEn: user?.departmentEn,
+        departmentAr: user?.departmentAr,
+        jobTitleEn: user?.jobTitleEn,
+        jobTitleAr: user?.jobTitleAr,
       };
     },
   };

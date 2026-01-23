@@ -123,7 +123,7 @@ export default function DashboardPage() {
   const [isLoading, setIsLoading] = React.useState(true);
 
   // Mock user role - replace with actual session
-  const userRole: UserRole = "admin";
+  const userRole = "admin" as UserRole;
   const userName = isRTL ? "د. أحمد الراشد" : "Dr. Ahmed Al-Rashid";
 
   React.useEffect(() => {

@@ -9,6 +9,7 @@
 
 import { google, drive_v3 } from 'googleapis';
 import { JWT } from 'google-auth-library';
+import { Readable } from 'stream';
 
 // ============================================================================
 // Types & Interfaces
@@ -561,7 +562,6 @@ export class GoogleDriveService {
   // ==========================================================================
 
   private bufferToStream(buffer: Buffer): NodeJS.ReadableStream {
-    const { Readable } = require('stream');
     const stream = new Readable();
     stream.push(buffer);
     stream.push(null);

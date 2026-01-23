@@ -32,11 +32,11 @@ export const personalInfoSchema = z.object({
 
 export const applicationTypeSchema = z.object({
   applicationType: z.enum(["new", "reapplication"], {
-    required_error: "Please select an application type",
+    message: "Please select an application type",
   }),
   reapplicationReason: z.string().optional(),
   requestType: z.enum(["core", "non-core", "extra"], {
-    required_error: "Please select a request type",
+    message: "Please select a request type",
   }),
 });
 
@@ -333,7 +333,7 @@ export function usePrivilegeRequest(
       }
     } catch (error) {
       if (error instanceof z.ZodError) {
-        const firstError = error.errors[0];
+        const firstError = error.issues[0];
         setState((prev) => ({
           ...prev,
           error: firstError?.message || "Validation failed",

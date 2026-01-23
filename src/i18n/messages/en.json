@@ -28,7 +28,54 @@
     "view": "View",
     "download": "Download",
     "upload": "Upload",
-    "refresh": "Refresh"
+    "refresh": "Refresh",
+    "navigation": {
+      "dashboard": "Dashboard",
+      "requests": "Requests",
+      "approvals": "Approvals",
+      "profile": "Profile",
+      "admin": "Administration",
+      "settings": "Settings",
+      "logout": "Logout"
+    },
+    "status": {
+      "pending": "Pending",
+      "in_review": "In Review",
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "draft": "Draft",
+      "submitted": "Submitted",
+      "completed": "Completed",
+      "cancelled": "Cancelled"
+    },
+    "pagination": {
+      "showing": "Showing {from} to {to} of {total} results",
+      "page": "Page {current} of {total}",
+      "first": "First",
+      "last": "Last",
+      "prev": "Previous",
+      "next": "Next"
+    }
+  },
+  "admin": {
+    "userManagement": {
+      "users": "User Management",
+      "assignRole": "Assign Role",
+      "changeStatus": "Change Status",
+      "viewDetails": "View Details",
+      "editUser": "Edit User",
+      "deleteUser": "Delete User",
+      "filterByRole": "Filter by Role",
+      "filterByStatus": "Filter by Status",
+      "filterByDepartment": "Filter by Department"
+    },
+    "settings": {
+      "title": "System Settings",
+      "general": "General Settings",
+      "email": "Email Settings",
+      "notifications": "Notification Settings",
+      "security": "Security Settings"
+    }
   },
   "auth": {
     "login": "Login",

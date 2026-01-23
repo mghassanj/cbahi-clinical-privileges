@@ -94,7 +94,8 @@ export interface RadioGroupItemProps
 const RadioGroupItem = React.forwardRef<HTMLInputElement, RadioGroupItemProps>(
   ({ className, value, label, description, id, disabled, ...props }, ref) => {
     const { name, value: groupValue, onChange, disabled: groupDisabled } = useRadioGroup();
-    const inputId = id || React.useId();
+    const generatedId = React.useId();
+    const inputId = id || generatedId;
     const isChecked = groupValue === value;
     const isDisabled = disabled || groupDisabled;
 
@@ -168,7 +169,8 @@ export interface RadioCardProps extends RadioGroupItemProps {
 const RadioCard = React.forwardRef<HTMLInputElement, RadioCardProps>(
   ({ className, value, label, description, icon, id, disabled, ...props }, ref) => {
     const { name, value: groupValue, onChange, disabled: groupDisabled } = useRadioGroup();
-    const inputId = id || React.useId();
+    const generatedId = React.useId();
+    const inputId = id || generatedId;
     const isChecked = groupValue === value;
     const isDisabled = disabled || groupDisabled;
 

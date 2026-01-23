@@ -28,7 +28,54 @@
     "view": "عرض",
     "download": "تحميل",
     "upload": "رفع",
-    "refresh": "تحديث"
+    "refresh": "تحديث",
+    "navigation": {
+      "dashboard": "لوحة التحكم",
+      "requests": "الطلبات",
+      "approvals": "الموافقات",
+      "profile": "الملف الشخصي",
+      "admin": "الإدارة",
+      "settings": "الإعدادات",
+      "logout": "تسجيل الخروج"
+    },
+    "status": {
+      "pending": "قيد الانتظار",
+      "in_review": "قيد المراجعة",
+      "approved": "موافق عليه",
+      "rejected": "مرفوض",
+      "draft": "مسودة",
+      "submitted": "مُقدم",
+      "completed": "مكتمل",
+      "cancelled": "ملغي"
+    },
+    "pagination": {
+      "showing": "عرض {from} إلى {to} من {total} نتيجة",
+      "page": "صفحة {current} من {total}",
+      "first": "الأولى",
+      "last": "الأخيرة",
+      "prev": "السابقة",
+      "next": "التالية"
+    }
+  },
+  "admin": {
+    "userManagement": {
+      "users": "إدارة المستخدمين",
+      "assignRole": "تعيين الدور",
+      "changeStatus": "تغيير الحالة",
+      "viewDetails": "عرض التفاصيل",
+      "editUser": "تعديل المستخدم",
+      "deleteUser": "حذف المستخدم",
+      "filterByRole": "تصفية حسب الدور",
+      "filterByStatus": "تصفية حسب الحالة",
+      "filterByDepartment": "تصفية حسب القسم"
+    },
+    "settings": {
+      "title": "إعدادات النظام",
+      "general": "الإعدادات العامة",
+      "email": "إعدادات البريد الإلكتروني",
+      "notifications": "إعدادات الإشعارات",
+      "security": "إعدادات الأمان"
+    }
   },
   "auth": {
     "login": "تسجيل الدخول",

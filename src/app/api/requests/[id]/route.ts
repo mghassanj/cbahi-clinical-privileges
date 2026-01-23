@@ -304,7 +304,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     // Update request and privileges in transaction
     const updatedRequest = await prisma.$transaction(async (tx) => {
       // Update the request
-      const updated = await tx.privilegeRequest.update({
+      await tx.privilegeRequest.update({
         where: { id },
         data: {
           type: body.type,

@@ -6,9 +6,7 @@ import { format, formatDistanceToNow } from "date-fns";
 import { ar, enUS } from "date-fns/locale";
 import {
   Bell,
-  Check,
   CheckCheck,
-  X,
   AlertTriangle,
   Info,
   CheckCircle2,

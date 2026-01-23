@@ -6,7 +6,6 @@
 
 import {
   PrivilegeApplicationRequest,
-  NotificationType,
   EmailMessage,
   EmailSendResult,
   NotificationServiceConfig,
@@ -16,12 +15,12 @@ import {
   ModificationInfo,
   EscalationInfo,
   EscalationLevel,
+  EmailProviderType,
   Approver,
   User,
 } from './types';
 
 import {
-  generateEmail,
   generateApprovalRequiredEmail,
   generateApprovalProgressEmail,
   generateApprovalCompleteEmail,
@@ -471,10 +470,10 @@ export function createNotificationServiceFromEnv(): NotificationService {
 
   let config: NotificationServiceConfig;
 
-  if (providerType === 'MICROSOFT_GRAPH') {
+  if (providerType === EmailProviderType.MICROSOFT_GRAPH) {
     config = {
       emailProvider: {
-        type: 'MICROSOFT_GRAPH' as const,
+        type: EmailProviderType.MICROSOFT_GRAPH,
         clientId: process.env.AZURE_CLIENT_ID || '',
         clientSecret: process.env.AZURE_CLIENT_SECRET || '',
         tenantId: process.env.AZURE_TENANT_ID || '',
@@ -491,7 +490,7 @@ export function createNotificationServiceFromEnv(): NotificationService {
   } else {
     config = {
       emailProvider: {
-        type: 'GMAIL_SMTP' as const,
+        type: EmailProviderType.GMAIL_SMTP,
         host: process.env.SMTP_HOST || 'smtp.gmail.com',
         port: parseInt(process.env.SMTP_PORT || '587', 10),
         secure: process.env.SMTP_SECURE === 'true',
@@ -526,7 +525,7 @@ export function createMockNotificationService(baseUrl: string = 'https://test.cb
   // Create a service with console-only testing mode
   const config: NotificationServiceConfig = {
     emailProvider: {
-      type: 'GMAIL_SMTP' as const,
+      type: EmailProviderType.GMAIL_SMTP,
       host: 'localhost',
       port: 587,
       secure: false,

@@ -13,7 +13,7 @@ import {
   MessageSquare,
   User,
 } from "lucide-react";
-import { ApprovalStep, Approver } from "@/lib/notifications/types";
+// Types imported from "@/lib/notifications/types" are used for reference
 
 export interface Approval {
   /**

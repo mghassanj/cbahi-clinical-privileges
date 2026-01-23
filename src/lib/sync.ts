@@ -7,9 +7,7 @@
 
 import {
   JisrClient,
-  JisrClientError,
   JisrEmployee,
-  JisrEmployeeDetail,
   JisrDepartment,
   JisrLocation,
   createJisrClientFromEnv,
@@ -587,7 +585,7 @@ export class SyncService {
         totalDuration: Date.now() - startTime,
         timestamp: new Date(),
       };
-    } catch (error) {
+    } catch {
       // Rollback transaction if supported
       if (this.db.rollbackTransaction) {
         await this.db.rollbackTransaction();

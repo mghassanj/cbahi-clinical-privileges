@@ -4,31 +4,20 @@ import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
-import {
-  LiquidGlassCard,
-  LiquidGlassCardContent,
-  LiquidGlassCardHeader,
-  LiquidGlassCardTitle,
-} from "@/components/custom/liquid-glass-card";
+import { LiquidGlassCard } from "@/components/custom/liquid-glass-card";
 import { DataTable, Column } from "@/components/dashboard/data-table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar } from "@/components/ui/avatar";
 import { Select } from "@/components/ui/select";
-import { formatDate } from "@/lib/utils";
 import {
   LayoutGrid,
   List,
   Filter,
   AlertTriangle,
   Clock,
-  CheckCircle,
-  XCircle,
   ChevronRight,
-  ArrowRight,
 } from "lucide-react";
-
-type ApprovalStatus = "pending" | "approved" | "rejected";
 
 interface PendingApproval {
   id: string;
@@ -271,7 +260,7 @@ export default function ApprovalsPage() {
     },
   ];
 
-  const departments = [...new Set(mockApprovals.map((a) => a.applicant.department))];
+  const departments = Array.from(new Set(mockApprovals.map((a) => a.applicant.department)));
 
   return (
     <div className="space-y-6">

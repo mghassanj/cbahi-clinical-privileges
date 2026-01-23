@@ -37,7 +37,7 @@ export default async function DashboardLayout({
     email: "ahmed.rashid@hospital.com",
     role: "admin" as const,
     department: "Dental",
-    avatar: null,
+    avatar: undefined,
   };
 
   return (

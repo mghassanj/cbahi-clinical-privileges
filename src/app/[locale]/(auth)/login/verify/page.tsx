@@ -13,7 +13,7 @@
 
 import { signIn } from "next-auth/react";
 import { useParams, useSearchParams } from "next/navigation";
-import { useState, useTransition } from "react";
+import { Suspense, useState, useTransition } from "react";
 
 // ============================================================================
 // Types
@@ -141,10 +141,22 @@ function SuccessAlert({ message }: { message: string }) {
 }
 
 // ============================================================================
-// Main Component
+// Loading Component
 // ============================================================================
 
-export default function VerifyPage() {
+function VerifyLoading() {
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
+      <div className="animate-spin h-8 w-8 border-4 border-teal-600 border-t-transparent rounded-full" />
+    </div>
+  );
+}
+
+// ============================================================================
+// Main Content Component
+// ============================================================================
+
+function VerifyPageContent() {
   const params = useParams();
   const searchParams = useSearchParams();
 
@@ -316,5 +328,17 @@ export default function VerifyPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+// ============================================================================
+// Export with Suspense
+// ============================================================================
+
+export default function VerifyPage() {
+  return (
+    <Suspense fallback={<VerifyLoading />}>
+      <VerifyPageContent />
+    </Suspense>
   );
 }

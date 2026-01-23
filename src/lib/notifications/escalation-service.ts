@@ -12,8 +12,6 @@ import {
   EscalationRecord,
   EscalationThresholds,
   PendingApproval,
-  PrivilegeApplicationRequest,
-  Approver,
   User,
   EscalationInfo,
 } from './types';
@@ -492,7 +490,8 @@ export class InMemoryEscalationRepository {
 
   async loadAll(): Promise<EscalationRecord[]> {
     const allRecords: EscalationRecord[] = [];
-    for (const records of this.records.values()) {
+    const recordsArray = Array.from(this.records.values());
+    for (const records of recordsArray) {
       allRecords.push(...records);
     }
     return allRecords;
