@@ -258,7 +258,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     }
 
     // Check if request can be edited
-    const editableStatuses = [RequestStatus.DRAFT, RequestStatus.REJECTED];
+    const editableStatuses: RequestStatus[] = [RequestStatus.DRAFT, RequestStatus.REJECTED];
     if (!editableStatuses.includes(privilegeRequest.status)) {
       return NextResponse.json(
         {

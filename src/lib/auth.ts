@@ -6,9 +6,9 @@
  */
 
 import { PrismaAdapter } from "@auth/prisma-adapter";
-import { PrismaClient, UserRole, UserStatus } from "@prisma/client";
-import type { NextAuthOptions, User } from "next-auth";
-import type { Adapter } from "next-auth/adapters";
+import { UserRole, UserStatus } from "@prisma/client";
+import type { NextAuthOptions } from "next-auth";
+import type { Adapter, AdapterUser } from "next-auth/adapters";
 import EmailProvider from "next-auth/providers/email";
 import nodemailer from "nodemailer";
 
@@ -18,6 +18,15 @@ import { prisma } from "@/lib/db";
 // Custom Email Sending Function
 // ============================================================================
 
+interface VerificationRequestParams {
+  identifier: string;
+  url: string;
+  provider: {
+    server: string | nodemailer.TransportOptions;
+    from: string;
+  };
+}
+
 /**
  * Custom verification request handler using our email system
  * Sends magic link emails with bilingual support
@@ -26,11 +35,7 @@ async function customSendVerificationRequest({
   identifier: email,
   url,
   provider,
-}: {
-  identifier: string;
-  url: string;
-  provider: { server: string; from: string };
-}) {
+}: VerificationRequestParams) {
   // Get system settings for email configuration
   const settings = await prisma.systemSettings.findUnique({
     where: { id: "default" },
@@ -51,7 +56,7 @@ async function customSendVerificationRequest({
     } as nodemailer.TransportOptions;
   } else if (provider.server) {
     // Fallback to provider server string
-    transportConfig = provider.server as unknown as nodemailer.TransportOptions;
+    transportConfig = provider.server as nodemailer.TransportOptions;
   } else {
     throw new Error("Email configuration not found");
   }
@@ -230,21 +235,21 @@ function generateHtmlEmail(
 /**
  * Custom adapter that links AuthUser to our User model
  */
-function CustomPrismaAdapter(p: PrismaClient): Adapter {
-  const baseAdapter = PrismaAdapter(p) as Adapter;
+function CustomPrismaAdapter(): Adapter {
+  const baseAdapter = PrismaAdapter(prisma) as Adapter;
 
   return {
     ...baseAdapter,
 
     // Override createUser to link with existing User from Jisr
-    async createUser(data) {
+    async createUser(data): Promise<AdapterUser> {
       // Find the User record synced from Jisr
-      const jisrUser = await p.user.findUnique({
+      const jisrUser = await prisma.user.findUnique({
         where: { email: data.email! },
       });
 
       // Create AuthUser and link to Jisr User if exists
-      const authUser = await p.authUser.create({
+      const authUser = await prisma.authUser.create({
         data: {
           email: data.email,
           name: jisrUser?.nameEn || data.name,
@@ -257,16 +262,16 @@ function CustomPrismaAdapter(p: PrismaClient): Adapter {
       // Return in format NextAuth expects
       return {
         id: authUser.id,
-        email: authUser.email,
+        email: authUser.email!,
         emailVerified: authUser.emailVerified,
         name: authUser.name,
         image: authUser.image,
-      } as User;
+      };
     },
 
     // Override getUser to include linked User data
-    async getUser(id) {
-      const authUser = await p.authUser.findUnique({
+    async getUser(id): Promise<AdapterUser | null> {
+      const authUser = await prisma.authUser.findUnique({
         where: { id },
         include: { user: true },
       });
@@ -275,16 +280,16 @@ function CustomPrismaAdapter(p: PrismaClient): Adapter {
 
       return {
         id: authUser.id,
-        email: authUser.email,
+        email: authUser.email!,
         emailVerified: authUser.emailVerified,
         name: authUser.name,
         image: authUser.image,
-      } as User;
+      };
     },
 
     // Override getUserByEmail to include linked User data
-    async getUserByEmail(email) {
-      const authUser = await p.authUser.findUnique({
+    async getUserByEmail(email): Promise<AdapterUser | null> {
+      const authUser = await prisma.authUser.findUnique({
         where: { email },
         include: { user: true },
       });
@@ -293,11 +298,11 @@ function CustomPrismaAdapter(p: PrismaClient): Adapter {
 
       return {
         id: authUser.id,
-        email: authUser.email,
+        email: authUser.email!,
         emailVerified: authUser.emailVerified,
         name: authUser.name,
         image: authUser.image,
-      } as User;
+      };
     },
   };
 }
@@ -307,7 +312,7 @@ function CustomPrismaAdapter(p: PrismaClient): Adapter {
 // ============================================================================
 
 export const authOptions: NextAuthOptions = {
-  adapter: CustomPrismaAdapter(prisma),
+  adapter: CustomPrismaAdapter(),
 
   providers: [
     EmailProvider({
@@ -372,7 +377,7 @@ export const authOptions: NextAuthOptions = {
 
         // Fetch full user data from Jisr-synced Users table
         const jisrUser = await prisma.user.findUnique({
-          where: { email },
+          where: { email: email as string },
           select: {
             id: true,
             email: true,
@@ -416,19 +421,19 @@ export const authOptions: NextAuthOptions = {
     async session({ session, token }) {
       if (token) {
         session.user = {
-          id: token.id,
-          email: token.email,
-          name: token.name,
-          nameAr: token.nameAr,
-          role: token.role,
-          status: token.status,
-          departmentId: token.departmentId,
-          departmentEn: token.departmentEn,
-          departmentAr: token.departmentAr,
-          jobTitleEn: token.jobTitleEn,
-          jobTitleAr: token.jobTitleAr,
-          jisrEmployeeId: token.jisrEmployeeId,
-          isActive: token.isActive,
+          id: token.id as string,
+          email: token.email as string,
+          name: token.name as string,
+          nameAr: token.nameAr as string | null,
+          role: token.role as UserRole,
+          status: token.status as UserStatus,
+          departmentId: token.departmentId as number | null,
+          departmentEn: token.departmentEn as string | null,
+          departmentAr: token.departmentAr as string | null,
+          jobTitleEn: token.jobTitleEn as string | null,
+          jobTitleAr: token.jobTitleAr as string | null,
+          jisrEmployeeId: token.jisrEmployeeId as number,
+          isActive: token.isActive as boolean,
         };
       }
 
@@ -467,7 +472,7 @@ export const authOptions: NextAuthOptions = {
     async signOut(message) {
       if ("token" in message && message.token?.email) {
         const jisrUser = await prisma.user.findUnique({
-          where: { email: message.token.email },
+          where: { email: message.token.email as string },
           select: { id: true },
         });
 
@@ -510,13 +515,14 @@ export function isAdmin(userRole: UserRole): boolean {
  * Check if user can approve requests (has approver role)
  */
 export function canApprove(userRole: UserRole): boolean {
-  return [
+  const approverRoles: UserRole[] = [
     UserRole.ADMIN,
     UserRole.MEDICAL_DIRECTOR,
     UserRole.HEAD_OF_DEPT,
     UserRole.HEAD_OF_SECTION,
     UserRole.COMMITTEE_MEMBER,
-  ].includes(userRole);
+  ];
+  return approverRoles.includes(userRole);
 }
 
 /**

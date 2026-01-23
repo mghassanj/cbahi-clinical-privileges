@@ -50,7 +50,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Only approvers can view approvals queue
-    const approverRoles = [
+    const approverRoles: UserRole[] = [
       UserRole.HEAD_OF_SECTION,
       UserRole.HEAD_OF_DEPT,
       UserRole.COMMITTEE_MEMBER,
