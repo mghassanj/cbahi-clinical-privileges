@@ -57,8 +57,23 @@
       "next": "التالية"
     }
   },
+  "common.actions": {
+    "filter": "تصفية",
+    "back": "رجوع"
+  },
+  "request": {
+    "newRequest": "طلب جديد",
+    "title": "طلبات الامتياز"
+  },
+  "approvals": {
+    "title": "الموافقات",
+    "pending": "موافقات معلقة",
+    "approved": "موافق عليه",
+    "rejected": "مرفوض"
+  },
   "admin": {
     "userManagement": {
+      "title": "إدارة المستخدمين",
       "users": "إدارة المستخدمين",
       "assignRole": "تعيين الدور",
       "changeStatus": "تغيير الحالة",

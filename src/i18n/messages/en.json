@@ -57,8 +57,23 @@
       "next": "Next"
     }
   },
+  "common.actions": {
+    "filter": "Filter",
+    "back": "Back"
+  },
+  "request": {
+    "newRequest": "New Request",
+    "title": "Privilege Requests"
+  },
+  "approvals": {
+    "title": "Approvals",
+    "pending": "Pending Approvals",
+    "approved": "Approved",
+    "rejected": "Rejected"
+  },
   "admin": {
     "userManagement": {
+      "title": "User Management",
       "users": "User Management",
       "assignRole": "Assign Role",
       "changeStatus": "Change Status",
