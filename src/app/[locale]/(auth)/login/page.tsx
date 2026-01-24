@@ -13,7 +13,7 @@
 
 import { signIn } from "next-auth/react";
 import { useParams, useSearchParams } from "next/navigation";
-import { Suspense, useState, useTransition } from "react";
+import { Suspense, useEffect, useState, useTransition } from "react";
 
 // ============================================================================
 // Types
@@ -159,6 +159,15 @@ function LoginPageContent() {
   const [email, setEmail] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const [testingMode, setTestingMode] = useState(false);
+
+  // Fetch testing mode from API (since NEXT_PUBLIC_ vars are only available at build time)
+  useEffect(() => {
+    fetch("/api/config")
+      .then((res) => res.json())
+      .then((data) => setTestingMode(data.testingMode))
+      .catch(() => setTestingMode(false));
+  }, []);
 
   // Check for error from URL params
   const urlError = searchParams.get("error");
@@ -320,7 +329,7 @@ function LoginPageContent() {
             <p className="text-center text-xs text-gray-500">{t.footerText}</p>
 
             {/* Test Login Section - Only visible in testing mode */}
-            {process.env.NEXT_PUBLIC_TESTING_MODE === "true" && (
+            {testingMode && (
               <div className="mt-6 pt-6 border-t border-gray-200">
                 <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
                   <p className="text-sm text-yellow-700 font-medium">
