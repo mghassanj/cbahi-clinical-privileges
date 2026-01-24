@@ -189,19 +189,11 @@ export async function middleware(request: NextRequest) {
   const hasRegularCookie = request.cookies.has(regularCookieName);
   const cookieName = hasSecureCookie ? secureCookieName : regularCookieName;
 
-  // Log cookie info for debugging
-  console.log("[Middleware] Secure cookie exists:", hasSecureCookie);
-  console.log("[Middleware] Regular cookie exists:", hasRegularCookie);
-  console.log("[Middleware] Using cookie name:", cookieName);
-  console.log("[Middleware] All cookies:", request.cookies.getAll().map(c => c.name));
-
   const token = await getToken({
     req: request,
     secret: secret,
     cookieName: cookieName,
   });
-
-  console.log("[Middleware] Token decoded:", !!token);
 
   // Redirect to login if not authenticated and accessing protected route
   if (requiresAuth(pathname) && !token) {
