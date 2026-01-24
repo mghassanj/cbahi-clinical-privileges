@@ -1,8 +1,8 @@
 /**
- * CBAHI Configuration API
+ * Config API Endpoint
  *
- * Returns public configuration that needs to be available at runtime
- * (since NEXT_PUBLIC_ vars are only embedded at build time)
+ * Returns public configuration values to the client.
+ * Only exposes non-sensitive configuration.
  */
 
 import { NextResponse } from "next/server";

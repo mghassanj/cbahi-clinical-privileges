@@ -251,7 +251,7 @@ const DashboardShell: React.FC<DashboardShellProps> = ({ children, user }) => {
         {/* Sidebar footer */}
         <div className="border-t border-neutral-200 p-4 dark:border-neutral-800">
           <button
-            onClick={() => signOut({ callbackUrl: `/${locale}/auth/signin` })}
+            onClick={() => signOut({ callbackUrl: `/${locale}/login` })}
             className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-error-600 transition-colors hover:bg-error-50 dark:text-error-400 dark:hover:bg-error-900/20"
           >
             <LogOut className="h-5 w-5" />
@@ -331,7 +331,7 @@ const DashboardShell: React.FC<DashboardShellProps> = ({ children, user }) => {
                       {t("common.navigation.profile")}
                     </Link>
                     <button
-                      onClick={() => signOut({ callbackUrl: `/${locale}/auth/signin` })}
+                      onClick={() => signOut({ callbackUrl: `/${locale}/login` })}
                       className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-error-600 hover:bg-error-50 dark:text-error-400 dark:hover:bg-error-900/20"
                     >
                       <LogOut className="h-4 w-4" />
