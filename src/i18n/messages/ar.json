@@ -55,6 +55,15 @@
       "last": "الأخيرة",
       "prev": "السابقة",
       "next": "التالية"
+    },
+    "messages": {
+      "loading": "جارٍ التحميل...",
+      "noData": "لا توجد بيانات",
+      "noResults": "لا توجد نتائج",
+      "confirmDelete": "هل أنت متأكد من حذف هذا العنصر؟",
+      "unsavedChanges": "لديك تغييرات غير محفوظة. هل أنت متأكد من المغادرة؟",
+      "success": "تمت العملية بنجاح",
+      "error": "حدث خطأ"
     }
   },
   "common.actions": {
@@ -336,12 +345,26 @@
   },
   "dashboard": {
     "title": "لوحة التحكم",
+    "welcome": "مرحباً، {name}",
     "overview": "نظرة عامة",
     "recentActivity": "النشاط الأخير",
     "pendingApplications": "الطلبات المعلقة",
+    "pendingApprovals": "الموافقات المعلقة",
     "expiringPrivileges": "الصلاحيات المنتهية قريباً",
     "totalPractitioners": "إجمالي الممارسين",
-    "activePrivileges": "الصلاحيات النشطة"
+    "activePrivileges": "الصلاحيات النشطة",
+    "newRequest": "طلب جديد",
+    "viewAllRequests": "عرض جميع الطلبات",
+    "viewAllApprovals": "عرض جميع الموافقات",
+    "quickActions": "إجراءات سريعة",
+    "statistics": {
+      "totalRequests": "إجمالي الطلبات",
+      "pendingRequests": "الطلبات المعلقة",
+      "approvedRequests": "الطلبات المعتمدة",
+      "rejectedRequests": "الطلبات المرفوضة",
+      "averageProcessingTime": "متوسط وقت المعالجة",
+      "daysToProcess": "{days} أيام"
+    }
   },
   "practitioners": {
     "title": "الممارسون",

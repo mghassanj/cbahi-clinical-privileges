@@ -55,6 +55,15 @@
       "last": "Last",
       "prev": "Previous",
       "next": "Next"
+    },
+    "messages": {
+      "loading": "Loading...",
+      "noData": "No data available",
+      "noResults": "No results found",
+      "confirmDelete": "Are you sure you want to delete this item?",
+      "unsavedChanges": "You have unsaved changes. Are you sure you want to leave?",
+      "success": "Operation completed successfully",
+      "error": "An error occurred"
     }
   },
   "common.actions": {
@@ -336,12 +345,26 @@
   },
   "dashboard": {
     "title": "Dashboard",
+    "welcome": "Welcome, {name}",
     "overview": "Overview",
     "recentActivity": "Recent Activity",
     "pendingApplications": "Pending Applications",
+    "pendingApprovals": "Pending Approvals",
     "expiringPrivileges": "Expiring Privileges",
     "totalPractitioners": "Total Practitioners",
-    "activePrivileges": "Active Privileges"
+    "activePrivileges": "Active Privileges",
+    "newRequest": "New Request",
+    "viewAllRequests": "View All Requests",
+    "viewAllApprovals": "View All Approvals",
+    "quickActions": "Quick Actions",
+    "statistics": {
+      "totalRequests": "Total Requests",
+      "pendingRequests": "Pending Requests",
+      "approvedRequests": "Approved Requests",
+      "rejectedRequests": "Rejected Requests",
+      "averageProcessingTime": "Avg. Processing Time",
+      "daysToProcess": "{days} days"
+    }
   },
   "practitioners": {
     "title": "Practitioners",
