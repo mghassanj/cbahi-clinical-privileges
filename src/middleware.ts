@@ -180,14 +180,12 @@ export async function middleware(request: NextRequest) {
   }
 
   // Get session token
-  // Try both cookie names since Railway proxy might cause issues
+  // Try secure cookie first (HTTPS), fall back to regular cookie (HTTP/dev)
   const secureCookieName = "__Secure-next-auth.session-token";
   const regularCookieName = "next-auth.session-token";
-
-  // Check which cookie exists
-  const hasSecureCookie = request.cookies.has(secureCookieName);
-  const hasRegularCookie = request.cookies.has(regularCookieName);
-  const cookieName = hasSecureCookie ? secureCookieName : regularCookieName;
+  const cookieName = request.cookies.has(secureCookieName)
+    ? secureCookieName
+    : regularCookieName;
 
   const token = await getToken({
     req: request,
