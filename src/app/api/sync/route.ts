@@ -7,6 +7,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { UserRole } from "@prisma/client";
 import { JisrClient } from "@/lib/jisr";
@@ -41,7 +42,7 @@ interface TriggerSyncBody {
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function GET(_request: NextRequest) {
   try {
-    const session = await getServerSession();
+    const session = await getServerSession(authOptions);
 
     if (!session?.user?.id) {
       return NextResponse.json(
@@ -205,7 +206,7 @@ export async function POST(request: NextRequest) {
       userName = "System (Cron)";
     } else {
       // Session authentication
-      const session = await getServerSession();
+      const session = await getServerSession(authOptions);
 
       if (!session?.user?.id) {
         return NextResponse.json(

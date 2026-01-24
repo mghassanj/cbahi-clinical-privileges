@@ -11,6 +11,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { RequestStatus, UserRole } from "@prisma/client";
 import {
@@ -76,7 +77,7 @@ function setCachedCertificate(
 
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
-    const session = await getServerSession();
+    const session = await getServerSession(authOptions);
 
     if (!session?.user?.id) {
       return NextResponse.json(
@@ -331,7 +332,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
 export async function HEAD(request: NextRequest, { params }: RouteParams) {
   try {
-    const session = await getServerSession();
+    const session = await getServerSession(authOptions);
 
     if (!session?.user?.id) {
       return new NextResponse(null, { status: 401 });
