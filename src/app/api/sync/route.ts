@@ -457,45 +457,31 @@ async function syncUsers(client: JisrClient): Promise<{
         continue;
       }
 
-      // Check if user exists
+      // Check if user exists by jisrEmployeeId or email
       const existing = await prisma.user.findFirst({
         where: {
           OR: [
             { email: email },
-            { jisrId: String(emp.id) },
+            { jisrEmployeeId: emp.id },
           ],
         },
       });
 
-      // Find or create department
-      let departmentId: string | null = null;
-      if (emp.department_id) {
-        const dept = await prisma.department.findFirst({
-          where: { jisrId: String(emp.department_id) },
-        });
-        departmentId = dept?.id || null;
-      }
-
-      // Find or create location
-      let locationId: string | null = null;
-      if (emp.location_id) {
-        const loc = await prisma.location.findFirst({
-          where: { jisrId: String(emp.location_id) },
-        });
-        locationId = loc?.id || null;
-      }
-
       const userData = {
         email: email,
-        nameEn: emp.full_name || `${emp.first_name || ""} ${emp.last_name || ""}`.trim(),
+        nameEn: emp.full_name || `${emp.first_name || ""} ${emp.last_name || ""}`.trim() || "Unknown",
         nameAr: emp.full_name_ar || `${emp.first_name_ar || ""} ${emp.last_name_ar || ""}`.trim() || null,
-        jisrId: String(emp.id),
-        jisrEmployeeNumber: emp.employee_number || null,
-        departmentId: departmentId,
-        locationId: locationId,
+        jisrEmployeeId: emp.id,
+        employeeCode: emp.employee_number || null,
+        departmentId: emp.department_id || null,
+        departmentEn: emp.department_name || null,
+        locationId: emp.location_id || null,
+        jobTitleId: emp.job_title_id || null,
         jobTitleEn: emp.job_title_name || null,
+        nationalityId: emp.nationality_id || null,
+        nationalityEn: emp.nationality_name || null,
         isActive: emp.is_active !== false,
-        role: UserRole.PRACTITIONER, // Default role
+        lastSyncedAt: new Date(),
       };
 
       if (existing) {
@@ -506,9 +492,12 @@ async function syncUsers(client: JisrClient): Promise<{
         });
         updated++;
       } else {
-        // Create new user
+        // Create new user with default role
         await prisma.user.create({
-          data: userData,
+          data: {
+            ...userData,
+            role: UserRole.PRACTITIONER,
+          },
         });
         added++;
       }
@@ -543,14 +532,14 @@ async function syncDepartments(client: JisrClient): Promise<{
   for (const dept of departments) {
     try {
       const existing = await prisma.department.findFirst({
-        where: { jisrId: String(dept.id) },
+        where: { jisrDepartmentId: dept.id },
       });
 
       const deptData = {
         nameEn: dept.name || `Department ${dept.id}`,
         nameAr: dept.name_ar || null,
-        jisrId: String(dept.id),
-        isActive: dept.is_active !== false,
+        jisrDepartmentId: dept.id,
+        lastSyncedAt: new Date(),
       };
 
       if (existing) {
@@ -596,14 +585,16 @@ async function syncLocations(client: JisrClient): Promise<{
   for (const loc of locations) {
     try {
       const existing = await prisma.location.findFirst({
-        where: { jisrId: String(loc.id) },
+        where: { jisrLocationId: loc.id },
       });
 
       const locData = {
-        nameEn: loc.name || `Location ${loc.id}`,
-        nameAr: loc.name_ar || null,
-        jisrId: String(loc.id),
-        isActive: loc.is_active !== false,
+        jisrLocationId: loc.id,
+        countryId: loc.country_id || null,
+        areaId: loc.area_id || null,
+        addressEn: loc.name || loc.address || `Location ${loc.id}`,
+        addressAr: loc.name_ar || null,
+        lastSyncedAt: new Date(),
       };
 
       if (existing) {
