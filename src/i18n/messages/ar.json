@@ -73,7 +73,11 @@
       "cancel": "إلغاء",
       "delete": "حذف",
       "save": "حفظ",
-      "search": "بحث"
+      "search": "بحث",
+      "next": "التالي",
+      "previous": "السابق",
+      "saveDraft": "حفظ كمسودة",
+      "submit": "إرسال"
     }
   },
   "request": {

@@ -73,7 +73,11 @@
       "cancel": "Cancel",
       "delete": "Delete",
       "save": "Save",
-      "search": "Search"
+      "search": "Search",
+      "next": "Next",
+      "previous": "Previous",
+      "saveDraft": "Save Draft",
+      "submit": "Submit"
     }
   },
   "request": {
