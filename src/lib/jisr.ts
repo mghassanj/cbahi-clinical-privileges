@@ -32,27 +32,67 @@ export interface JisrPaginatedResponse<T> {
   };
 }
 
-// Employee Types
+// Employee Types - matches actual Jisr API response
 export interface JisrEmployee {
   id: number;
-  employee_number: string;
-  full_name: string;
+  code?: string; // Employee code/number
+  employee_number?: string; // Alternative field for employee number
+  name?: string;
+  full_name?: string;
+  full_name_i18n?: string;
   full_name_ar?: string;
-  first_name: string;
+  first_name?: string;
   first_name_ar?: string;
-  last_name: string;
+  first_name_i18n?: string;
+  last_name?: string;
   last_name_ar?: string;
   email: string;
   work_email?: string;
   phone?: string;
   mobile?: string;
-  gender?: 'male' | 'female';
+  telephone?: string;
+  gender?: string;
   birth_date?: string;
-  hire_date?: string;
+  joining_date?: string; // Jisr uses joining_date, not hire_date
+  hire_date?: string; // Keep for compatibility
   employment_status?: string;
-  employment_type?: string;
+  employment_type?: string | { id: number; name: string; name_i18n?: string };
   avatar_url?: string;
-  avatar_thumb_url?: string;
+  avatar_thumb?: string;
+  is_active?: boolean;
+  status?: string;
+
+  // Nested objects from Jisr API
+  department?: {
+    id: number;
+    name?: string;
+    name_ar?: string;
+    name_i18n?: string;
+  };
+  job_title?: {
+    id: number;
+    name?: string;
+    name_ar?: string;
+    name_i18n?: string;
+  };
+  location?: {
+    id: number;
+    address_en?: string;
+    address_ar?: string;
+    address_i18n?: string;
+  };
+  line_manager?: {
+    id: number;
+    name?: string;
+    name_i18n?: string;
+  };
+  identification_info?: {
+    nationality_id?: number;
+    nationality?: string;
+    nationality_i18n?: string;
+  };
+
+  // Flat fields (for backwards compatibility)
   department_id?: number;
   department_name?: string;
   job_title_id?: number;
@@ -63,7 +103,7 @@ export interface JisrEmployee {
   line_manager_name?: string;
   nationality_id?: number;
   nationality_name?: string;
-  is_active?: boolean;
+
   created_at?: string;
   updated_at?: string;
 }
@@ -386,13 +426,30 @@ export class JisrClient {
     // Handle nested response format: { data: { employees: [...] } }
     if (response?.data?.employees && Array.isArray(response.data.employees)) {
       return response.data.employees.map(emp => {
-        // Cast to access i18n properties that may come from API but aren't in our interface
-        const rawEmp = emp as JisrEmployee & { name_i18n?: string; job_title_i18n?: string; name?: string; code?: string };
+        // Normalize the employee data by flattening nested objects
         return {
           ...emp,
-          full_name: rawEmp.name_i18n || emp.full_name || rawEmp.name || '',
-          job_title_name: rawEmp.job_title_i18n || emp.job_title_name,
-          employee_number: rawEmp.code || emp.employee_number,
+          // Name fields
+          full_name: emp.full_name_i18n || emp.full_name || emp.name || '',
+          employee_number: emp.code || emp.employee_number || '',
+          // Use joining_date for hire_date
+          hire_date: emp.joining_date || emp.hire_date,
+          // Flatten department
+          department_id: emp.department?.id || emp.department_id,
+          department_name: emp.department?.name_i18n || emp.department?.name || emp.department_name,
+          // Flatten job title
+          job_title_id: emp.job_title?.id || emp.job_title_id,
+          job_title_name: emp.job_title?.name_i18n || emp.job_title?.name || emp.job_title_name,
+          // Flatten location
+          location_id: emp.location?.id || emp.location_id,
+          location_name: emp.location?.address_i18n || emp.location?.address_en || emp.location_name,
+          // Flatten line manager
+          line_manager_id: emp.line_manager?.id || emp.line_manager_id,
+          line_manager_name: emp.line_manager?.name_i18n || emp.line_manager?.name || emp.line_manager_name,
+          // Avatar
+          avatar_url: emp.avatar_thumb || emp.avatar_url,
+          // Status - check both is_active and status field
+          is_active: emp.is_active !== false && emp.status !== 'inactive',
         };
       });
     }

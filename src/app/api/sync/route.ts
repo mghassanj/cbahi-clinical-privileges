@@ -468,20 +468,40 @@ async function syncUsers(client: JisrClient): Promise<{
         },
       });
 
+      // Extract data from both flat and nested structures
+      const departmentId = emp.department_id || emp.department?.id || null;
+      const departmentName = emp.department_name || emp.department?.name_i18n || emp.department?.name || null;
+      const departmentNameAr = emp.department?.name_ar || null;
+      const jobTitleId = emp.job_title_id || emp.job_title?.id || null;
+      const jobTitleName = emp.job_title_name || emp.job_title?.name_i18n || emp.job_title?.name || null;
+      const jobTitleNameAr = emp.job_title?.name_ar || null;
+      const locationId = emp.location_id || emp.location?.id || null;
+      const locationName = emp.location_name || emp.location?.address_i18n || emp.location?.address_en || null;
+      const locationNameAr = emp.location?.address_ar || null;
+      const nationalityId = emp.nationality_id || emp.identification_info?.nationality_id || null;
+      const nationalityName = emp.nationality_name || emp.identification_info?.nationality_i18n || emp.identification_info?.nationality || null;
+      const joiningDate = emp.joining_date || emp.hire_date || null;
+
       const userData = {
         email: email,
-        nameEn: emp.full_name || `${emp.first_name || ""} ${emp.last_name || ""}`.trim() || "Unknown",
+        nameEn: emp.full_name || emp.full_name_i18n || emp.name || `${emp.first_name || ""} ${emp.last_name || ""}`.trim() || "Unknown",
         nameAr: emp.full_name_ar || `${emp.first_name_ar || ""} ${emp.last_name_ar || ""}`.trim() || null,
         jisrEmployeeId: emp.id,
-        employeeCode: emp.employee_number || null,
-        departmentId: emp.department_id || null,
-        departmentEn: emp.department_name || null,
-        locationId: emp.location_id || null,
-        jobTitleId: emp.job_title_id || null,
-        jobTitleEn: emp.job_title_name || null,
-        nationalityId: emp.nationality_id || null,
-        nationalityEn: emp.nationality_name || null,
-        isActive: emp.is_active !== false,
+        employeeCode: emp.code || emp.employee_number || null,
+        departmentId: departmentId,
+        departmentEn: departmentName,
+        departmentAr: departmentNameAr,
+        locationId: locationId,
+        locationEn: locationName,
+        locationAr: locationNameAr,
+        jobTitleId: jobTitleId,
+        jobTitleEn: jobTitleName,
+        jobTitleAr: jobTitleNameAr,
+        lineManagerId: null, // Will be resolved in a second pass if needed
+        nationalityId: nationalityId,
+        nationalityEn: nationalityName,
+        joiningDate: joiningDate ? new Date(joiningDate) : null,
+        isActive: emp.is_active !== false && emp.status !== 'inactive',
         lastSyncedAt: new Date(),
       };
 
@@ -505,6 +525,35 @@ async function syncUsers(client: JisrClient): Promise<{
     } catch (error) {
       console.error(`Error syncing user ${emp.id}:`, error);
       skipped++;
+    }
+  }
+
+  // Second pass: Update line manager relationships
+  for (const emp of employees) {
+    try {
+      const lineManagerJisrId = emp.line_manager_id || emp.line_manager?.id;
+      if (!lineManagerJisrId) continue;
+
+      // Find the user and their line manager by Jisr IDs
+      const user = await prisma.user.findFirst({
+        where: { jisrEmployeeId: emp.id },
+        select: { id: true, lineManagerId: true },
+      });
+
+      const lineManager = await prisma.user.findFirst({
+        where: { jisrEmployeeId: lineManagerJisrId },
+        select: { id: true },
+      });
+
+      if (user && lineManager && user.lineManagerId !== lineManager.id) {
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { lineManagerId: lineManager.id },
+        });
+      }
+    } catch (error) {
+      // Silently skip line manager errors - not critical
+      console.error(`Error updating line manager for user ${emp.id}:`, error);
     }
   }
 

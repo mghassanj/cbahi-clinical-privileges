@@ -669,32 +669,37 @@ export class SyncService {
       locationId = localLoc?.id || null;
     }
 
+    // Handle employment_type which can be string or object
+    const employmentType = typeof jisrEmployee.employment_type === 'object'
+      ? jisrEmployee.employment_type?.name
+      : jisrEmployee.employment_type;
+
     return {
       id: existingUser?.id,
       jisr_id: jisrEmployee.id,
-      employee_number: jisrEmployee.employee_number,
-      first_name: jisrEmployee.first_name,
+      employee_number: jisrEmployee.employee_number || jisrEmployee.code || '',
+      first_name: jisrEmployee.first_name || '',
       first_name_ar: jisrEmployee.first_name_ar,
-      last_name: jisrEmployee.last_name,
+      last_name: jisrEmployee.last_name || '',
       last_name_ar: jisrEmployee.last_name_ar,
-      full_name: jisrEmployee.full_name,
+      full_name: jisrEmployee.full_name || jisrEmployee.full_name_i18n || jisrEmployee.name || '',
       full_name_ar: jisrEmployee.full_name_ar,
       email: jisrEmployee.email,
       work_email: jisrEmployee.work_email,
-      phone: jisrEmployee.phone,
+      phone: jisrEmployee.phone || jisrEmployee.telephone,
       mobile: jisrEmployee.mobile,
       gender: jisrEmployee.gender,
       birth_date: jisrEmployee.birth_date ? new Date(jisrEmployee.birth_date) : null,
-      hire_date: jisrEmployee.hire_date ? new Date(jisrEmployee.hire_date) : null,
-      employment_status: jisrEmployee.employment_status,
-      employment_type: jisrEmployee.employment_type,
-      avatar_url: jisrEmployee.avatar_url,
+      hire_date: jisrEmployee.joining_date || jisrEmployee.hire_date ? new Date(jisrEmployee.joining_date || jisrEmployee.hire_date!) : null,
+      employment_status: jisrEmployee.employment_status || jisrEmployee.status,
+      employment_type: employmentType,
+      avatar_url: jisrEmployee.avatar_url || jisrEmployee.avatar_thumb,
       department_id: departmentId,
-      job_title: jisrEmployee.job_title_name,
+      job_title: jisrEmployee.job_title_name || jisrEmployee.job_title?.name_i18n || jisrEmployee.job_title?.name,
       location_id: locationId,
       line_manager_id: null, // Will be set in second pass
-      nationality: jisrEmployee.nationality_name,
-      is_active: jisrEmployee.is_active ?? true,
+      nationality: jisrEmployee.nationality_name || jisrEmployee.identification_info?.nationality_i18n || jisrEmployee.identification_info?.nationality,
+      is_active: jisrEmployee.is_active ?? (jisrEmployee.status !== 'inactive'),
       synced_at: new Date(),
       created_at: existingUser?.created_at,
       updated_at: new Date(),
