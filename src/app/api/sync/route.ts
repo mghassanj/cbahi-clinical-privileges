@@ -453,6 +453,7 @@ async function syncFromJisr(
 
 /**
  * Sync users from Jisr
+ * Makes two API calls with different locales to get both English and Arabic names
  */
 async function syncUsers(client: JisrClient): Promise<{
   total: number;
@@ -460,18 +461,34 @@ async function syncUsers(client: JisrClient): Promise<{
   updated: number;
   skipped: number;
 }> {
-  const employees = await client.getEmployees();
+  // First call with English locale to get English names
+  client.setLocale("en");
+  const employeesEn = await client.getEmployees();
+
+  // Second call with Arabic locale to get Arabic names
+  client.setLocale("ar");
+  const employeesAr = await client.getEmployees();
+
+  // Create a map of Arabic employee data by ID
+  const arabicDataMap = new Map<number, typeof employeesAr[0]>();
+  for (const emp of employeesAr) {
+    arabicDataMap.set(emp.id, emp);
+  }
+
   let added = 0;
   let updated = 0;
   let skipped = 0;
 
-  for (const emp of employees) {
+  for (const emp of employeesEn) {
     try {
       const email = emp.email || emp.work_email;
       if (!email) {
         skipped++;
         continue;
       }
+
+      // Get Arabic data for this employee
+      const empAr = arabicDataMap.get(emp.id);
 
       // Check if user exists by jisrEmployeeId or email
       const existing = await prisma.user.findFirst({
@@ -486,13 +503,13 @@ async function syncUsers(client: JisrClient): Promise<{
       // Extract data from both flat and nested structures
       const departmentId = emp.department_id || emp.department?.id || null;
       const departmentName = emp.department_name || emp.department?.name_i18n || emp.department?.name || null;
-      const departmentNameAr = emp.department?.name_ar || null;
+      const departmentNameAr = empAr?.department?.name_i18n || emp.department?.name_ar || null;
       const jobTitleId = emp.job_title_id || emp.job_title?.id || null;
       const jobTitleName = emp.job_title_name || emp.job_title?.name_i18n || emp.job_title?.name || null;
-      const jobTitleNameAr = emp.job_title?.name_ar || null;
+      const jobTitleNameAr = empAr?.job_title?.name_i18n || emp.job_title?.name_ar || null;
       const locationId = emp.location_id || emp.location?.id || null;
       const locationName = emp.location_name || emp.location?.address_i18n || emp.location?.address_en || null;
-      const locationNameAr = emp.location?.address_ar || null;
+      const locationNameAr = empAr?.location?.address_i18n || emp.location?.address_ar || null;
       const nationalityId = emp.nationality_id || emp.identification_info?.nationality_id || null;
       const nationalityName = emp.nationality_name || emp.identification_info?.nationality_i18n || emp.identification_info?.nationality || null;
       const joiningDate = emp.joining_date || emp.hire_date || null;
@@ -501,7 +518,6 @@ async function syncUsers(client: JisrClient): Promise<{
       const nationalIdNumber = emp.identification_info?.national_id || null;
       const iqamaNumber = emp.identification_info?.iqama_number || null;
       const passportNumber = emp.identification_info?.passport_number || null;
-      // Primary document number (prefer national ID, then iqama, then passport)
       const documentNumber = nationalIdNumber || iqamaNumber || passportNumber || null;
       const documentType = nationalIdNumber ? 'national_id' : (iqamaNumber ? 'iqama' : (passportNumber ? 'passport' : null));
 
@@ -511,12 +527,15 @@ async function syncUsers(client: JisrClient): Promise<{
       // Branch information
       const branchId = emp.branch_id || emp.branch?.id || null;
       const branchName = emp.branch_name || emp.branch?.name_i18n || emp.branch?.name || null;
-      const branchNameAr = emp.branch?.name_ar || null;
+      const branchNameAr = empAr?.branch?.name_i18n || emp.branch?.name_ar || null;
+
+      // Get Arabic name from the Arabic locale API call
+      const nameAr = empAr?.full_name_i18n || empAr?.full_name || empAr?.name || null;
 
       const userData = {
         email: email,
         nameEn: emp.full_name || emp.full_name_i18n || emp.name || `${emp.first_name || ""} ${emp.last_name || ""}`.trim() || "Unknown",
-        nameAr: emp.full_name_ar || `${emp.first_name_ar || ""} ${emp.last_name_ar || ""}`.trim() || null,
+        nameAr: nameAr,
         jisrEmployeeId: emp.id,
         employeeCode: emp.code || emp.employee_number || null,
         departmentId: departmentId,
@@ -528,18 +547,15 @@ async function syncUsers(client: JisrClient): Promise<{
         jobTitleId: jobTitleId,
         jobTitleEn: jobTitleName,
         jobTitleAr: jobTitleNameAr,
-        lineManagerId: null, // Will be resolved in a second pass if needed
+        lineManagerId: null,
         nationalityId: nationalityId,
         nationalityEn: nationalityName,
-        // Document information
         documentNumber: documentNumber,
         documentType: documentType,
         nationalIdNumber: nationalIdNumber,
         iqamaNumber: iqamaNumber,
         passportNumber: passportNumber,
-        // Photo URL
         photoUrl: photoUrl,
-        // Branch information
         branchId: branchId,
         branchEn: branchName,
         branchAr: branchNameAr,
@@ -549,14 +565,12 @@ async function syncUsers(client: JisrClient): Promise<{
       };
 
       if (existing) {
-        // Update existing user
         await prisma.user.update({
           where: { id: existing.id },
           data: userData,
         });
         updated++;
       } else {
-        // Create new user with default role
         await prisma.user.create({
           data: {
             ...userData,
@@ -571,13 +585,12 @@ async function syncUsers(client: JisrClient): Promise<{
     }
   }
 
-  // Second pass: Update line manager relationships
-  for (const emp of employees) {
+  // Update line manager relationships
+  for (const emp of employeesEn) {
     try {
       const lineManagerJisrId = emp.line_manager_id || emp.line_manager?.id;
       if (!lineManagerJisrId) continue;
 
-      // Find the user and their line manager by Jisr IDs
       const user = await prisma.user.findFirst({
         where: { jisrEmployeeId: emp.id },
         select: { id: true, lineManagerId: true },
@@ -595,13 +608,12 @@ async function syncUsers(client: JisrClient): Promise<{
         });
       }
     } catch (error) {
-      // Silently skip line manager errors - not critical
       console.error(`Error updating line manager for user ${emp.id}:`, error);
     }
   }
 
   return {
-    total: employees.length,
+    total: employeesEn.length,
     added,
     updated,
     skipped,
