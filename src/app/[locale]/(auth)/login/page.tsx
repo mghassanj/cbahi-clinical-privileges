@@ -318,6 +318,42 @@ function LoginPageContent() {
 
             {/* Footer */}
             <p className="text-center text-xs text-gray-500">{t.footerText}</p>
+
+            {/* Test Login Section - Only visible in testing mode */}
+            {process.env.NEXT_PUBLIC_TESTING_MODE === "true" && (
+              <div className="mt-6 pt-6 border-t border-gray-200">
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+                  <p className="text-sm text-yellow-700 font-medium">
+                    Testing Mode Enabled
+                  </p>
+                  <p className="text-xs text-yellow-600 mt-1">
+                    Click below to login directly without email verification
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    if (!email || !isValidEmail(email)) {
+                      setError(t.errorInvalidEmail);
+                      return;
+                    }
+                    const callbackUrl = searchParams.get("callbackUrl") || `/${locale}/dashboard`;
+                    const result = await signIn("test-login", {
+                      email,
+                      callbackUrl,
+                      redirect: true,
+                    });
+                    if (result?.error) {
+                      setError(t.errorGeneric);
+                    }
+                  }}
+                  disabled={!email}
+                  className="w-full py-3 px-4 bg-yellow-500 hover:bg-yellow-600 text-white font-medium rounded-lg transition-colors disabled:bg-yellow-300 disabled:cursor-not-allowed"
+                >
+                  Test Login (Bypass Email)
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>

@@ -9,10 +9,14 @@ import { PrismaAdapter } from "@auth/prisma-adapter";
 import { UserRole, UserStatus } from "@prisma/client";
 import type { NextAuthOptions } from "next-auth";
 import type { Adapter, AdapterUser } from "next-auth/adapters";
+import CredentialsProvider from "next-auth/providers/credentials";
 import EmailProvider, { type SendVerificationRequestParams } from "next-auth/providers/email";
 import nodemailer from "nodemailer";
 
 import { prisma } from "@/lib/db";
+
+// Check if testing mode is enabled
+const TESTING_MODE = process.env.TESTING_MODE === "true";
 
 // ============================================================================
 // Custom Email Sending Function
@@ -334,17 +338,64 @@ function CustomPrismaAdapter(): Adapter {
 // NextAuth Configuration
 // ============================================================================
 
-export const authOptions: NextAuthOptions = {
-  adapter: CustomPrismaAdapter(),
+// Build providers list based on mode
+const providers: NextAuthOptions["providers"] = [];
 
-  providers: [
-    EmailProvider({
-      server: process.env.EMAIL_SERVER || "",
-      from: process.env.EMAIL_FROM || "noreply@cbahi.gov.sa",
-      maxAge: 24 * 60 * 60, // 24 hours
-      sendVerificationRequest: customSendVerificationRequest,
-    }),
-  ],
+// Always add Email provider (for production)
+providers.push(
+  EmailProvider({
+    server: process.env.EMAIL_SERVER || "",
+    from: process.env.EMAIL_FROM || "noreply@cbahi.gov.sa",
+    maxAge: 24 * 60 * 60, // 24 hours
+    sendVerificationRequest: customSendVerificationRequest,
+  })
+);
+
+// Add Credentials provider for testing mode
+if (TESTING_MODE) {
+  providers.push(
+    CredentialsProvider({
+      id: "test-login",
+      name: "Test Login",
+      credentials: {
+        email: { label: "Email", type: "email" },
+      },
+      async authorize(credentials) {
+        if (!credentials?.email) return null;
+
+        // Find user in database
+        const user = await prisma.user.findUnique({
+          where: { email: credentials.email },
+        });
+
+        if (!user || !user.isActive) return null;
+
+        // Return user object for session
+        return {
+          id: user.id,
+          email: user.email,
+          name: user.nameEn,
+          nameAr: user.nameAr,
+          role: user.role,
+          status: user.status,
+          departmentId: user.departmentId,
+          departmentEn: user.departmentEn,
+          departmentAr: user.departmentAr,
+          jobTitleEn: user.jobTitleEn,
+          jobTitleAr: user.jobTitleAr,
+          jisrEmployeeId: user.jisrEmployeeId,
+          isActive: user.isActive,
+        };
+      },
+    })
+  );
+}
+
+export const authOptions: NextAuthOptions = {
+  // Only use adapter for non-credentials auth
+  adapter: TESTING_MODE ? undefined : CustomPrismaAdapter(),
+
+  providers,
 
   session: {
     strategy: "jwt",
@@ -362,7 +413,12 @@ export const authOptions: NextAuthOptions = {
      * Sign in callback - validates user exists in Jisr-synced Users table
      * and is active
      */
-    async signIn({ user }) {
+    async signIn({ user, account }) {
+      // Skip validation for test credentials provider
+      if (TESTING_MODE && account?.provider === "test-login") {
+        return true;
+      }
+
       if (!user.email) {
         return false;
       }
