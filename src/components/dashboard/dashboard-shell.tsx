@@ -60,6 +60,17 @@ const DashboardShell: React.FC<DashboardShellProps> = ({ children, user }) => {
   // Use authenticated user data - no fallback to mock data
   const currentUser: DashboardUser | null = user || null;
 
+  // Close user menu when clicking outside
+  React.useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+        setUserMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   // Show loading state if no user is available (should be handled by auth)
   if (!currentUser) {
     return (
@@ -73,17 +84,6 @@ const DashboardShell: React.FC<DashboardShellProps> = ({ children, user }) => {
   }
 
   const displayName = isRTL && currentUser.nameAr ? currentUser.nameAr : currentUser.name;
-
-  // Close user menu when clicking outside
-  React.useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
-        setUserMenuOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
 
   const getNavItems = (): NavItem[] => {
     const baseItems: NavItem[] = [

@@ -25,8 +25,6 @@ import {
   User,
   Building,
   Mail,
-  Phone,
-  Calendar,
   Shield,
 } from "lucide-react";
 

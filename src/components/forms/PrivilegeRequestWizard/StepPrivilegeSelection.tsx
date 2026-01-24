@@ -9,7 +9,6 @@ import type { PrivilegeSelectionData } from "@/hooks/usePrivilegeRequest";
 import {
   dentalPrivileges,
   PrivilegeCategory,
-  type DentalPrivilege,
 } from "@/data/privileges";
 import {
   Search,

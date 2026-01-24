@@ -18,15 +18,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { formatDate } from "@/lib/utils";
 import {
   Mail,
-  Phone,
   Calendar,
   Shield,
   Globe,
   Bell,
   Save,
-  CheckCircle,
-  Clock,
-  XCircle,
   Award,
   Building,
   Briefcase,

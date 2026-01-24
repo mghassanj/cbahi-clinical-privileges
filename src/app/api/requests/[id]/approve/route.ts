@@ -7,7 +7,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { prisma } from "@/lib/db";
-import { ApprovalStatus, RequestStatus, UserRole } from "@prisma/client";
+import { ApprovalLevel, ApprovalStatus, PrivilegeStatus, RequestStatus, UserRole } from "@prisma/client";
 
 // ============================================================================
 // Types
@@ -18,8 +18,8 @@ interface ApprovalRequestBody {
   comments?: string;
   privilegeDecisions?: Array<{
     privilegeId: string;
-    isGranted: boolean;
-    denyReason?: string;
+    approved: boolean;
+    comments?: string;
   }>;
 }
 
@@ -71,7 +71,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     const approverRoles: UserRole[] = [
       UserRole.HEAD_OF_SECTION,
       UserRole.HEAD_OF_DEPT,
-      UserRole.COMMITTEE,
+      UserRole.COMMITTEE_MEMBER,
       UserRole.MEDICAL_DIRECTOR,
       UserRole.ADMIN,
     ];
@@ -121,11 +121,29 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     const existingApproval = privilegeRequest.approvals[0];
 
     // Map status to ApprovalStatus enum
+    // Note: RETURNED maps to REJECTED at the approval level, but PENDING at the request level
     const approvalStatusMap: Record<string, ApprovalStatus> = {
       APPROVED: ApprovalStatus.APPROVED,
       REJECTED: ApprovalStatus.REJECTED,
-      RETURNED: ApprovalStatus.RETURNED_FOR_MODIFICATION,
+      RETURNED: ApprovalStatus.REJECTED, // Returned for modifications is treated as rejected at approval level
     };
+
+    // Map user role to approval level
+    const roleToLevelMap: Partial<Record<UserRole, ApprovalLevel>> = {
+      [UserRole.HEAD_OF_SECTION]: ApprovalLevel.HEAD_OF_SECTION,
+      [UserRole.HEAD_OF_DEPT]: ApprovalLevel.HEAD_OF_DEPT,
+      [UserRole.COMMITTEE_MEMBER]: ApprovalLevel.COMMITTEE,
+      [UserRole.MEDICAL_DIRECTOR]: ApprovalLevel.MEDICAL_DIRECTOR,
+      [UserRole.ADMIN]: ApprovalLevel.MEDICAL_DIRECTOR, // Admin acts as Medical Director
+    };
+
+    const approvalLevel = roleToLevelMap[user.role];
+    if (!approvalLevel) {
+      return NextResponse.json(
+        { error: "Invalid role", message: "Your role cannot approve requests" },
+        { status: 403 }
+      );
+    }
 
     // Start a transaction
     const result = await prisma.$transaction(async (tx) => {
@@ -137,7 +155,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
           data: {
             status: approvalStatusMap[status],
             comments,
-            decidedAt: new Date(),
+            approvedAt: new Date(),
           },
         });
       } else {
@@ -145,10 +163,10 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
           data: {
             requestId,
             approverId: user.id,
-            level: user.role as unknown as import("@prisma/client").ApprovalLevel,
+            level: approvalLevel,
             status: approvalStatusMap[status],
             comments,
-            decidedAt: new Date(),
+            approvedAt: new Date(),
           },
         });
       }
@@ -162,8 +180,8 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
               privilegeId: decision.privilegeId,
             },
             data: {
-              isGranted: decision.isGranted,
-              denyReason: decision.denyReason || null,
+              status: decision.approved ? PrivilegeStatus.APPROVED : PrivilegeStatus.REJECTED,
+              comments: decision.comments || null,
             },
           });
         }
@@ -179,7 +197,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       } else {
         // For APPROVED, check if this is the final approval level
         // Medical Director is the final level
-        if (user.role === UserRole.MEDICAL_DIRECTOR) {
+        if (user.role === UserRole.MEDICAL_DIRECTOR || user.role === UserRole.ADMIN) {
           newRequestStatus = RequestStatus.APPROVED;
         } else {
           // Still needs more approvals
@@ -192,8 +210,8 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         where: { id: requestId },
         data: {
           status: newRequestStatus,
-          currentLevel: status === "APPROVED" && user.role !== UserRole.MEDICAL_DIRECTOR
-            ? getNextApprovalLevel(user.role)
+          completedAt: newRequestStatus === RequestStatus.APPROVED || newRequestStatus === RequestStatus.REJECTED
+            ? new Date()
             : undefined,
         },
       });
@@ -216,17 +234,4 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       { status: 500 }
     );
   }
-}
-
-// Helper function to get the next approval level
-function getNextApprovalLevel(currentRole: UserRole): import("@prisma/client").ApprovalLevel | undefined {
-  const levelOrder: Record<UserRole, import("@prisma/client").ApprovalLevel | undefined> = {
-    [UserRole.HEAD_OF_SECTION]: "HEAD_OF_DEPT" as import("@prisma/client").ApprovalLevel,
-    [UserRole.HEAD_OF_DEPT]: "COMMITTEE" as import("@prisma/client").ApprovalLevel,
-    [UserRole.COMMITTEE]: "MEDICAL_DIRECTOR" as import("@prisma/client").ApprovalLevel,
-    [UserRole.MEDICAL_DIRECTOR]: undefined,
-    [UserRole.ADMIN]: undefined,
-    [UserRole.EMPLOYEE]: undefined,
-  };
-  return levelOrder[currentRole];
 }
