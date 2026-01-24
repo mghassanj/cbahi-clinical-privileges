@@ -198,7 +198,7 @@ function LoginPageContent() {
 
     startTransition(async () => {
       try {
-        const callbackUrl = searchParams.get("callbackUrl") || `/${locale}/dashboard`;
+        const callbackUrl = searchParams.get("callbackUrl") || `/${locale}`;
 
         const result = await signIn("email", {
           email,
@@ -295,7 +295,7 @@ function LoginPageContent() {
                     setError(null);
                     startTransition(async () => {
                       try {
-                        const callbackUrl = searchParams.get("callbackUrl") || `/${locale}/dashboard`;
+                        const callbackUrl = searchParams.get("callbackUrl") || `/${locale}`;
                         const result = await signIn("test-login", {
                           email,
                           callbackUrl,
