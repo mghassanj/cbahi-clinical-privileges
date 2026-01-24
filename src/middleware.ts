@@ -13,6 +13,9 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { UserRole } from "@prisma/client";
 
+// Get the secret - explicitly read from process.env for Edge Runtime
+const secret = process.env.NEXTAUTH_SECRET;
+
 // ============================================================================
 // Configuration
 // ============================================================================
@@ -177,10 +180,21 @@ export async function middleware(request: NextRequest) {
   }
 
   // Get session token
+  // Use explicit secret and secureCookie setting for Edge Runtime compatibility
   const token = await getToken({
     req: request,
-    secret: process.env.NEXTAUTH_SECRET,
+    secret: secret,
+    secureCookie: process.env.NODE_ENV === "production",
   });
+
+  // Debug logging for auth issues (remove in production)
+  if (requiresAuth(pathname)) {
+    console.log("[Middleware] Path:", pathname);
+    console.log("[Middleware] Token exists:", !!token);
+    console.log("[Middleware] Secret exists:", !!secret);
+    console.log("[Middleware] NODE_ENV:", process.env.NODE_ENV);
+    console.log("[Middleware] Cookies:", request.cookies.getAll().map(c => c.name));
+  }
 
   // Redirect to login if not authenticated and accessing protected route
   if (requiresAuth(pathname) && !token) {
