@@ -396,6 +396,25 @@
       "details": "التفاصيل",
       "ipAddress": "عنوان IP",
       "exportLog": "تصدير السجل"
+    },
+    "privileges": {
+      "title": "إدارة الامتيازات",
+      "description": "إدارة كتالوج الامتيازات السريرية",
+      "add": "إضافة امتياز",
+      "edit": "تعديل امتياز",
+      "code": "الرمز",
+      "nameEn": "الاسم (بالإنجليزية)",
+      "nameAr": "الاسم (بالعربية)",
+      "category": "الفئة",
+      "privilegeDescription": "الوصف",
+      "specialQualification": "يتطلب تأهيل خاص",
+      "active": "نشط",
+      "inactive": "غير نشط",
+      "status": "الحالة",
+      "actions": "الإجراءات",
+      "confirmDelete": "هل أنت متأكد من حذف هذا الامتياز؟",
+      "deactivated": "تم إلغاء تنشيط الامتياز (قيد الاستخدام)",
+      "deleted": "تم حذف الامتياز"
     }
   },
   "notifications": {

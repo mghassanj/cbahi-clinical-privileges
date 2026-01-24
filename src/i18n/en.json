@@ -396,6 +396,25 @@
       "details": "Details",
       "ipAddress": "IP Address",
       "exportLog": "Export Log"
+    },
+    "privileges": {
+      "title": "Privileges Management",
+      "description": "Manage the clinical privileges catalog",
+      "add": "Add Privilege",
+      "edit": "Edit Privilege",
+      "code": "Code",
+      "nameEn": "Name (English)",
+      "nameAr": "Name (Arabic)",
+      "category": "Category",
+      "privilegeDescription": "Description",
+      "specialQualification": "Requires Special Qualification",
+      "active": "Active",
+      "inactive": "Inactive",
+      "status": "Status",
+      "actions": "Actions",
+      "confirmDelete": "Are you sure you want to delete this privilege?",
+      "deactivated": "Privilege deactivated (in use)",
+      "deleted": "Privilege deleted"
     }
   },
   "notifications": {
