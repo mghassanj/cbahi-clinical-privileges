@@ -141,6 +141,7 @@ export function PrivilegeRequestWizard({
             data={wizard.documents}
             onUpdate={wizard.updateDocuments}
             errors={wizard.error}
+            requestId={wizard.draftId || undefined}
           />
         );
       case 4:

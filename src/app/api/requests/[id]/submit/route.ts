@@ -14,6 +14,7 @@ import {
   UserRole,
   ApprovalLevel,
 } from "@prisma/client";
+import { notifyApprovalRequired } from "@/lib/notifications/broadcast";
 
 // ============================================================================
 // Types
@@ -277,6 +278,24 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         },
       },
     });
+
+    // Send real-time notification to first approver
+    try {
+      if (approvers.length > 0 && updatedRequest) {
+        // Use request ID as display reference since requestNumber doesn't exist in schema
+        const requestRef = id.slice(-8).toUpperCase();
+        notifyApprovalRequired(
+          approvers[0].approverId,
+          id,
+          requestRef,
+          user.nameEn,
+          user.nameEn // Using English name for Arabic as well
+        );
+      }
+    } catch (notificationError) {
+      // Log but don't fail the request if notification fails
+      console.error("Failed to send real-time notification:", notificationError);
+    }
 
     return NextResponse.json({
       message: "Request submitted successfully",

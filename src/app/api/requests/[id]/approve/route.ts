@@ -8,6 +8,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { prisma } from "@/lib/db";
 import { ApprovalLevel, ApprovalStatus, PrivilegeStatus, RequestStatus, UserRole } from "@prisma/client";
+import {
+  notifyRequestApproved,
+  notifyRequestRejected,
+  notifyModificationsRequested,
+} from "@/lib/notifications/broadcast";
 
 // ============================================================================
 // Types
@@ -83,7 +88,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    // Get the request
+    // Get the request with applicant information for notifications
     const privilegeRequest = await prisma.privilegeRequest.findUnique({
       where: { id: requestId },
       include: {
@@ -93,6 +98,13 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
           take: 1,
         },
         requestedPrivileges: true,
+        applicant: {
+          select: {
+            id: true,
+            nameEn: true,
+            nameAr: true,
+          },
+        },
       },
     });
 
@@ -216,8 +228,46 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         },
       });
 
-      return { approval, request: updatedRequest };
+      return { approval, request: updatedRequest, newRequestStatus };
     });
+
+    // Send real-time notifications to the applicant
+    try {
+      const applicantId = privilegeRequest.applicant.id;
+      // Use request ID as display reference since requestNumber doesn't exist in schema
+      const requestRef = requestId.slice(-8).toUpperCase();
+
+      if (status === "APPROVED") {
+        const isFinalApproval = result.newRequestStatus === RequestStatus.APPROVED;
+        notifyRequestApproved(
+          applicantId,
+          requestId,
+          requestRef,
+          user.nameEn,
+          user.nameEn, // Using English name for Arabic as well since we only have nameEn
+          isFinalApproval
+        );
+      } else if (status === "REJECTED") {
+        notifyRequestRejected(
+          applicantId,
+          requestId,
+          requestRef,
+          comments || "No reason provided",
+          comments || "لم يتم تقديم سبب"
+        );
+      } else if (status === "RETURNED") {
+        notifyModificationsRequested(
+          applicantId,
+          requestId,
+          requestRef,
+          comments || "Please review and update your request",
+          comments || "يرجى مراجعة وتحديث طلبك"
+        );
+      }
+    } catch (notificationError) {
+      // Log but don't fail the request if notification fails
+      console.error("Failed to send real-time notification:", notificationError);
+    }
 
     return NextResponse.json({
       success: true,

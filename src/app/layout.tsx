@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Tajawal } from "next/font/google";
 import { SessionProvider } from "@/components/providers/session-provider";
+import { NotificationProvider } from "@/components/providers/NotificationProvider";
 import { Toaster } from "sonner";
 import "./globals.css";
 
@@ -70,7 +71,9 @@ export default function RootLayout({
       <body
         className={`${inter.variable} ${tajawal.variable} font-sans antialiased min-h-screen`}
       >
-        <SessionProvider>{children}</SessionProvider>
+        <SessionProvider>
+          <NotificationProvider>{children}</NotificationProvider>
+        </SessionProvider>
         <Toaster
           position="top-center"
           richColors

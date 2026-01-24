@@ -86,3 +86,32 @@ export {
   createTestEscalationService,
   DEFAULT_ESCALATION_THRESHOLDS,
 } from './escalation-service';
+
+// ============================================================================
+// Real-time Broadcast (SSE)
+// ============================================================================
+
+export {
+  registerClient,
+  unregisterClient,
+  isUserConnected,
+  getClientCount,
+  getTotalClientCount,
+  sendHeartbeat,
+  broadcastToUser,
+  broadcastToUsers,
+  broadcastToAll,
+  notifyApprovalRequired,
+  notifyRequestApproved,
+  notifyRequestRejected,
+  notifyModificationsRequested,
+  notifyEscalationWarning,
+  clearPendingNotifications,
+  getStats,
+} from './broadcast';
+
+export type {
+  NotificationEventType,
+  BroadcastNotification,
+  SSEClient,
+} from './broadcast';
