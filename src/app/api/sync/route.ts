@@ -9,7 +9,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { prisma } from "@/lib/db";
 import { UserRole } from "@prisma/client";
-import { JisrClient, JisrClientError } from "@/lib/jisr";
+import { JisrClient } from "@/lib/jisr";
 
 // Cron secret for automated sync
 const CRON_SECRET = process.env.CRON_SECRET;
