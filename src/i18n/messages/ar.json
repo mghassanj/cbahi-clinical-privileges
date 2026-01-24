@@ -299,6 +299,35 @@
         "hours": "ساعات"
       }
     },
+    "sync": {
+      "title": "إدارة المزامنة",
+      "lastSync": "آخر مزامنة",
+      "syncNow": "مزامنة الآن",
+      "syncStatus": "حالة المزامنة",
+      "syncHistory": "سجل المزامنة",
+      "syncSuccess": "تمت المزامنة بنجاح",
+      "syncFailed": "فشلت المزامنة",
+      "syncInProgress": "جارٍ المزامنة..."
+    },
+    "integrations": {
+      "title": "التكاملات",
+      "jisr": {
+        "title": "تكامل جسر",
+        "description": "مزامنة بيانات الموظفين من نظام جسر للموارد البشرية",
+        "connected": "متصل",
+        "disconnected": "غير متصل"
+      },
+      "email": {
+        "title": "إعدادات البريد الإلكتروني",
+        "provider": "مزود البريد"
+      },
+      "google": {
+        "title": "تكامل جوجل",
+        "description": "الاتصال بخدمات جوجل",
+        "connected": "متصل",
+        "disconnected": "غير متصل"
+      }
+    },
     "privileges": {
       "title": "الصلاحيات",
       "description": "إدارة كتالوج الصلاحيات السريرية",

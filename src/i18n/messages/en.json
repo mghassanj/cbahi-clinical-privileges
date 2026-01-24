@@ -299,6 +299,35 @@
         "hours": "hours"
       }
     },
+    "sync": {
+      "title": "Sync Management",
+      "lastSync": "Last Sync",
+      "syncNow": "Sync Now",
+      "syncStatus": "Sync Status",
+      "syncHistory": "Sync History",
+      "syncSuccess": "Sync completed successfully",
+      "syncFailed": "Sync failed",
+      "syncInProgress": "Sync in progress..."
+    },
+    "integrations": {
+      "title": "Integrations",
+      "jisr": {
+        "title": "Jisr Integration",
+        "description": "Sync employee data from Jisr HR system",
+        "connected": "Connected",
+        "disconnected": "Disconnected"
+      },
+      "email": {
+        "title": "Email Configuration",
+        "provider": "Email Provider"
+      },
+      "google": {
+        "title": "Google Integration",
+        "description": "Connect with Google services",
+        "connected": "Connected",
+        "disconnected": "Disconnected"
+      }
+    },
     "privileges": {
       "title": "Privileges",
       "description": "Manage clinical privileges catalog",
