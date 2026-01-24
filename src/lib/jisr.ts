@@ -374,22 +374,25 @@ export class JisrClient {
 
   /**
    * Get all employees
+   * Uses /employees endpoint which includes email addresses
    * @returns Promise<JisrEmployee[]>
    */
   public async getEmployees(): Promise<JisrEmployee[]> {
+    // Use /employees endpoint instead of /employees/get_all as it includes email addresses
     const response = await this.request<{ data: { employees: JisrEmployee[] } }>(
-      '/employees/get_all'
+      '/employees'
     );
 
     // Handle nested response format: { data: { employees: [...] } }
     if (response?.data?.employees && Array.isArray(response.data.employees)) {
       return response.data.employees.map(emp => {
         // Cast to access i18n properties that may come from API but aren't in our interface
-        const rawEmp = emp as JisrEmployee & { name_i18n?: string; job_title_i18n?: string; name?: string };
+        const rawEmp = emp as JisrEmployee & { name_i18n?: string; job_title_i18n?: string; name?: string; code?: string };
         return {
           ...emp,
           full_name: rawEmp.name_i18n || emp.full_name || rawEmp.name || '',
           job_title_name: rawEmp.job_title_i18n || emp.job_title_name,
+          employee_number: rawEmp.code || emp.employee_number,
         };
       });
     }
