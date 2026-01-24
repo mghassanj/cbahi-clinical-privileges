@@ -64,15 +64,17 @@
       "unsavedChanges": "You have unsaved changes. Are you sure you want to leave?",
       "success": "Operation completed successfully",
       "error": "An error occurred"
+    },
+    "actions": {
+      "filter": "Filter",
+      "back": "Back",
+      "retry": "Retry",
+      "reset": "Reset",
+      "cancel": "Cancel",
+      "delete": "Delete",
+      "save": "Save",
+      "search": "Search"
     }
-  },
-  "common.actions": {
-    "filter": "Filter",
-    "back": "Back",
-    "retry": "Retry",
-    "reset": "Reset",
-    "cancel": "Cancel",
-    "delete": "Delete"
   },
   "request": {
     "newRequest": "New Request",

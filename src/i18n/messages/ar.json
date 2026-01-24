@@ -64,15 +64,17 @@
       "unsavedChanges": "لديك تغييرات غير محفوظة. هل أنت متأكد من المغادرة؟",
       "success": "تمت العملية بنجاح",
       "error": "حدث خطأ"
+    },
+    "actions": {
+      "filter": "تصفية",
+      "back": "رجوع",
+      "retry": "إعادة المحاولة",
+      "reset": "إعادة تعيين",
+      "cancel": "إلغاء",
+      "delete": "حذف",
+      "save": "حفظ",
+      "search": "بحث"
     }
-  },
-  "common.actions": {
-    "filter": "تصفية",
-    "back": "رجوع",
-    "retry": "إعادة المحاولة",
-    "reset": "إعادة تعيين",
-    "cancel": "إلغاء",
-    "delete": "حذف"
   },
   "request": {
     "newRequest": "طلب جديد",
