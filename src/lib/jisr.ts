@@ -383,11 +383,15 @@ export class JisrClient {
 
     // Handle nested response format: { data: { employees: [...] } }
     if (response?.data?.employees && Array.isArray(response.data.employees)) {
-      return response.data.employees.map(emp => ({
-        ...emp,
-        full_name: emp.name_i18n || emp.full_name || (emp as Record<string, unknown>).name as string,
-        job_title_name: emp.job_title_i18n || emp.job_title_name,
-      }));
+      return response.data.employees.map(emp => {
+        // Cast to access i18n properties that may come from API but aren't in our interface
+        const rawEmp = emp as JisrEmployee & { name_i18n?: string; job_title_i18n?: string; name?: string };
+        return {
+          ...emp,
+          full_name: rawEmp.name_i18n || emp.full_name || rawEmp.name || '',
+          job_title_name: rawEmp.job_title_i18n || emp.job_title_name,
+        };
+      });
     }
 
     return [];
@@ -422,12 +426,15 @@ export class JisrClient {
 
     // Handle nested response format: { data: { departments: [...] } }
     if (response?.data?.departments && Array.isArray(response.data.departments)) {
-      return response.data.departments.map(dept => ({
-        ...dept,
-        name: dept.name_i18n || dept.name,
-        manager_id: (dept.manager as { id?: number })?.id,
-        manager_name: (dept.manager as { name_i18n?: string })?.name_i18n,
-      }));
+      return response.data.departments.map(dept => {
+        const rawDept = dept as JisrDepartment & { name_i18n?: string; manager?: { id?: number; name_i18n?: string } };
+        return {
+          ...dept,
+          name: rawDept.name_i18n || dept.name,
+          manager_id: rawDept.manager?.id,
+          manager_name: rawDept.manager?.name_i18n,
+        };
+      });
     }
 
     return [];
