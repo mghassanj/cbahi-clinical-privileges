@@ -1,7 +1,7 @@
 /**
  * CBAHI Clinical Privileges - Jisr Sync API
  *
- * POST - Trigger manual sync (admin only)
+ * POST - Trigger manual sync (admin only or via cron secret)
  * GET  - Get sync status and last sync time
  */
 
@@ -9,6 +9,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { prisma } from "@/lib/db";
 import { UserRole } from "@prisma/client";
+import { JisrClient, JisrClientError } from "@/lib/jisr";
+
+// Cron secret for automated sync
+const CRON_SECRET = process.env.CRON_SECRET;
 
 // ============================================================================
 // Types
@@ -186,36 +190,56 @@ export async function GET(_request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession();
+    // Check for cron secret authentication first
+    const cronSecret = request.headers.get("x-cron-secret");
+    const isCronAuth = CRON_SECRET && cronSecret === CRON_SECRET;
 
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: "Unauthorized", message: "Please sign in to continue" },
-        { status: 401 }
-      );
-    }
+    let userId: string | null = null;
+    let userEmail: string | null = null;
+    let userName: string | null = null;
 
-    const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: { id: true, role: true, nameEn: true },
-    });
+    if (isCronAuth) {
+      // Cron authentication - use system user context
+      userId = "system";
+      userEmail = "system@cbahi.local";
+      userName = "System (Cron)";
+    } else {
+      // Session authentication
+      const session = await getServerSession();
 
-    if (!user) {
-      return NextResponse.json(
-        { error: "User not found", message: "User profile not found" },
-        { status: 404 }
-      );
-    }
+      if (!session?.user?.id) {
+        return NextResponse.json(
+          { error: "Unauthorized", message: "Please sign in to continue" },
+          { status: 401 }
+        );
+      }
 
-    // Only admins can trigger sync
-    if (user.role !== UserRole.ADMIN) {
-      return NextResponse.json(
-        {
-          error: "Forbidden",
-          message: "Only administrators can trigger sync",
-        },
-        { status: 403 }
-      );
+      const user = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { id: true, role: true, nameEn: true, email: true },
+      });
+
+      if (!user) {
+        return NextResponse.json(
+          { error: "User not found", message: "User profile not found" },
+          { status: 404 }
+        );
+      }
+
+      // Only admins can trigger sync
+      if (user.role !== UserRole.ADMIN) {
+        return NextResponse.json(
+          {
+            error: "Forbidden",
+            message: "Only administrators can trigger sync",
+          },
+          { status: 403 }
+        );
+      }
+
+      userId = user.id;
+      userEmail = session.user.email || "";
+      userName = user.nameEn;
     }
 
     // Check if sync is already running
@@ -243,7 +267,11 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    if (!settings?.jisrAccessToken || !settings?.jisrSlug) {
+    // Use database settings or fall back to environment variables
+    const jisrAccessToken = settings?.jisrAccessToken || process.env.JISR_ACCESS_TOKEN;
+    const jisrSlug = settings?.jisrSlug || process.env.JISR_COMPANY_SLUG;
+
+    if (!jisrAccessToken || !jisrSlug) {
       return NextResponse.json(
         {
           error: "Jisr not configured",
@@ -273,9 +301,8 @@ export async function POST(request: NextRequest) {
       });
 
       try {
-        // Note: In production, this would call the actual Jisr sync service
-        // For now, we'll simulate the sync process
-        const result = await simulateSync(entityType, settings.jisrSlug);
+        // Sync from Jisr HR API
+        const result = await syncFromJisr(entityType, jisrSlug, jisrAccessToken);
 
         // Update sync log with results
         await prisma.syncLog.update({
@@ -321,38 +348,42 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Log audit
-    await prisma.auditLog.create({
-      data: {
-        userId: user.id,
-        action: "SYNC_TRIGGERED",
-        entityType: "sync",
-        newValues: {
-          entities: entitiesToSync,
-          fullSync: body.fullSync || false,
-          results: results.map((r) => ({
-            entity: r.entityType,
-            status: r.status,
-            records: r.recordsTotal,
-          })),
+    // Log audit (skip if cron auth with no real user)
+    if (userId && userId !== "system") {
+      await prisma.auditLog.create({
+        data: {
+          userId: userId,
+          action: "SYNC_TRIGGERED",
+          entityType: "sync",
+          newValues: {
+            entities: entitiesToSync,
+            fullSync: body.fullSync || false,
+            results: results.map((r) => ({
+              entity: r.entityType,
+              status: r.status,
+              records: r.recordsTotal,
+            })),
+          },
         },
-      },
-    });
+      });
+    }
 
-    // Create notification for sync completion
+    // Create notification for sync completion (skip if cron auth)
     const hasErrors = results.some((r) => r.status === "error");
-    await prisma.notificationLog.create({
-      data: {
-        type: hasErrors ? "SYNC_FAILED" : "SYNC_COMPLETED",
-        recipientEmail: session.user.email || "",
-        recipientName: user.nameEn,
-        subject: hasErrors
-          ? "Jisr Sync Completed with Errors"
-          : "Jisr Sync Completed Successfully",
-        status: "PENDING",
-        metadata: { results: JSON.parse(JSON.stringify(results)) },
-      },
-    });
+    if (userEmail && userEmail !== "system@cbahi.local") {
+      await prisma.notificationLog.create({
+        data: {
+          type: hasErrors ? "SYNC_FAILED" : "SYNC_COMPLETED",
+          recipientEmail: userEmail,
+          recipientName: userName || "Administrator",
+          subject: hasErrors
+            ? "Jisr Sync Completed with Errors"
+            : "Jisr Sync Completed Successfully",
+          status: "PENDING",
+          metadata: { results: JSON.parse(JSON.stringify(results)) },
+        },
+      });
+    }
 
     return NextResponse.json({
       message: hasErrors
@@ -374,50 +405,229 @@ export async function POST(request: NextRequest) {
 // ============================================================================
 
 /**
- * Simulate sync process (placeholder for actual Jisr integration)
- * In production, this would call the JisrService methods
+ * Sync data from Jisr HR API
  */
-async function simulateSync(
+async function syncFromJisr(
   entityType: string,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  _jisrSlug: string
+  jisrSlug: string,
+  jisrAccessToken: string
 ): Promise<{
   total: number;
   added: number;
   updated: number;
   skipped: number;
 }> {
-  // Simulate some processing time
-  await new Promise((resolve) => setTimeout(resolve, 1000));
+  const client = new JisrClient({
+    accessToken: jisrAccessToken,
+    companySlug: jisrSlug,
+    locale: "en",
+  });
 
-  // Return simulated results
-  // In production, this would be replaced with actual Jisr API calls
   switch (entityType) {
     case "users":
-      const userCount = await prisma.user.count();
-      return {
-        total: userCount,
-        added: 0,
-        updated: Math.floor(Math.random() * 5),
-        skipped: userCount - Math.floor(Math.random() * 5),
-      };
+      return await syncUsers(client);
     case "departments":
-      const deptCount = await prisma.department.count();
-      return {
-        total: deptCount,
-        added: 0,
-        updated: Math.floor(Math.random() * 2),
-        skipped: deptCount - Math.floor(Math.random() * 2),
-      };
+      return await syncDepartments(client);
     case "locations":
-      const locCount = await prisma.location.count();
-      return {
-        total: locCount,
-        added: 0,
-        updated: 0,
-        skipped: locCount,
-      };
+      return await syncLocations(client);
     default:
       throw new Error(`Unknown entity type: ${entityType}`);
   }
+}
+
+/**
+ * Sync users from Jisr
+ */
+async function syncUsers(client: JisrClient): Promise<{
+  total: number;
+  added: number;
+  updated: number;
+  skipped: number;
+}> {
+  const employees = await client.getEmployees();
+  let added = 0;
+  let updated = 0;
+  let skipped = 0;
+
+  for (const emp of employees) {
+    try {
+      const email = emp.email || emp.work_email;
+      if (!email) {
+        skipped++;
+        continue;
+      }
+
+      // Check if user exists
+      const existing = await prisma.user.findFirst({
+        where: {
+          OR: [
+            { email: email },
+            { jisrId: String(emp.id) },
+          ],
+        },
+      });
+
+      // Find or create department
+      let departmentId: string | null = null;
+      if (emp.department_id) {
+        const dept = await prisma.department.findFirst({
+          where: { jisrId: String(emp.department_id) },
+        });
+        departmentId = dept?.id || null;
+      }
+
+      // Find or create location
+      let locationId: string | null = null;
+      if (emp.location_id) {
+        const loc = await prisma.location.findFirst({
+          where: { jisrId: String(emp.location_id) },
+        });
+        locationId = loc?.id || null;
+      }
+
+      const userData = {
+        email: email,
+        nameEn: emp.full_name || `${emp.first_name || ""} ${emp.last_name || ""}`.trim(),
+        nameAr: emp.full_name_ar || `${emp.first_name_ar || ""} ${emp.last_name_ar || ""}`.trim() || null,
+        jisrId: String(emp.id),
+        jisrEmployeeNumber: emp.employee_number || null,
+        departmentId: departmentId,
+        locationId: locationId,
+        jobTitleEn: emp.job_title_name || null,
+        isActive: emp.is_active !== false,
+        role: UserRole.PRACTITIONER, // Default role
+      };
+
+      if (existing) {
+        // Update existing user
+        await prisma.user.update({
+          where: { id: existing.id },
+          data: userData,
+        });
+        updated++;
+      } else {
+        // Create new user
+        await prisma.user.create({
+          data: userData,
+        });
+        added++;
+      }
+    } catch (error) {
+      console.error(`Error syncing user ${emp.id}:`, error);
+      skipped++;
+    }
+  }
+
+  return {
+    total: employees.length,
+    added,
+    updated,
+    skipped,
+  };
+}
+
+/**
+ * Sync departments from Jisr
+ */
+async function syncDepartments(client: JisrClient): Promise<{
+  total: number;
+  added: number;
+  updated: number;
+  skipped: number;
+}> {
+  const departments = await client.getDepartments();
+  let added = 0;
+  let updated = 0;
+  let skipped = 0;
+
+  for (const dept of departments) {
+    try {
+      const existing = await prisma.department.findFirst({
+        where: { jisrId: String(dept.id) },
+      });
+
+      const deptData = {
+        nameEn: dept.name || `Department ${dept.id}`,
+        nameAr: dept.name_ar || null,
+        jisrId: String(dept.id),
+        isActive: dept.is_active !== false,
+      };
+
+      if (existing) {
+        await prisma.department.update({
+          where: { id: existing.id },
+          data: deptData,
+        });
+        updated++;
+      } else {
+        await prisma.department.create({
+          data: deptData,
+        });
+        added++;
+      }
+    } catch (error) {
+      console.error(`Error syncing department ${dept.id}:`, error);
+      skipped++;
+    }
+  }
+
+  return {
+    total: departments.length,
+    added,
+    updated,
+    skipped,
+  };
+}
+
+/**
+ * Sync locations from Jisr
+ */
+async function syncLocations(client: JisrClient): Promise<{
+  total: number;
+  added: number;
+  updated: number;
+  skipped: number;
+}> {
+  const locations = await client.getLocations();
+  let added = 0;
+  let updated = 0;
+  let skipped = 0;
+
+  for (const loc of locations) {
+    try {
+      const existing = await prisma.location.findFirst({
+        where: { jisrId: String(loc.id) },
+      });
+
+      const locData = {
+        nameEn: loc.name || `Location ${loc.id}`,
+        nameAr: loc.name_ar || null,
+        jisrId: String(loc.id),
+        isActive: loc.is_active !== false,
+      };
+
+      if (existing) {
+        await prisma.location.update({
+          where: { id: existing.id },
+          data: locData,
+        });
+        updated++;
+      } else {
+        await prisma.location.create({
+          data: locData,
+        });
+        added++;
+      }
+    } catch (error) {
+      console.error(`Error syncing location ${loc.id}:`, error);
+      skipped++;
+    }
+  }
+
+  return {
+    total: locations.length,
+    added,
+    updated,
+    skipped,
+  };
 }
