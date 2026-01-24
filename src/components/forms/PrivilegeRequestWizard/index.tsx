@@ -83,13 +83,14 @@ export function PrivilegeRequestWizard({
   const handleNext = async () => {
     const isValid = await wizard.validateCurrentStep();
     if (isValid) {
-      wizard.nextStep();
-      // Auto-save draft after each step
+      // Save draft BEFORE navigating to next step to ensure draftId is available
+      // This is especially important before Step 4 (Documents) where we need the requestId for uploads
       try {
         await wizard.saveDraft();
       } catch (error) {
         console.error("Failed to save draft:", error);
       }
+      wizard.nextStep();
     }
   };
 

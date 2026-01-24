@@ -20,6 +20,8 @@ interface ListUsersParams {
   role?: UserRole | UserRole[];
   status?: UserStatus;
   departmentId?: number;
+  locationId?: number;
+  branchId?: number;
   page?: number;
   limit?: number;
   sortBy?: string;
@@ -78,6 +80,12 @@ export async function GET(request: NextRequest) {
       departmentId: searchParams.get("departmentId")
         ? parseInt(searchParams.get("departmentId")!)
         : undefined,
+      locationId: searchParams.get("locationId")
+        ? parseInt(searchParams.get("locationId")!)
+        : undefined,
+      branchId: searchParams.get("branchId")
+        ? parseInt(searchParams.get("branchId")!)
+        : undefined,
       page: parseInt(searchParams.get("page") || "1"),
       limit: Math.min(parseInt(searchParams.get("limit") || "20"), 100),
       sortBy: searchParams.get("sortBy") || "nameEn",
@@ -122,6 +130,16 @@ export async function GET(request: NextRequest) {
       where.departmentId = params.departmentId;
     }
 
+    // Location filter
+    if (params.locationId) {
+      where.locationId = params.locationId;
+    }
+
+    // Branch filter
+    if (params.branchId) {
+      where.branchId = params.branchId;
+    }
+
     // Calculate pagination
     const skip = (params.page! - 1) * params.limit!;
 
@@ -146,10 +164,21 @@ export async function GET(request: NextRequest) {
           departmentId: true,
           departmentEn: true,
           departmentAr: true,
+          locationId: true,
           locationEn: true,
           locationAr: true,
+          branchId: true,
+          branchEn: true,
+          branchAr: true,
           nationalityEn: true,
           nationalityAr: true,
+          // Document fields from Jisr
+          documentType: true,
+          nationalIdNumber: true,
+          iqamaNumber: true,
+          passportNumber: true,
+          // Photo from Jisr
+          photoUrl: true,
           joiningDate: true,
           status: true,
           role: true,

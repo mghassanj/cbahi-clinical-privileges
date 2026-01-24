@@ -26,6 +26,8 @@ import {
   Award,
   Building,
   Briefcase,
+  MapPin,
+  FileText,
 } from "lucide-react";
 
 interface UserProfile {
@@ -43,6 +45,13 @@ interface UserProfile {
   role: string;
   status: string;
   isActive: boolean;
+  // New fields synced from Jisr
+  documentNumber: string | null;
+  photoUrl: string | null;
+  locationEn: string | null;
+  locationAr: string | null;
+  branchEn: string | null;
+  branchAr: string | null;
   _count: {
     privilegeRequests: number;
     approvals: number;
@@ -193,7 +202,11 @@ export default function ProfilePage() {
             <LiquidGlassCardContent>
               <div className="flex flex-col gap-6 sm:flex-row sm:items-start">
                 <div className="flex flex-col items-center gap-3">
-                  <Avatar name={profile.nameEn} size="xl" />
+                  <Avatar
+                    src={profile.photoUrl}
+                    name={profile.nameEn}
+                    size="xl"
+                  />
                   <Badge variant={getRoleBadgeVariant(profile.role)}>
                     {getRoleLabel(profile.role)}
                   </Badge>
@@ -226,6 +239,18 @@ export default function ProfilePage() {
                       <p className="text-sm text-neutral-500">{t("request.form.personalInfo.jobTitle")}</p>
                       <p className="font-medium text-neutral-900 dark:text-white">
                         {isRTL ? profile.jobTitleAr || profile.jobTitleEn : profile.jobTitleEn || "-"}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <MapPin className="h-4 w-4 text-neutral-400 mt-0.5" />
+                    <div>
+                      <p className="text-sm text-neutral-500">{t("profile.location")}</p>
+                      <p className="font-medium text-neutral-900 dark:text-white">
+                        {isRTL
+                          ? profile.branchAr || profile.branchEn || profile.locationAr || profile.locationEn || "-"
+                          : profile.branchEn || profile.locationEn || "-"
+                        }
                       </p>
                     </div>
                   </div>
@@ -286,6 +311,17 @@ export default function ProfilePage() {
                   <p className="mt-1 text-xs text-neutral-500">
                     {t("profile.scfhsFormat")}
                   </p>
+                </div>
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                    <FileText className="mr-2 inline h-4 w-4 rtl:ml-2 rtl:mr-0" />
+                    {t("profile.documentNumber")}
+                  </label>
+                  <div className="flex h-10 items-center">
+                    <p className="font-medium text-neutral-900 dark:text-white">
+                      {profile.documentNumber || "-"}
+                    </p>
+                  </div>
                 </div>
                 <div>
                   <label className="mb-2 block text-sm font-medium text-neutral-700 dark:text-neutral-300">

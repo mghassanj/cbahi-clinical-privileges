@@ -89,6 +89,12 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         nationalityId: true,
         nationalityEn: true,
         nationalityAr: true,
+        // New fields synced from Jisr
+        documentNumber: true,
+        photoUrl: true,
+        branchId: true,
+        branchEn: true,
+        branchAr: true,
         joiningDate: true,
         status: true,
         role: true,

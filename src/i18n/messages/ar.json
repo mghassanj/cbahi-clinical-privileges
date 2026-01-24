@@ -149,7 +149,18 @@
       "filters": {
         "allRoles": "كل الأدوار",
         "allStatus": "كل الحالات",
-        "allDepartments": "كل الأقسام"
+        "allDepartments": "كل الأقسام",
+        "allLocations": "كل المواقع"
+      },
+      "columns": {
+        "user": "المستخدم",
+        "department": "القسم",
+        "documentNumber": "رقم الهوية",
+        "location": "الموقع",
+        "role": "الدور",
+        "status": "الحالة",
+        "lastSync": "آخر مزامنة",
+        "actions": "الإجراءات"
       },
       "roles": {
         "EMPLOYEE": "موظف",
@@ -395,6 +406,8 @@
     "accountStatus": "حالة الحساب",
     "scfhsFormat": "صيغة: XX-XXXXXX",
     "syncedFromJisr": "المعلومات الشخصية يتم مزامنتها من نظام جسر للموارد البشرية. لتحديث هذه المعلومات، يرجى التواصل مع قسم الموارد البشرية.",
+    "documentNumber": "رقم الوثيقة",
+    "location": "الموقع",
     "statistics": {
       "myRequests": "إحصائيات طلباتي",
       "totalRequests": "إجمالي الطلبات",

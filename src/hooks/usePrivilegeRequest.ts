@@ -389,20 +389,54 @@ export function usePrivilegeRequest(
         return;
       }
 
-      const response = await fetch("/api/requests", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          draftId: state.draftId,
-          personalInfo: state.personalInfo,
-          applicationType: state.applicationType,
-          privileges: state.privileges,
-          documents: state.documents,
-        }),
-      });
+      // If we have an existing draft, save it first then submit it
+      // Otherwise create a new request and submit directly
+      if (state.draftId) {
+        // First, save the latest draft data
+        const saveResponse = await fetch("/api/requests/draft", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            id: state.draftId,
+            personalInfo: state.personalInfo,
+            applicationType: state.applicationType,
+            privileges: state.privileges,
+            documents: state.documents,
+          }),
+        });
 
-      if (!response.ok) {
-        throw new Error("Failed to submit request");
+        if (!saveResponse.ok) {
+          throw new Error("Failed to save draft before submission");
+        }
+
+        // Then submit the existing draft
+        const submitResponse = await fetch(`/api/requests/${state.draftId}/submit`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+        });
+
+        if (!submitResponse.ok) {
+          const result = await submitResponse.json();
+          throw new Error(result.message || "Failed to submit request");
+        }
+      } else {
+        // Create and submit a new request in one go
+        const response = await fetch("/api/requests", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            personalInfo: state.personalInfo,
+            applicationType: state.applicationType,
+            privileges: state.privileges,
+            documents: state.documents,
+            submit: true, // Flag to indicate immediate submission
+          }),
+        });
+
+        if (!response.ok) {
+          const result = await response.json();
+          throw new Error(result.message || "Failed to submit request");
+        }
       }
 
       // Clear localStorage on successful submission

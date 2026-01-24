@@ -170,6 +170,21 @@ model User {
   nationalityEn   String?
   nationalityAr   String?
 
+  // Document Information (from Jisr identification_info)
+  documentNumber  String?    // National ID / Iqama number
+  documentType    String?    // Type of document (national_id, iqama, passport)
+  passportNumber  String?
+  iqamaNumber     String?
+  nationalIdNumber String?
+
+  // Photo
+  photoUrl        String?    // Avatar/photo URL from Jisr
+
+  // Branch Information (from Jisr)
+  branchId        Int?
+  branchEn        String?
+  branchAr        String?
+
   // Dates
   joiningDate     DateTime?
 

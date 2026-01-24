@@ -87,6 +87,18 @@ export interface LocalUser {
   location_id?: string | number | null;
   line_manager_id?: string | number | null;
   nationality?: string;
+  // Document information
+  document_number?: string | null;
+  document_type?: string | null;
+  national_id_number?: string | null;
+  iqama_number?: string | null;
+  passport_number?: string | null;
+  // Photo URL
+  photo_url?: string | null;
+  // Branch information
+  branch_id?: number | null;
+  branch_name?: string | null;
+  branch_name_ar?: string | null;
   is_active: boolean;
   synced_at: Date;
   created_at?: Date;
@@ -674,6 +686,13 @@ export class SyncService {
       ? jisrEmployee.employment_type?.name
       : jisrEmployee.employment_type;
 
+    // Extract document information
+    const nationalIdNumber = jisrEmployee.identification_info?.national_id || null;
+    const iqamaNumber = jisrEmployee.identification_info?.iqama_number || null;
+    const passportNumber = jisrEmployee.identification_info?.passport_number || null;
+    const documentNumber = nationalIdNumber || iqamaNumber || passportNumber || null;
+    const documentType = nationalIdNumber ? 'national_id' : (iqamaNumber ? 'iqama' : (passportNumber ? 'passport' : null));
+
     return {
       id: existingUser?.id,
       jisr_id: jisrEmployee.id,
@@ -699,6 +718,18 @@ export class SyncService {
       location_id: locationId,
       line_manager_id: null, // Will be set in second pass
       nationality: jisrEmployee.nationality_name || jisrEmployee.identification_info?.nationality_i18n || jisrEmployee.identification_info?.nationality,
+      // Document information
+      document_number: documentNumber,
+      document_type: documentType,
+      national_id_number: nationalIdNumber,
+      iqama_number: iqamaNumber,
+      passport_number: passportNumber,
+      // Photo URL
+      photo_url: jisrEmployee.avatar_url || jisrEmployee.avatar_thumb || null,
+      // Branch information
+      branch_id: jisrEmployee.branch_id || jisrEmployee.branch?.id || null,
+      branch_name: jisrEmployee.branch_name || jisrEmployee.branch?.name_i18n || jisrEmployee.branch?.name || null,
+      branch_name_ar: jisrEmployee.branch?.name_ar || null,
       is_active: jisrEmployee.is_active ?? (jisrEmployee.status !== 'inactive'),
       synced_at: new Date(),
       created_at: existingUser?.created_at,

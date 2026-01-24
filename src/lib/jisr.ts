@@ -90,7 +90,21 @@ export interface JisrEmployee {
     nationality_id?: number;
     nationality?: string;
     nationality_i18n?: string;
+    national_id?: string;
+    iqama_number?: string;
+    passport_number?: string;
+    document_type?: string;
   };
+
+  // Branch/location info (may be separate from location)
+  branch?: {
+    id: number;
+    name?: string;
+    name_ar?: string;
+    name_i18n?: string;
+  };
+  branch_id?: number;
+  branch_name?: string;
 
   // Flat fields (for backwards compatibility)
   department_id?: number;
@@ -123,9 +137,7 @@ export interface JisrEmployeeDetail extends JisrEmployee {
   country?: string;
   postal_code?: string;
 
-  // Organization Information
-  branch_id?: number;
-  branch_name?: string;
+  // Organization Information (branch info already in JisrEmployee)
   grade_id?: number;
   grade_name?: string;
   cost_center_id?: number;
@@ -446,8 +458,11 @@ export class JisrClient {
           // Flatten line manager
           line_manager_id: emp.line_manager?.id || emp.line_manager_id,
           line_manager_name: emp.line_manager?.name_i18n || emp.line_manager?.name || emp.line_manager_name,
-          // Avatar
+          // Avatar/Photo
           avatar_url: emp.avatar_thumb || emp.avatar_url,
+          // Branch info
+          branch_id: emp.branch?.id || emp.branch_id,
+          branch_name: emp.branch?.name_i18n || emp.branch?.name || emp.branch_name,
           // Status - check both is_active and status field
           is_active: emp.is_active !== false && emp.status !== 'inactive',
         };

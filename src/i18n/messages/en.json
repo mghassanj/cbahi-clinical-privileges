@@ -149,7 +149,18 @@
       "filters": {
         "allRoles": "All Roles",
         "allStatus": "All Status",
-        "allDepartments": "All Departments"
+        "allDepartments": "All Departments",
+        "allLocations": "All Locations"
+      },
+      "columns": {
+        "user": "User",
+        "department": "Department",
+        "documentNumber": "Document No.",
+        "location": "Location",
+        "role": "Role",
+        "status": "Status",
+        "lastSync": "Last Sync",
+        "actions": "Actions"
       },
       "roles": {
         "EMPLOYEE": "Employee",
@@ -395,6 +406,8 @@
     "accountStatus": "Account Status",
     "scfhsFormat": "Format: XX-XXXXXX",
     "syncedFromJisr": "Personal information is synced from Jisr HR system. To update this information, please contact HR department.",
+    "documentNumber": "Document Number",
+    "location": "Location",
     "statistics": {
       "myRequests": "My Request Statistics",
       "totalRequests": "Total Requests",

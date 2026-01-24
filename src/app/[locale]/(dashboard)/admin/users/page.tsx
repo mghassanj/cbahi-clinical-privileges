@@ -18,6 +18,8 @@ import {
   Shield,
   CheckCircle,
   XCircle,
+  MapPin,
+  FileText,
 } from "lucide-react";
 
 type UserRole = "EMPLOYEE" | "HEAD_OF_SECTION" | "HEAD_OF_DEPT" | "COMMITTEE_MEMBER" | "MEDICAL_DIRECTOR" | "ADMIN";
@@ -30,6 +32,20 @@ interface User {
   email: string;
   departmentEn: string | null;
   departmentAr: string | null;
+  // Location fields from Jisr
+  locationId: number | null;
+  locationEn: string | null;
+  locationAr: string | null;
+  branchId: number | null;
+  branchEn: string | null;
+  branchAr: string | null;
+  // Document fields from Jisr
+  documentType: string | null;
+  nationalIdNumber: string | null;
+  iqamaNumber: string | null;
+  passportNumber: string | null;
+  // Photo from Jisr
+  photoUrl: string | null;
   role: UserRole;
   status: UserStatus;
   isActive: boolean;
@@ -53,6 +69,7 @@ export default function UsersPage() {
   const [roleFilter, setRoleFilter] = React.useState<string>("all");
   const [statusFilter, setStatusFilter] = React.useState<string>("all");
   const [departmentFilter, setDepartmentFilter] = React.useState<string>("all");
+  const [locationFilter, setLocationFilter] = React.useState<string>("all");
   const [selectedUser, setSelectedUser] = React.useState<User | null>(null);
   const [showRoleModal, setShowRoleModal] = React.useState(false);
 
@@ -89,11 +106,13 @@ export default function UsersPage() {
   const filteredUsers = React.useMemo(() => {
     return users.filter((user) => {
       if (departmentFilter !== "all" && user.departmentEn !== departmentFilter) return false;
+      if (locationFilter !== "all" && user.locationEn !== locationFilter) return false;
       return true;
     });
-  }, [users, departmentFilter]);
+  }, [users, departmentFilter, locationFilter]);
 
   const departments = Array.from(new Set(users.map((u) => u.departmentEn).filter(Boolean)));
+  const locations = Array.from(new Set(users.map((u) => u.locationEn).filter(Boolean)));
 
   const getRoleLabel = (role: UserRole) => {
     return t(`admin.userManagement.roles.${role}`);
@@ -137,6 +156,21 @@ export default function UsersPage() {
     return t("admin.userManagement.timeAgo.days", { count: days });
   };
 
+  const getDocumentNumber = (user: User) => {
+    // Return the most relevant document number available
+    if (user.nationalIdNumber) return user.nationalIdNumber;
+    if (user.iqamaNumber) return user.iqamaNumber;
+    if (user.passportNumber) return user.passportNumber;
+    return null;
+  };
+
+  const getLocationDisplay = (user: User) => {
+    // Prefer branch if available, otherwise use location
+    const branch = isRTL ? user.branchAr || user.branchEn : user.branchEn;
+    const location = isRTL ? user.locationAr || user.locationEn : user.locationEn;
+    return branch || location || null;
+  };
+
   const handleAssignRole = (user: User) => {
     setSelectedUser(user);
     setShowRoleModal(true);
@@ -149,7 +183,11 @@ export default function UsersPage() {
       headerAr: "المستخدم",
       cell: (item) => (
         <div className="flex items-center gap-3">
-          <Avatar name={item.nameEn} size="sm" />
+          <Avatar
+            name={item.nameEn}
+            src={item.photoUrl}
+            size="sm"
+          />
           <div>
             <p className="font-medium text-neutral-900 dark:text-white">
               {isRTL ? item.nameAr || item.nameEn : item.nameEn}
@@ -164,10 +202,34 @@ export default function UsersPage() {
       header: "Department",
       headerAr: "القسم",
       cell: (item) => (
-        <span className="text-neutral-600 dark:text-neutral-400">
-          {isRTL ? item.departmentAr || item.departmentEn : item.departmentEn || "-"}
-        </span>
+        <div>
+          <span className="text-neutral-600 dark:text-neutral-400">
+            {isRTL ? item.departmentAr || item.departmentEn : item.departmentEn || "-"}
+          </span>
+          {getLocationDisplay(item) && (
+            <div className="flex items-center gap-1 mt-0.5 text-xs text-neutral-400">
+              <MapPin className="h-3 w-3" />
+              <span>{getLocationDisplay(item)}</span>
+            </div>
+          )}
+        </div>
       ),
+    },
+    {
+      key: "documentNumber",
+      header: "Document No.",
+      headerAr: "رقم الهوية",
+      cell: (item) => {
+        const docNumber = getDocumentNumber(item);
+        return docNumber ? (
+          <div className="flex items-center gap-1.5 text-neutral-600 dark:text-neutral-400">
+            <FileText className="h-3.5 w-3.5 text-neutral-400" />
+            <span className="text-sm font-mono">{docNumber}</span>
+          </div>
+        ) : (
+          <span className="text-neutral-400">-</span>
+        );
+      },
     },
     {
       key: "role",
@@ -301,7 +363,19 @@ export default function UsersPage() {
             </option>
           ))}
         </Select>
-        {(roleFilter !== "all" || statusFilter !== "all" || departmentFilter !== "all") && (
+        <Select
+          value={locationFilter}
+          onChange={(e) => setLocationFilter(e.target.value)}
+          className="w-44"
+        >
+          <option value="all">{t("admin.userManagement.filters.allLocations")}</option>
+          {locations.map((loc) => (
+            <option key={loc} value={loc || ""}>
+              {loc}
+            </option>
+          ))}
+        </Select>
+        {(roleFilter !== "all" || statusFilter !== "all" || departmentFilter !== "all" || locationFilter !== "all") && (
           <Button
             variant="ghost"
             size="sm"
@@ -309,6 +383,7 @@ export default function UsersPage() {
               setRoleFilter("all");
               setStatusFilter("all");
               setDepartmentFilter("all");
+              setLocationFilter("all");
             }}
           >
             {t("common.actions.reset")}
@@ -397,7 +472,7 @@ function RoleAssignmentModal({
 
           <div className="mb-4">
             <div className="flex items-center gap-3">
-              <Avatar name={user.nameEn} size="md" />
+              <Avatar name={user.nameEn} src={user.photoUrl} size="md" />
               <div>
                 <p className="font-medium text-neutral-900 dark:text-white">
                   {isRTL ? user.nameAr || user.nameEn : user.nameEn}

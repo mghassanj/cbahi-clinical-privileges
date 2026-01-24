@@ -11,6 +11,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { UserRole } from "@prisma/client";
 import { JisrClient } from "@/lib/jisr";
+import { checkRateLimit, getRateLimitHeaders, RATE_LIMITS } from '@/lib/rate-limit';
 
 // Cron secret for automated sync
 const CRON_SECRET = process.env.CRON_SECRET;
@@ -241,6 +242,20 @@ export async function POST(request: NextRequest) {
       userId = user.id;
       userEmail = session.user.email || "";
       userName = user.nameEn;
+    }
+
+    // Rate limiting for sync operations
+    const rateLimitId = userId || request.headers.get('x-cron-secret') || 'anonymous';
+    const rateLimit = checkRateLimit(`sync:${rateLimitId}`, RATE_LIMITS.sync);
+
+    if (!rateLimit.success) {
+      return NextResponse.json(
+        { error: 'Too many sync requests. Please try again later.' },
+        {
+          status: 429,
+          headers: getRateLimitHeaders(rateLimit, RATE_LIMITS.sync.limit),
+        }
+      );
     }
 
     // Check if sync is already running
@@ -482,6 +497,22 @@ async function syncUsers(client: JisrClient): Promise<{
       const nationalityName = emp.nationality_name || emp.identification_info?.nationality_i18n || emp.identification_info?.nationality || null;
       const joiningDate = emp.joining_date || emp.hire_date || null;
 
+      // Document information
+      const nationalIdNumber = emp.identification_info?.national_id || null;
+      const iqamaNumber = emp.identification_info?.iqama_number || null;
+      const passportNumber = emp.identification_info?.passport_number || null;
+      // Primary document number (prefer national ID, then iqama, then passport)
+      const documentNumber = nationalIdNumber || iqamaNumber || passportNumber || null;
+      const documentType = nationalIdNumber ? 'national_id' : (iqamaNumber ? 'iqama' : (passportNumber ? 'passport' : null));
+
+      // Photo URL
+      const photoUrl = emp.avatar_url || emp.avatar_thumb || null;
+
+      // Branch information
+      const branchId = emp.branch_id || emp.branch?.id || null;
+      const branchName = emp.branch_name || emp.branch?.name_i18n || emp.branch?.name || null;
+      const branchNameAr = emp.branch?.name_ar || null;
+
       const userData = {
         email: email,
         nameEn: emp.full_name || emp.full_name_i18n || emp.name || `${emp.first_name || ""} ${emp.last_name || ""}`.trim() || "Unknown",
@@ -500,6 +531,18 @@ async function syncUsers(client: JisrClient): Promise<{
         lineManagerId: null, // Will be resolved in a second pass if needed
         nationalityId: nationalityId,
         nationalityEn: nationalityName,
+        // Document information
+        documentNumber: documentNumber,
+        documentType: documentType,
+        nationalIdNumber: nationalIdNumber,
+        iqamaNumber: iqamaNumber,
+        passportNumber: passportNumber,
+        // Photo URL
+        photoUrl: photoUrl,
+        // Branch information
+        branchId: branchId,
+        branchEn: branchName,
+        branchAr: branchNameAr,
         joiningDate: joiningDate ? new Date(joiningDate) : null,
         isActive: emp.is_active !== false && emp.status !== 'inactive',
         lastSyncedAt: new Date(),

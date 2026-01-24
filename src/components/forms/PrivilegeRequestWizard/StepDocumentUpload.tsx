@@ -158,12 +158,19 @@ export function StepDocumentUpload({
     file: File,
     documentType: string
   ): Promise<DocumentData | null> => {
+    // Require requestId to ensure attachments are properly linked to the request
+    if (!requestId) {
+      throw new Error(
+        isRTL
+          ? "يرجى حفظ الطلب أولاً قبل رفع المستندات"
+          : "Please save the request first before uploading documents"
+      );
+    }
+
     const formData = new FormData();
     formData.append("file", file);
     formData.append("documentType", documentType);
-    if (requestId) {
-      formData.append("requestId", requestId);
-    }
+    formData.append("requestId", requestId);
 
     try {
       const response = await fetch("/api/uploads", {
@@ -217,6 +224,16 @@ export function StepDocumentUpload({
     requirement: DocumentRequirement
   ) => {
     if (!files || files.length === 0) return;
+
+    // Check if requestId is available before allowing uploads
+    if (!requestId) {
+      toast.error(
+        isRTL
+          ? "يرجى الانتظار حتى يتم حفظ الطلب قبل رفع المستندات"
+          : "Please wait for the request to be saved before uploading documents"
+      );
+      return;
+    }
 
     setUploadingKey(requirement.key);
     setUploadProgress((prev) => ({ ...prev, [requirement.key]: 0 }));
@@ -383,7 +400,10 @@ export function StepDocumentUpload({
 
   const handleDragOver = (e: React.DragEvent, key: string) => {
     e.preventDefault();
-    setDragOver(key);
+    // Only show drag indicator if requestId is available
+    if (requestId) {
+      setDragOver(key);
+    }
   };
 
   const handleDragLeave = () => {
@@ -393,7 +413,16 @@ export function StepDocumentUpload({
   const handleDrop = (e: React.DragEvent, requirement: DocumentRequirement) => {
     e.preventDefault();
     setDragOver(null);
-    handleFileSelect(e.dataTransfer.files, requirement);
+    // Only handle drop if requestId is available
+    if (requestId) {
+      handleFileSelect(e.dataTransfer.files, requirement);
+    } else {
+      toast.error(
+        isRTL
+          ? "يرجى الانتظار حتى يتم حفظ الطلب قبل رفع المستندات"
+          : "Please wait for the request to be saved before uploading documents"
+      );
+    }
   };
 
   const getDocumentStatus = (requirement: DocumentRequirement): "empty" | "uploaded" | "uploading" | "error" => {
@@ -518,6 +547,18 @@ export function StepDocumentUpload({
         </p>
       </div>
 
+      {/* Warning if requestId is missing */}
+      {!requestId && (
+        <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 dark:bg-amber-900/20 dark:border-amber-800">
+          <p className="text-sm text-amber-700 dark:text-amber-300 flex items-center gap-2">
+            <AlertCircle className="h-4 w-4 flex-shrink-0" />
+            {isRTL
+              ? "جاري تحضير الطلب... يرجى الانتظار قبل رفع المستندات"
+              : "Preparing request... please wait before uploading documents"}
+          </p>
+        </div>
+      )}
+
       {/* Document Upload Cards */}
       <div className="space-y-4">
         {DOCUMENT_REQUIREMENTS.map((requirement) => {
@@ -620,12 +661,12 @@ export function StepDocumentUpload({
                     <button
                       type="button"
                       onClick={() => fileInputRefs.current[requirement.key]?.click()}
-                      disabled={isUploading}
+                      disabled={isUploading || !requestId}
                       className={cn(
                         "w-full flex items-center justify-center gap-2 p-4 rounded-lg border-2 border-dashed transition-colors",
                         "border-neutral-300 dark:border-neutral-600",
                         "hover:border-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/10",
-                        isUploading && "opacity-50 cursor-not-allowed"
+                        (isUploading || !requestId) && "opacity-50 cursor-not-allowed"
                       )}
                     >
                       {isUploading ? (
@@ -650,14 +691,14 @@ export function StepDocumentUpload({
                     <button
                       type="button"
                       onClick={() => fileInputRefs.current[requirement.key]?.click()}
-                      disabled={isUploading}
+                      disabled={isUploading || !requestId}
                       className={cn(
                         "w-full flex flex-col items-center justify-center gap-3 p-8 rounded-lg border-2 border-dashed transition-colors",
                         isDraggedOver
                           ? "border-primary-500 bg-primary-50 dark:bg-primary-900/20"
                           : "border-neutral-300 dark:border-neutral-600",
                         "hover:border-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/10",
-                        isUploading && "opacity-50 cursor-not-allowed"
+                        (isUploading || !requestId) && "opacity-50 cursor-not-allowed"
                       )}
                     >
                       {isUploading ? (
@@ -695,6 +736,7 @@ export function StepDocumentUpload({
                   accept={getAcceptString(requirement)}
                   multiple={requirement.multiple}
                   onChange={(e) => handleFileSelect(e.target.files, requirement)}
+                  disabled={!requestId}
                   className="hidden"
                   aria-label={isRTL ? requirement.labelAr : requirement.labelEn}
                 />
