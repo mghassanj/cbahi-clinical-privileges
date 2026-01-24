@@ -577,7 +577,7 @@ export const htmlComponents = {
   },
 };
 
-export default {
+const emailTemplates = {
   defaultBrandConfig,
   emailTitles,
   statusLabels,
@@ -587,3 +587,5 @@ export default {
   generatePlainTextEmail,
   htmlComponents,
 };
+
+export default emailTemplates;

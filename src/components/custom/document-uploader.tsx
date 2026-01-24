@@ -6,7 +6,7 @@ import {
   Upload,
   X,
   FileText,
-  Image,
+  Image as ImageIcon,
   File,
   AlertCircle,
   Check,
@@ -102,8 +102,8 @@ const DEFAULT_MAX_SIZE = 10 * 1024 * 1024; // 10MB
 
 const FILE_ICONS: Record<string, React.ReactNode> = {
   "application/pdf": <FileText size={24} className="text-error-500" />,
-  "image/jpeg": <Image size={24} className="text-primary-500" />,
-  "image/png": <Image size={24} className="text-primary-500" />,
+  "image/jpeg": <ImageIcon size={24} className="text-primary-500" />,
+  "image/png": <ImageIcon size={24} className="text-primary-500" />,
   default: <File size={24} className="text-neutral-500" />,
 };
 

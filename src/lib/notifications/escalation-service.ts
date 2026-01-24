@@ -615,10 +615,12 @@ export function createTestEscalationService(options: {
   return { service, repository };
 }
 
-export default {
+const escalationServices = {
   EscalationService,
   InMemoryEscalationRepository,
   ScheduledEscalationRunner,
   createTestEscalationService,
   DEFAULT_ESCALATION_THRESHOLDS,
 };
+
+export default escalationServices;

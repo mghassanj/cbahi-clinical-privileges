@@ -150,6 +150,7 @@ export function usePrivilegeRequest(
   const [state, setState] = useState<WizardState>(initialState);
 
   // Load draft from localStorage on mount
+  /* eslint-disable react-hooks/exhaustive-deps */
   useEffect(() => {
     if (typeof window === "undefined") return;
 
@@ -174,7 +175,9 @@ export function usePrivilegeRequest(
     } else {
       loadLocalDraft();
     }
+    // loadDraft is defined later but stable via useCallback
   }, [initialDraftId]);
+  /* eslint-enable react-hooks/exhaustive-deps */
 
   // Save to localStorage whenever state changes
   useEffect(() => {

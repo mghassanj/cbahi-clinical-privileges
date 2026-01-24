@@ -69,7 +69,10 @@ export function StepPrivilegeSelection({
     PRIVILEGE_CATEGORIES.map((c) => c.id)
   );
 
-  const selectedPrivileges = data.selectedPrivileges || [];
+  const selectedPrivileges = React.useMemo(
+    () => data.selectedPrivileges || [],
+    [data.selectedPrivileges]
+  );
 
   // Filter privileges based on search
   const filterPrivileges = (

@@ -565,10 +565,12 @@ export function resetNotificationService(): void {
   notificationServiceInstance = null;
 }
 
-export default {
+const notificationServices = {
   NotificationService,
   createNotificationServiceFromEnv,
   createMockNotificationService,
   getNotificationService,
   resetNotificationService,
 };
+
+export default notificationServices;

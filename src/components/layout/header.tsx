@@ -190,6 +190,7 @@ const Header: React.FC<HeaderProps> = ({
     if (logo) {
       if (typeof logo === "string") {
         return (
+          // eslint-disable-next-line @next/next/no-img-element
           <img
             src={logo}
             alt={isArabic ? titleAr : titleEn}
@@ -220,6 +221,7 @@ const Header: React.FC<HeaderProps> = ({
   const renderUserAvatar = () => {
     if (user?.avatar) {
       return (
+        // eslint-disable-next-line @next/next/no-img-element
         <img
           src={user.avatar}
           alt={isArabic ? user.nameAr : user.nameEn}

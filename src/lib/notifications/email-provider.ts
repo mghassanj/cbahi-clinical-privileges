@@ -568,7 +568,7 @@ export class RateLimitedEmailProvider implements EmailProvider {
   }
 }
 
-export default {
+const emailProviders = {
   GmailSmtpProvider,
   MicrosoftGraphProvider,
   MockEmailProvider,
@@ -578,3 +578,5 @@ export default {
   createGmailProviderFromEnv,
   createMicrosoftGraphProviderFromEnv,
 };
+
+export default emailProviders;

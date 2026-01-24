@@ -60,6 +60,7 @@ export function PrivilegeRequestWizard({
   const wizard = usePrivilegeRequest(draftId);
 
   // Initialize with user data from Jisr if provided
+  /* eslint-disable react-hooks/exhaustive-deps */
   React.useEffect(() => {
     if (initialData && Object.keys(wizard.personalInfo).length === 0) {
       wizard.updatePersonalInfo({
@@ -75,7 +76,9 @@ export function PrivilegeRequestWizard({
         email: initialData.email || "",
       });
     }
+    // wizard is intentionally excluded to prevent infinite loops
   }, [initialData]);
+  /* eslint-enable react-hooks/exhaustive-deps */
 
   const handleNext = async () => {
     const isValid = await wizard.validateCurrentStep();

@@ -1111,7 +1111,7 @@ export function generateEmail(params: GenerateEmailParams): EmailContent {
   }
 }
 
-export default {
+const emailGenerator = {
   formatters,
   sectionGenerators,
   generateEmail,
@@ -1122,3 +1122,5 @@ export default {
   generateModificationsRequestedEmail,
   generateEscalationEmail,
 };
+
+export default emailGenerator;

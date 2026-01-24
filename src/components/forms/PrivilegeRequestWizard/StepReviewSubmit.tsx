@@ -119,7 +119,10 @@ export function StepReviewSubmit({
 
   const [showConfirmDialog, setShowConfirmDialog] = React.useState(false);
 
-  const selectedPrivileges = privileges.selectedPrivileges || [];
+  const selectedPrivileges = React.useMemo(
+    () => privileges.selectedPrivileges || [],
+    [privileges.selectedPrivileges]
+  );
 
   // Group privileges by category for summary
   const privilegesByCategory = React.useMemo(() => {
