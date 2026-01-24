@@ -4,6 +4,8 @@ import * as React from "react";
 import { Suspense } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useSession } from "next-auth/react";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { PrivilegeRequestWizard } from "@/components/forms/PrivilegeRequestWizard";
 import {
@@ -13,19 +15,18 @@ import {
 import { ArrowLeft, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-// Mock user data - in production, this would come from session/API
-const MOCK_USER_DATA = {
-  nameEn: "Ahmed Mohammed Al-Zahrani",
-  nameAr: "أحمد محمد الزهراني",
-  employeeCode: "EMP-2024-001",
-  department: "Dental Services",
-  departmentAr: "خدمات طب الأسنان",
-  jobTitle: "General Dentist",
-  jobTitleAr: "طبيب أسنان عام",
-  location: "Main Hospital - Building A",
-  locationAr: "المستشفى الرئيسي - المبنى أ",
-  email: "ahmed.alzahrani@hospital.org",
-};
+interface UserData {
+  nameEn: string;
+  nameAr: string;
+  employeeCode: string;
+  department: string;
+  departmentAr: string;
+  jobTitle: string;
+  jobTitleAr: string;
+  location: string;
+  locationAr: string;
+  email: string;
+}
 
 function NewRequestLoading() {
   return (
@@ -40,34 +41,56 @@ function NewRequestPageContent() {
   const locale = useLocale();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { data: session, status } = useSession();
   const isRTL = locale === "ar";
 
   const draftId = searchParams.get("draft") || undefined;
 
   const [isLoading, setIsLoading] = React.useState(true);
-  const [userData] = React.useState(MOCK_USER_DATA);
+  const [userData, setUserData] = React.useState<UserData | null>(null);
   const [isSubmitted, setIsSubmitted] = React.useState(false);
   const [submittedRequestId, setSubmittedRequestId] = React.useState<string | null>(
     null
   );
 
-  // Simulate fetching user data
+  // Fetch user profile data
   React.useEffect(() => {
     const fetchUserData = async () => {
-      try {
-        // In production, fetch user data from session/API
-        // const response = await fetch('/api/user/profile');
-        // const data = await response.json();
-        // setUserData(data);
+      if (!session?.user?.id) {
         setIsLoading(false);
+        return;
+      }
+
+      try {
+        const response = await fetch(`/api/users/${session.user.id}`);
+        const result = await response.json();
+
+        if (response.ok && result.data) {
+          const user = result.data;
+          setUserData({
+            nameEn: user.nameEn || session.user.name || "",
+            nameAr: user.nameAr || user.nameEn || session.user.name || "",
+            employeeCode: user.employeeCode || "",
+            department: user.departmentEn || "",
+            departmentAr: user.departmentAr || user.departmentEn || "",
+            jobTitle: user.jobTitleEn || "",
+            jobTitleAr: user.jobTitleAr || user.jobTitleEn || "",
+            location: user.locationEn || "",
+            locationAr: user.locationAr || user.locationEn || "",
+            email: user.email || session.user.email || "",
+          });
+        }
       } catch (error) {
         console.error("Failed to fetch user data:", error);
+      } finally {
         setIsLoading(false);
       }
     };
 
-    fetchUserData();
-  }, []);
+    if (status !== "loading") {
+      fetchUserData();
+    }
+  }, [session?.user?.id, session?.user?.name, session?.user?.email, status]);
 
   const handleSubmitSuccess = (requestId: string) => {
     setSubmittedRequestId(requestId);
@@ -75,8 +98,7 @@ function NewRequestPageContent() {
   };
 
   const handleSaveDraft = () => {
-    // Show toast notification or feedback
-    console.log("Draft saved");
+    toast.success(isRTL ? "تم حفظ المسودة" : "Draft saved successfully");
   };
 
   const handleBackToDashboard = () => {
@@ -90,7 +112,7 @@ function NewRequestPageContent() {
   };
 
   // Loading state
-  if (isLoading) {
+  if (isLoading || status === "loading") {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -98,6 +120,22 @@ function NewRequestPageContent() {
           <p className="mt-4 text-neutral-600 dark:text-neutral-400">
             {t("common.messages.loading")}
           </p>
+        </div>
+      </div>
+    );
+  }
+
+  // No user data available
+  if (!userData) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-neutral-600 dark:text-neutral-400 mb-4">
+            {isRTL ? "تعذر تحميل بيانات المستخدم" : "Unable to load user data"}
+          </p>
+          <Button onClick={handleBackToDashboard}>
+            {t("common.actions.back")}
+          </Button>
         </div>
       </div>
     );

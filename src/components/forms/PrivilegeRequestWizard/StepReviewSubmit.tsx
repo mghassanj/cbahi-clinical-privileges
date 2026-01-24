@@ -38,6 +38,7 @@ import {
   Clock,
   ArrowRight,
 } from "lucide-react";
+import { PrivilegeCategory } from "@/data/privileges";
 
 export interface StepReviewSubmitProps {
   personalInfo: Partial<PersonalInfoData>;
@@ -50,7 +51,8 @@ export interface StepReviewSubmitProps {
   errors?: string | null;
 }
 
-// Mock approval chain - in production, this would come from the system
+// System approval workflow configuration
+// These levels match the ApprovalLevel enum in the Prisma schema
 const APPROVAL_CHAIN = [
   {
     level: "HEAD_OF_SECTION",
@@ -86,14 +88,18 @@ const APPROVAL_CHAIN = [
   },
 ];
 
-// Mock privilege categories for summary
-const PRIVILEGE_CATEGORIES = {
-  core: { nameEn: "Core", nameAr: "أساسية" },
-  restorative: { nameEn: "Restorative", nameAr: "ترميمية" },
-  pediatric: { nameEn: "Pediatric", nameAr: "أطفال" },
-  endodontics: { nameEn: "Endodontics", nameAr: "علاج جذور" },
-  periodontics: { nameEn: "Periodontics", nameAr: "لثة" },
-  "oral-surgery": { nameEn: "Oral Surgery", nameAr: "جراحة فم" },
+// Privilege category display names for summary - uses real PrivilegeCategory enum
+const PRIVILEGE_CATEGORY_NAMES: Record<string, { nameEn: string; nameAr: string }> = {
+  [PrivilegeCategory.CORE.toLowerCase()]: { nameEn: "Core", nameAr: "أساسية" },
+  [PrivilegeCategory.RESTORATIVE.toLowerCase()]: { nameEn: "Restorative", nameAr: "ترميمية" },
+  [PrivilegeCategory.PEDIATRIC.toLowerCase()]: { nameEn: "Pediatric", nameAr: "أطفال" },
+  [PrivilegeCategory.ORTHODONTICS.toLowerCase()]: { nameEn: "Orthodontics", nameAr: "تقويم" },
+  [PrivilegeCategory.PROSTHODONTICS.toLowerCase()]: { nameEn: "Prosthodontics", nameAr: "تركيبات" },
+  [PrivilegeCategory.PERIODONTICS.toLowerCase()]: { nameEn: "Periodontics", nameAr: "لثة" },
+  [PrivilegeCategory.ORAL_SURGERY.toLowerCase()]: { nameEn: "Oral Surgery", nameAr: "جراحة فم" },
+  [PrivilegeCategory.ENDODONTICS.toLowerCase()]: { nameEn: "Endodontics", nameAr: "علاج جذور" },
+  [PrivilegeCategory.ORAL_MEDICINE.toLowerCase()]: { nameEn: "Oral Medicine", nameAr: "طب الفم" },
+  [PrivilegeCategory.RADIOLOGY.toLowerCase()]: { nameEn: "Radiology", nameAr: "أشعة" },
 };
 
 export function StepReviewSubmit({
@@ -331,8 +337,7 @@ export function StepReviewSubmit({
             </div>
             <div className="flex flex-wrap gap-2">
               {Object.entries(privilegesByCategory).map(([category, count]) => {
-                const catInfo =
-                  PRIVILEGE_CATEGORIES[category as keyof typeof PRIVILEGE_CATEGORIES];
+                const catInfo = PRIVILEGE_CATEGORY_NAMES[category];
                 return (
                   <span
                     key={category}

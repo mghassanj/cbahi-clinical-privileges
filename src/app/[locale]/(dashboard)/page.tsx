@@ -29,91 +29,42 @@ import {
   Activity as ActivityIcon,
 } from "lucide-react";
 
-// Mock data - replace with actual API calls
-const mockStats = {
-  employee: {
-    myRequests: 5,
-    pendingRequests: 2,
-    approvedRequests: 3,
-    draftRequests: 1,
-  },
-  approver: {
-    pendingApprovals: 12,
-    approvedToday: 5,
-    escalated: 2,
-    avgProcessingTime: 2.5,
-  },
-  admin: {
-    totalUsers: 156,
-    activeRequests: 45,
-    lastSyncTime: new Date(Date.now() - 1000 * 60 * 30),
-    syncStatus: "success" as const,
-  },
-};
+// Types for API responses
+interface EmployeeStats {
+  total: number;
+  pending: number;
+  approved: number;
+  draft: number;
+  inReview: number;
+  rejected: number;
+}
 
-const mockActivities: Activity[] = [
-  {
-    id: "1",
-    type: "request_submitted",
-    user: { name: "Dr. Sara Ahmed", nameAr: "د. سارة أحمد" },
-    requestId: "REQ-2024-001",
-    timestamp: new Date(Date.now() - 1000 * 60 * 5),
-  },
-  {
-    id: "2",
-    type: "request_approved",
-    user: { name: "Dr. Mohammed Ali", nameAr: "د. محمد علي" },
-    requestId: "REQ-2024-002",
-    timestamp: new Date(Date.now() - 1000 * 60 * 30),
-  },
-  {
-    id: "3",
-    type: "request_pending",
-    user: { name: "Dr. Fatima Hassan", nameAr: "د. فاطمة حسن" },
-    requestId: "REQ-2024-003",
-    timestamp: new Date(Date.now() - 1000 * 60 * 60),
-  },
-  {
-    id: "4",
-    type: "escalation",
-    user: { name: "System", nameAr: "النظام" },
-    requestId: "REQ-2024-004",
-    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2),
-  },
-];
+interface ApproverStats {
+  pending: number;
+  approvedToday: number;
+  escalated: number;
+}
 
-const mockPendingApprovals = [
-  {
-    id: "REQ-2024-005",
-    applicant: "Dr. Ahmad Al-Harbi",
-    applicantAr: "د. أحمد الحربي",
-    type: "Initial",
-    typeAr: "أولي",
-    submittedDate: new Date(Date.now() - 1000 * 60 * 60 * 24),
-    daysPending: 3,
-    isEscalated: false,
-  },
-  {
-    id: "REQ-2024-006",
-    applicant: "Dr. Noura Al-Rashid",
-    applicantAr: "د. نورة الراشد",
-    type: "Renewal",
-    typeAr: "تجديد",
-    submittedDate: new Date(Date.now() - 1000 * 60 * 60 * 24 * 5),
-    daysPending: 5,
-    isEscalated: true,
-  },
-  {
-    id: "REQ-2024-007",
-    applicant: "Dr. Khalid Omar",
-    applicantAr: "د. خالد عمر",
-    type: "Expansion",
-    typeAr: "توسيع",
-    submittedDate: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2),
-    daysPending: 2,
-    isEscalated: false,
-  },
-];
+interface AdminStats {
+  totalUsers: number;
+  activeRequests: number;
+  pendingApprovals: number;
+}
+
+interface PendingApproval {
+  id: string;
+  requestId: string;
+  daysPending: number;
+  isEscalated: boolean;
+  request: {
+    id: string;
+    type: string;
+    applicant: {
+      nameEn: string;
+      nameAr: string;
+    };
+  };
+}
 
 type UserRole = "employee" | "approver" | "admin";
 
@@ -176,6 +127,79 @@ function EmployeeDashboard() {
   const t = useTranslations();
   const locale = useLocale();
   const isRTL = locale === "ar";
+  const [stats, setStats] = React.useState<EmployeeStats>({
+    total: 0,
+    pending: 0,
+    approved: 0,
+    draft: 0,
+    inReview: 0,
+    rejected: 0,
+  });
+  const [activities, setActivities] = React.useState<Activity[]>([]);
+  const [isLoading, setIsLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    async function fetchData() {
+      try {
+        // Fetch all requests for the current user to calculate stats
+        const response = await fetch("/api/requests?limit=100");
+        const result = await response.json();
+
+        if (result.data) {
+          const requests = result.data;
+          const newStats: EmployeeStats = {
+            total: requests.length,
+            pending: requests.filter((r: { status: string }) => r.status === "PENDING").length,
+            approved: requests.filter((r: { status: string }) => r.status === "APPROVED").length,
+            draft: requests.filter((r: { status: string }) => r.status === "DRAFT").length,
+            inReview: requests.filter((r: { status: string }) => r.status === "IN_REVIEW").length,
+            rejected: requests.filter((r: { status: string }) => r.status === "REJECTED").length,
+          };
+          setStats(newStats);
+
+          // Convert recent requests to activities
+          const recentActivities: Activity[] = requests.slice(0, 4).map((req: {
+            id: string;
+            status: string;
+            applicant: { nameEn: string; nameAr: string };
+            createdAt: string;
+            submittedAt: string | null;
+          }) => ({
+            id: req.id,
+            type: req.status === "APPROVED" ? "request_approved"
+                : req.status === "PENDING" ? "request_pending"
+                : req.status === "REJECTED" ? "request_rejected"
+                : "request_submitted",
+            user: { name: req.applicant.nameEn, nameAr: req.applicant.nameAr },
+            requestId: req.id,
+            timestamp: new Date(req.submittedAt || req.createdAt),
+          }));
+          setActivities(recentActivities);
+        }
+      } catch (error) {
+        console.error("Failed to fetch dashboard data:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    fetchData();
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {[...Array(4)].map((_, i) => (
+            <Skeleton key={i} className="h-32" />
+          ))}
+        </div>
+        <div className="grid gap-6 lg:grid-cols-2">
+          <Skeleton className="h-64" />
+          <Skeleton className="h-64" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -184,7 +208,7 @@ function EmployeeDashboard() {
         <BentoGridItem>
           <StatCard
             title={t("dashboard.statistics.totalRequests")}
-            value={mockStats.employee.myRequests}
+            value={stats.total}
             icon={FileText}
             variant="primary"
             description={isRTL ? "إجمالي طلباتك" : "Your total requests"}
@@ -193,7 +217,7 @@ function EmployeeDashboard() {
         <BentoGridItem>
           <StatCard
             title={t("dashboard.statistics.pendingRequests")}
-            value={mockStats.employee.pendingRequests}
+            value={stats.pending + stats.inReview}
             icon={Clock}
             variant="warning"
             description={isRTL ? "في انتظار المراجعة" : "Awaiting review"}
@@ -202,7 +226,7 @@ function EmployeeDashboard() {
         <BentoGridItem>
           <StatCard
             title={t("dashboard.statistics.approvedRequests")}
-            value={mockStats.employee.approvedRequests}
+            value={stats.approved}
             icon={CheckSquare}
             variant="success"
             description={isRTL ? "معتمد ونشط" : "Approved and active"}
@@ -211,7 +235,7 @@ function EmployeeDashboard() {
         <BentoGridItem>
           <StatCard
             title={isRTL ? "المسودات" : "Drafts"}
-            value={mockStats.employee.draftRequests}
+            value={stats.draft}
             icon={FileText}
             variant="default"
             description={isRTL ? "طلبات غير مكتملة" : "Incomplete requests"}
@@ -248,7 +272,7 @@ function EmployeeDashboard() {
 
         {/* Recent Activity */}
         <ActivityFeed
-          activities={mockActivities.slice(0, 4)}
+          activities={activities}
           showViewAll
           onViewAll={() => {}}
         />
@@ -261,6 +285,78 @@ function ApproverDashboard() {
   const t = useTranslations();
   const locale = useLocale();
   const isRTL = locale === "ar";
+  const [stats, setStats] = React.useState<ApproverStats>({
+    pending: 0,
+    approvedToday: 0,
+    escalated: 0,
+  });
+  const [pendingApprovals, setPendingApprovals] = React.useState<PendingApproval[]>([]);
+  const [activities, setActivities] = React.useState<Activity[]>([]);
+  const [isLoading, setIsLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    async function fetchData() {
+      try {
+        // Fetch pending approvals
+        const response = await fetch("/api/approvals?limit=10");
+        const result = await response.json();
+
+        if (result.data) {
+          setPendingApprovals(result.data.slice(0, 3));
+
+          // Calculate stats
+          const escalatedCount = result.data.filter((a: { isEscalated: boolean }) => a.isEscalated).length;
+          setStats({
+            pending: result.statistics?.pending || result.data.length,
+            approvedToday: result.statistics?.approved || 0,
+            escalated: escalatedCount,
+          });
+
+          // Convert to activities
+          const recentActivities: Activity[] = result.data.slice(0, 4).map((approval: PendingApproval) => ({
+            id: approval.id,
+            type: "request_pending" as const,
+            user: {
+              name: approval.request.applicant.nameEn,
+              nameAr: approval.request.applicant.nameAr,
+            },
+            requestId: approval.request.id,
+            timestamp: new Date(),
+          }));
+          setActivities(recentActivities);
+        }
+      } catch (error) {
+        console.error("Failed to fetch approver dashboard data:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    fetchData();
+  }, []);
+
+  const getTypeLabel = (type: string) => {
+    const labels: Record<string, { en: string; ar: string }> = {
+      NEW: { en: "Initial", ar: "أولي" },
+      RENEWAL: { en: "Renewal", ar: "تجديد" },
+      ADDITION: { en: "Expansion", ar: "توسيع" },
+      TEMPORARY: { en: "Temporary", ar: "مؤقت" },
+    };
+    return isRTL ? labels[type]?.ar || type : labels[type]?.en || type;
+  };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {[...Array(4)].map((_, i) => (
+            <Skeleton key={i} className="h-32" />
+          ))}
+        </div>
+        <Skeleton className="h-64" />
+        <Skeleton className="h-64" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -269,17 +365,16 @@ function ApproverDashboard() {
         <BentoGridItem>
           <StatCard
             title={t("dashboard.pendingApprovals")}
-            value={mockStats.approver.pendingApprovals}
+            value={stats.pending}
             icon={CheckSquare}
             variant="warning"
             description={isRTL ? "تتطلب انتباهك" : "Require your attention"}
-            onClick={() => {}}
           />
         </BentoGridItem>
         <BentoGridItem>
           <StatCard
-            title={isRTL ? "تمت الموافقة اليوم" : "Approved Today"}
-            value={mockStats.approver.approvedToday}
+            title={isRTL ? "تمت الموافقة" : "Approved"}
+            value={stats.approvedToday}
             icon={CheckSquare}
             variant="success"
             description={isRTL ? "طلبات تمت معالجتها" : "Requests processed"}
@@ -288,7 +383,7 @@ function ApproverDashboard() {
         <BentoGridItem>
           <StatCard
             title={isRTL ? "مصعد" : "Escalated"}
-            value={mockStats.approver.escalated}
+            value={stats.escalated}
             icon={AlertTriangle}
             variant="error"
             description={isRTL ? "تجاوز الوقت المحدد" : "Overdue items"}
@@ -297,7 +392,9 @@ function ApproverDashboard() {
         <BentoGridItem>
           <StatCard
             title={t("dashboard.statistics.averageProcessingTime")}
-            value={`${mockStats.approver.avgProcessingTime}d`}
+            value={pendingApprovals.length > 0
+              ? `${Math.round(pendingApprovals.reduce((sum, a) => sum + a.daysPending, 0) / pendingApprovals.length)}d`
+              : "0d"}
             icon={Clock}
             variant="primary"
             description={isRTL ? "أيام للمعالجة" : "Days to process"}
@@ -319,45 +416,51 @@ function ApproverDashboard() {
           </Link>
         </LiquidGlassCardHeader>
         <LiquidGlassCardContent className="p-0">
-          <div className="divide-y divide-neutral-200 dark:divide-neutral-800">
-            {mockPendingApprovals.map((approval) => (
-              <Link
-                key={approval.id}
-                href={`/${locale}/approvals/${approval.id}`}
-                className="flex items-center justify-between p-4 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800/50"
-              >
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium text-neutral-900 dark:text-white">
-                      {isRTL ? approval.applicantAr : approval.applicant}
-                    </span>
-                    {approval.isEscalated && (
-                      <Badge variant="error">
-                        <AlertTriangle className="mr-1 h-3 w-3" />
-                        {isRTL ? "مصعد" : "Escalated"}
-                      </Badge>
-                    )}
+          {pendingApprovals.length === 0 ? (
+            <div className="p-8 text-center text-neutral-500">
+              {isRTL ? "لا توجد موافقات معلقة" : "No pending approvals"}
+            </div>
+          ) : (
+            <div className="divide-y divide-neutral-200 dark:divide-neutral-800">
+              {pendingApprovals.map((approval) => (
+                <Link
+                  key={approval.id}
+                  href={`/${locale}/approvals/${approval.request.id}`}
+                  className="flex items-center justify-between p-4 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800/50"
+                >
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-neutral-900 dark:text-white">
+                        {isRTL ? approval.request.applicant.nameAr : approval.request.applicant.nameEn}
+                      </span>
+                      {approval.isEscalated && (
+                        <Badge variant="error">
+                          <AlertTriangle className="mr-1 h-3 w-3" />
+                          {isRTL ? "مصعد" : "Escalated"}
+                        </Badge>
+                      )}
+                    </div>
+                    <div className="mt-1 flex items-center gap-2 text-sm text-neutral-500">
+                      <span>{approval.request.id}</span>
+                      <span>•</span>
+                      <span>{getTypeLabel(approval.request.type)}</span>
+                    </div>
                   </div>
-                  <div className="mt-1 flex items-center gap-2 text-sm text-neutral-500">
-                    <span>{approval.id}</span>
-                    <span>•</span>
-                    <span>{isRTL ? approval.typeAr : approval.type}</span>
+                  <div className="text-right rtl:text-left">
+                    <Badge variant={approval.daysPending > 3 ? "warning" : "secondary"}>
+                      {approval.daysPending} {isRTL ? "أيام" : "days"}
+                    </Badge>
                   </div>
-                </div>
-                <div className="text-right rtl:text-left">
-                  <Badge variant={approval.daysPending > 3 ? "warning" : "secondary"}>
-                    {approval.daysPending} {isRTL ? "أيام" : "days"}
-                  </Badge>
-                </div>
-              </Link>
-            ))}
-          </div>
+                </Link>
+              ))}
+            </div>
+          )}
         </LiquidGlassCardContent>
       </LiquidGlassCard>
 
       {/* Activity Feed */}
       <ActivityFeed
-        activities={mockActivities}
+        activities={activities}
         showViewAll
         onViewAll={() => {}}
       />
@@ -369,8 +472,71 @@ function AdminDashboard() {
   const t = useTranslations();
   const locale = useLocale();
   const isRTL = locale === "ar";
+  const [stats, setStats] = React.useState<AdminStats>({
+    totalUsers: 0,
+    activeRequests: 0,
+    pendingApprovals: 0,
+  });
+  const [lastSyncTime, setLastSyncTime] = React.useState<Date | null>(null);
+  const [syncStatus, setSyncStatus] = React.useState<"success" | "error">("success");
+  const [activities, setActivities] = React.useState<Activity[]>([]);
+  const [isLoading, setIsLoading] = React.useState(true);
 
-  const formatSyncTime = (date: Date) => {
+  React.useEffect(() => {
+    async function fetchData() {
+      try {
+        // Fetch data in parallel
+        const [usersRes, requestsRes, approvalsRes, configRes] = await Promise.all([
+          fetch("/api/users?limit=1"),
+          fetch("/api/requests?status=PENDING&status=IN_REVIEW&limit=1"),
+          fetch("/api/approvals?limit=5"),
+          fetch("/api/config").catch(() => null),
+        ]);
+
+        const [usersData, requestsData, approvalsData, configData] = await Promise.all([
+          usersRes.json(),
+          requestsRes.json(),
+          approvalsRes.json(),
+          configRes?.json().catch(() => null),
+        ]);
+
+        setStats({
+          totalUsers: usersData.pagination?.total || 0,
+          activeRequests: requestsData.pagination?.total || 0,
+          pendingApprovals: approvalsData.statistics?.pending || approvalsData.pagination?.total || 0,
+        });
+
+        // Get sync status from config if available
+        if (configData?.lastSync) {
+          setLastSyncTime(new Date(configData.lastSync));
+          setSyncStatus(configData.syncStatus || "success");
+        }
+
+        // Convert approvals to activities
+        if (approvalsData.data) {
+          const recentActivities: Activity[] = approvalsData.data.slice(0, 4).map((approval: PendingApproval) => ({
+            id: approval.id,
+            type: "request_pending" as const,
+            user: {
+              name: approval.request.applicant.nameEn,
+              nameAr: approval.request.applicant.nameAr,
+            },
+            requestId: approval.request.id,
+            timestamp: new Date(),
+          }));
+          setActivities(recentActivities);
+        }
+      } catch (error) {
+        console.error("Failed to fetch admin dashboard data:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    fetchData();
+  }, []);
+
+  const formatSyncTime = (date: Date | null) => {
+    if (!date) return isRTL ? "غير متاح" : "N/A";
     const minutes = Math.floor((Date.now() - date.getTime()) / 1000 / 60);
     if (minutes < 60) {
       return isRTL ? `منذ ${minutes} دقيقة` : `${minutes} min ago`;
@@ -379,6 +545,22 @@ function AdminDashboard() {
     return isRTL ? `منذ ${hours} ساعة` : `${hours} hour ago`;
   };
 
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {[...Array(4)].map((_, i) => (
+            <Skeleton key={i} className="h-32" />
+          ))}
+        </div>
+        <div className="grid gap-6 lg:grid-cols-2">
+          <Skeleton className="h-64" />
+          <Skeleton className="h-64" />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Stats Grid */}
@@ -386,17 +568,16 @@ function AdminDashboard() {
         <BentoGridItem>
           <StatCard
             title={isRTL ? "إجمالي المستخدمين" : "Total Users"}
-            value={mockStats.admin.totalUsers}
+            value={stats.totalUsers}
             icon={Users}
             variant="primary"
-            trend={{ value: 12, isPositive: true }}
-            description={isRTL ? "من الشهر الماضي" : "from last month"}
+            description={isRTL ? "المستخدمون المسجلون" : "Registered users"}
           />
         </BentoGridItem>
         <BentoGridItem>
           <StatCard
             title={isRTL ? "الطلبات النشطة" : "Active Requests"}
-            value={mockStats.admin.activeRequests}
+            value={stats.activeRequests}
             icon={FileText}
             variant="warning"
             description={isRTL ? "قيد المعالجة" : "In progress"}
@@ -405,7 +586,7 @@ function AdminDashboard() {
         <BentoGridItem>
           <StatCard
             title={t("dashboard.pendingApprovals")}
-            value={mockStats.approver.pendingApprovals}
+            value={stats.pendingApprovals}
             icon={CheckSquare}
             variant="error"
             description={isRTL ? "تتطلب الموافقة" : "Require approval"}
@@ -414,10 +595,10 @@ function AdminDashboard() {
         <BentoGridItem>
           <StatCard
             title={isRTL ? "حالة المزامنة" : "Sync Status"}
-            value={mockStats.admin.syncStatus === "success" ? (isRTL ? "نجاح" : "OK") : (isRTL ? "فشل" : "Failed")}
+            value={syncStatus === "success" ? (isRTL ? "نجاح" : "OK") : (isRTL ? "فشل" : "Failed")}
             icon={RefreshCw}
-            variant={mockStats.admin.syncStatus === "success" ? "success" : "error"}
-            description={formatSyncTime(mockStats.admin.lastSyncTime)}
+            variant={syncStatus === "success" ? "success" : "error"}
+            description={formatSyncTime(lastSyncTime)}
           />
         </BentoGridItem>
       </BentoGrid>
@@ -499,7 +680,7 @@ function AdminDashboard() {
                   {t("admin.sync.lastSync")}
                 </span>
                 <span className="text-sm text-neutral-900 dark:text-white">
-                  {formatSyncTime(mockStats.admin.lastSyncTime)}
+                  {formatSyncTime(lastSyncTime)}
                 </span>
               </div>
               <Button variant="outline" className="w-full">
@@ -513,7 +694,7 @@ function AdminDashboard() {
 
       {/* Recent Activity */}
       <ActivityFeed
-        activities={mockActivities}
+        activities={activities}
         showViewAll
         onViewAll={() => {}}
       />

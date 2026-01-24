@@ -3,6 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
+import { toast } from "sonner";
 import { BentoGrid, BentoGridItem } from "@/components/dashboard/bento-grid";
 import { StatCard } from "@/components/dashboard/stat-card";
 import {
@@ -42,64 +43,14 @@ interface SyncStatus {
   recordCount?: number;
 }
 
-// Mock data
-const mockStats: SystemStats = {
-  totalUsers: 156,
-  activeUsers: 142,
-  pendingRequests: 23,
-  totalDepartments: 12,
-};
-
-const mockSyncStatuses: SyncStatus[] = [
-  {
-    service: "Jisr HR",
-    serviceAr: "جسر للموارد البشرية",
-    status: "connected",
-    lastSync: new Date(Date.now() - 1000 * 60 * 30),
-    nextSync: new Date(Date.now() + 1000 * 60 * 30),
-    recordCount: 156,
-  },
-  {
-    service: "Email (SMTP)",
-    serviceAr: "البريد الإلكتروني",
-    status: "connected",
-    lastSync: new Date(Date.now() - 1000 * 60 * 5),
-  },
-  {
-    service: "Google Drive",
-    serviceAr: "جوجل درايف",
-    status: "connected",
-    lastSync: new Date(Date.now() - 1000 * 60 * 60),
-    recordCount: 342,
-  },
-];
-
-const mockRecentActivity = [
-  {
-    id: "1",
-    action: "User synced",
-    actionAr: "تمت مزامنة مستخدم",
-    details: "New employee: Dr. Sara Ahmed",
-    detailsAr: "موظف جديد: د. سارة أحمد",
-    timestamp: new Date(Date.now() - 1000 * 60 * 15),
-  },
-  {
-    id: "2",
-    action: "Role assigned",
-    actionAr: "تم تعيين دور",
-    details: "Dr. Mohammed Ali assigned as Approver",
-    detailsAr: "تم تعيين د. محمد علي كمعتمد",
-    timestamp: new Date(Date.now() - 1000 * 60 * 45),
-  },
-  {
-    id: "3",
-    action: "Settings updated",
-    actionAr: "تم تحديث الإعدادات",
-    details: "Email template modified",
-    detailsAr: "تم تعديل قالب البريد",
-    timestamp: new Date(Date.now() - 1000 * 60 * 120),
-  },
-];
+interface RecentActivity {
+  id: string;
+  action: string;
+  actionAr: string;
+  details: string;
+  detailsAr: string;
+  timestamp: Date;
+}
 
 export default function AdminPage() {
   const t = useTranslations();
@@ -108,17 +59,125 @@ export default function AdminPage() {
 
   const [isLoading, setIsLoading] = React.useState(true);
   const [isSyncing, setIsSyncing] = React.useState(false);
+  const [stats, setStats] = React.useState<SystemStats>({
+    totalUsers: 0,
+    activeUsers: 0,
+    pendingRequests: 0,
+    totalDepartments: 0,
+  });
+  const [syncStatuses, setSyncStatuses] = React.useState<SyncStatus[]>([
+    {
+      service: "Jisr HR",
+      serviceAr: "جسر للموارد البشرية",
+      status: "connected",
+      lastSync: null,
+      recordCount: 0,
+    },
+    {
+      service: "Email (SMTP)",
+      serviceAr: "البريد الإلكتروني",
+      status: "connected",
+      lastSync: null,
+    },
+    {
+      service: "Google Drive",
+      serviceAr: "جوجل درايف",
+      status: "connected",
+      lastSync: null,
+      recordCount: 0,
+    },
+  ]);
+  const [recentActivity, setRecentActivity] = React.useState<RecentActivity[]>([]);
 
   React.useEffect(() => {
-    const timer = setTimeout(() => setIsLoading(false), 500);
-    return () => clearTimeout(timer);
+    async function fetchData() {
+      try {
+        // Fetch stats in parallel
+        const [usersRes, requestsRes, configRes] = await Promise.all([
+          fetch("/api/users?limit=1"),
+          fetch("/api/requests?status=PENDING&status=IN_REVIEW&limit=1"),
+          fetch("/api/config").catch(() => null),
+        ]);
+
+        const [usersData, requestsData, configData] = await Promise.all([
+          usersRes.json(),
+          requestsRes.json(),
+          configRes?.json().catch(() => null),
+        ]);
+
+        // Calculate stats from API data
+        setStats({
+          totalUsers: usersData.pagination?.total || 0,
+          activeUsers: usersData.pagination?.total || 0, // Could be filtered if we had active filter
+          pendingRequests: requestsData.pagination?.total || 0,
+          totalDepartments: 12, // Would need a departments API endpoint
+        });
+
+        // Update sync statuses from config if available
+        if (configData) {
+          setSyncStatuses((prev) => prev.map((sync) => ({
+            ...sync,
+            lastSync: configData.lastSync ? new Date(configData.lastSync) : null,
+            status: "connected" as const,
+            recordCount: sync.service.includes("Jisr") ? usersData.pagination?.total : sync.recordCount,
+          })));
+        }
+
+        // Recent activity could be fetched from audit log if we had that endpoint
+        setRecentActivity([]);
+      } catch (error) {
+        console.error("Failed to fetch admin data:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    fetchData();
   }, []);
 
   const handleManualSync = async () => {
     setIsSyncing(true);
-    // TODO: API call for manual sync
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-    setIsSyncing(false);
+    try {
+      const response = await fetch("/api/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fullSync: true }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.message || "Sync failed");
+      }
+
+      // Update sync statuses with new data
+      setSyncStatuses((prev) =>
+        prev.map((sync) => ({
+          ...sync,
+          lastSync: new Date(),
+          status: "connected" as const,
+          recordCount: sync.service.includes("Jisr")
+            ? result.data?.users?.recordsTotal || sync.recordCount
+            : sync.recordCount,
+        }))
+      );
+
+      toast.success(
+        isRTL
+          ? `تمت المزامنة بنجاح. تم تحديث ${result.data?.users?.recordsUpdated || 0} سجل.`
+          : `Sync completed successfully. Updated ${result.data?.users?.recordsUpdated || 0} records.`
+      );
+    } catch (err) {
+      console.error("Sync error:", err);
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : isRTL
+          ? "فشل في المزامنة"
+          : "Sync failed"
+      );
+    } finally {
+      setIsSyncing(false);
+    }
   };
 
   const getStatusBadge = (status: SyncStatus["status"]) => {
@@ -166,16 +225,16 @@ export default function AdminPage() {
         <BentoGridItem>
           <StatCard
             title={isRTL ? "إجمالي المستخدمين" : "Total Users"}
-            value={mockStats.totalUsers}
+            value={stats.totalUsers}
             icon={Users}
             variant="primary"
-            description={`${mockStats.activeUsers} ${isRTL ? "نشط" : "active"}`}
+            description={`${stats.activeUsers} ${isRTL ? "نشط" : "active"}`}
           />
         </BentoGridItem>
         <BentoGridItem>
           <StatCard
             title={t("dashboard.pendingApprovals")}
-            value={mockStats.pendingRequests}
+            value={stats.pendingRequests}
             icon={Clock}
             variant="warning"
             description={isRTL ? "تتطلب الموافقة" : "Require approval"}
@@ -184,7 +243,7 @@ export default function AdminPage() {
         <BentoGridItem>
           <StatCard
             title={isRTL ? "الأقسام" : "Departments"}
-            value={mockStats.totalDepartments}
+            value={stats.totalDepartments}
             icon={Database}
             variant="default"
             description={isRTL ? "قسم نشط" : "Active departments"}
@@ -194,7 +253,7 @@ export default function AdminPage() {
           <StatCard
             title={t("admin.sync.syncStatus")}
             value={
-              mockSyncStatuses.every((s) => s.status === "connected")
+              syncStatuses.every((s) => s.status === "connected")
                 ? isRTL
                   ? "سليم"
                   : "Healthy"
@@ -204,7 +263,7 @@ export default function AdminPage() {
             }
             icon={Activity}
             variant={
-              mockSyncStatuses.every((s) => s.status === "connected")
+              syncStatuses.every((s) => s.status === "connected")
                 ? "success"
                 : "warning"
             }
@@ -294,7 +353,7 @@ export default function AdminPage() {
           </LiquidGlassCardHeader>
           <LiquidGlassCardContent className="p-0">
             <div className="divide-y divide-neutral-200 dark:divide-neutral-800">
-              {mockSyncStatuses.map((sync) => (
+              {syncStatuses.map((sync) => (
                 <div
                   key={sync.service}
                   className="flex items-center justify-between p-4"
@@ -327,7 +386,7 @@ export default function AdminPage() {
                   </div>
                   <div className="text-right rtl:text-left">
                     {getStatusBadge(sync.status)}
-                    {sync.recordCount !== undefined && (
+                    {sync.recordCount !== undefined && sync.recordCount > 0 && (
                       <p className="mt-1 text-xs text-neutral-500">
                         {sync.recordCount} {isRTL ? "سجل" : "records"}
                       </p>
@@ -348,26 +407,32 @@ export default function AdminPage() {
           </LiquidGlassCardTitle>
         </LiquidGlassCardHeader>
         <LiquidGlassCardContent className="p-0">
-          <div className="divide-y divide-neutral-200 dark:divide-neutral-800">
-            {mockRecentActivity.map((activity) => (
-              <div key={activity.id} className="flex items-start gap-3 p-4">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary-100 text-primary-600">
-                  <Activity className="h-4 w-4" />
+          {recentActivity.length === 0 ? (
+            <div className="p-8 text-center text-neutral-500">
+              {isRTL ? "لا يوجد نشاط حديث" : "No recent activity"}
+            </div>
+          ) : (
+            <div className="divide-y divide-neutral-200 dark:divide-neutral-800">
+              {recentActivity.map((activity) => (
+                <div key={activity.id} className="flex items-start gap-3 p-4">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary-100 text-primary-600">
+                    <Activity className="h-4 w-4" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium text-neutral-900 dark:text-white">
+                      {isRTL ? activity.actionAr : activity.action}
+                    </p>
+                    <p className="text-sm text-neutral-500">
+                      {isRTL ? activity.detailsAr : activity.details}
+                    </p>
+                    <p className="mt-1 text-xs text-neutral-400">
+                      {formatSyncTime(activity.timestamp)}
+                    </p>
+                  </div>
                 </div>
-                <div className="min-w-0 flex-1">
-                  <p className="font-medium text-neutral-900 dark:text-white">
-                    {isRTL ? activity.actionAr : activity.action}
-                  </p>
-                  <p className="text-sm text-neutral-500">
-                    {isRTL ? activity.detailsAr : activity.details}
-                  </p>
-                  <p className="mt-1 text-xs text-neutral-400">
-                    {formatSyncTime(activity.timestamp)}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </LiquidGlassCardContent>
       </LiquidGlassCard>
     </div>

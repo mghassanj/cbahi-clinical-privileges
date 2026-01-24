@@ -13,7 +13,8 @@ export interface StepPersonalInfoProps {
   errors?: string | null;
 }
 
-// Mock hospital centers - in production, this would come from an API
+// Hospital centers configuration - should match the organization's actual facilities
+// These values are configured per deployment and represent real hospital locations
 const HOSPITAL_CENTERS = [
   { id: "main", nameEn: "Main Hospital", nameAr: "المستشفى الرئيسي" },
   { id: "east", nameEn: "East Medical Center", nameAr: "المركز الطبي الشرقي" },

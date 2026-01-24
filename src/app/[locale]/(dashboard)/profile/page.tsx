@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { useLocale, useTranslations } from "next-intl";
+import { useSession } from "next-auth/react";
 import {
   LiquidGlassCard,
   LiquidGlassCardContent,
@@ -27,148 +28,149 @@ import {
   Clock,
   XCircle,
   Award,
+  Building,
+  Briefcase,
 } from "lucide-react";
 
 interface UserProfile {
   id: string;
-  name: string;
-  nameAr: string;
+  nameEn: string;
+  nameAr: string | null;
   email: string;
-  phone: string;
-  department: string;
-  departmentAr: string;
-  jobTitle: string;
-  jobTitleAr: string;
-  employeeCode: string;
-  scfhsNumber: string;
-  scfhsExpiry: Date;
-  hireDate: Date;
-  avatar?: string;
-  role: "employee" | "approver" | "admin";
-  preferences: {
-    language: "en" | "ar";
-    emailNotifications: boolean;
-    systemNotifications: boolean;
-  };
-  statistics: {
-    totalRequests: number;
-    approvedRequests: number;
-    rejectedRequests: number;
-    pendingRequests: number;
-    approvalsGiven?: number;
-    approvalsThisMonth?: number;
+  departmentEn: string | null;
+  departmentAr: string | null;
+  jobTitleEn: string | null;
+  jobTitleAr: string | null;
+  employeeCode: string | null;
+  scfhsNo: string | null;
+  joiningDate: string | null;
+  role: string;
+  status: string;
+  isActive: boolean;
+  _count: {
+    privilegeRequests: number;
+    approvals: number;
   };
 }
-
-// Mock data
-const mockProfile: UserProfile = {
-  id: "1",
-  name: "Dr. Ahmed Al-Rashid",
-  nameAr: "د. أحمد الراشد",
-  email: "ahmed.rashid@hospital.com",
-  phone: "+966 50 123 4567",
-  department: "Dental Department",
-  departmentAr: "قسم طب الأسنان",
-  jobTitle: "Senior Dentist",
-  jobTitleAr: "طبيب أسنان أول",
-  employeeCode: "EMP-001",
-  scfhsNumber: "SCFHS-12345",
-  scfhsExpiry: new Date(2025, 5, 30),
-  hireDate: new Date(2018, 2, 15),
-  role: "admin",
-  preferences: {
-    language: "en",
-    emailNotifications: true,
-    systemNotifications: true,
-  },
-  statistics: {
-    totalRequests: 12,
-    approvedRequests: 10,
-    rejectedRequests: 1,
-    pendingRequests: 1,
-    approvalsGiven: 45,
-    approvalsThisMonth: 8,
-  },
-};
 
 export default function ProfilePage() {
   const t = useTranslations();
   const locale = useLocale();
   const isRTL = locale === "ar";
+  const { data: session, status: sessionStatus } = useSession();
 
   const [isLoading, setIsLoading] = React.useState(true);
   const [profile, setProfile] = React.useState<UserProfile | null>(null);
-  const [editedProfile, setEditedProfile] = React.useState<Partial<UserProfile>>({});
+  const [error, setError] = React.useState<string | null>(null);
+  const [editedScfhs, setEditedScfhs] = React.useState("");
   const [isSaving, setIsSaving] = React.useState(false);
   const [hasChanges, setHasChanges] = React.useState(false);
+  const [preferences, setPreferences] = React.useState({
+    language: locale as "en" | "ar",
+    emailNotifications: true,
+    systemNotifications: true,
+  });
 
+  // Fetch profile data
   React.useEffect(() => {
-    const timer = setTimeout(() => {
-      setProfile(mockProfile);
-      setEditedProfile({
-        scfhsNumber: mockProfile.scfhsNumber,
-        preferences: { ...mockProfile.preferences },
-      });
-      setIsLoading(false);
-    }, 500);
-    return () => clearTimeout(timer);
-  }, []);
+    async function fetchProfile() {
+      if (!session?.user?.id) return;
+
+      try {
+        setIsLoading(true);
+        const response = await fetch(`/api/users/${session.user.id}`);
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch profile");
+        }
+
+        const result = await response.json();
+        setProfile(result.data);
+        setEditedScfhs(result.data.scfhsNo || "");
+      } catch (err) {
+        console.error("Error fetching profile:", err);
+        setError("Failed to load profile data");
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    if (session?.user?.id) {
+      fetchProfile();
+    }
+  }, [session?.user?.id]);
 
   const handleSave = async () => {
+    if (!profile) return;
+
     setIsSaving(true);
-    // TODO: API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    setIsSaving(false);
-    setHasChanges(false);
+    try {
+      const response = await fetch(`/api/users/${profile.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ scfhsNo: editedScfhs }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to update profile");
+      }
+
+      setProfile((prev) => prev ? { ...prev, scfhsNo: editedScfhs } : null);
+      setHasChanges(false);
+    } catch (err) {
+      console.error("Error saving profile:", err);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handlePreferenceChange = (
-    key: keyof UserProfile["preferences"],
+    key: keyof typeof preferences,
     value: string | boolean
   ) => {
-    setEditedProfile((prev) => {
-      const currentPrefs = prev.preferences || profile?.preferences || {
-        language: "en" as const,
-        emailNotifications: true,
-        systemNotifications: true,
-      };
-      return {
-        ...prev,
-        preferences: {
-          ...currentPrefs,
-          [key]: value,
-        },
-      };
-    });
-    setHasChanges(true);
-  };
-
-  const handleScfhsChange = (value: string) => {
-    setEditedProfile((prev) => ({
+    setPreferences((prev) => ({
       ...prev,
-      scfhsNumber: value,
+      [key]: value,
     }));
     setHasChanges(true);
   };
 
-  const getRoleLabel = (role: string) => {
-    const labels: Record<string, { en: string; ar: string }> = {
-      employee: { en: "Employee", ar: "موظف" },
-      approver: { en: "Approver", ar: "معتمد" },
-      admin: { en: "Administrator", ar: "مسؤول" },
-    };
-    return isRTL ? labels[role]?.ar : labels[role]?.en;
+  const handleScfhsChange = (value: string) => {
+    setEditedScfhs(value);
+    setHasChanges(value !== (profile?.scfhsNo || ""));
   };
 
-  if (isLoading) {
+  const getRoleLabel = (role: string) => {
+    const labels: Record<string, { en: string; ar: string }> = {
+      EMPLOYEE: { en: "Employee", ar: "موظف" },
+      HEAD_OF_SECTION: { en: "Head of Section", ar: "رئيس قسم" },
+      HEAD_OF_DEPT: { en: "Head of Department", ar: "رئيس إدارة" },
+      COMMITTEE_MEMBER: { en: "Committee Member", ar: "عضو لجنة" },
+      MEDICAL_DIRECTOR: { en: "Medical Director", ar: "المدير الطبي" },
+      ADMIN: { en: "Administrator", ar: "مسؤول" },
+    };
+    return isRTL ? labels[role]?.ar || role : labels[role]?.en || role;
+  };
+
+  const getRoleBadgeVariant = (role: string): "default" | "secondary" | "warning" => {
+    if (role === "ADMIN" || role === "MEDICAL_DIRECTOR") return "default";
+    if (["HEAD_OF_DEPT", "HEAD_OF_SECTION", "COMMITTEE_MEMBER"].includes(role)) return "warning";
+    return "secondary";
+  };
+
+  if (sessionStatus === "loading" || isLoading) {
     return <ProfileSkeleton />;
   }
 
-  if (!profile) {
-    return null;
+  if (error || !profile) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12">
+        <p className="text-neutral-500">{error || "Profile not found"}</p>
+      </div>
+    );
   }
 
-  const displayName = isRTL ? profile.nameAr : profile.name;
+  const displayName = isRTL && profile.nameAr ? profile.nameAr : profile.nameEn;
 
   return (
     <div className="space-y-6">
@@ -203,8 +205,10 @@ export default function ProfilePage() {
             <LiquidGlassCardContent>
               <div className="flex flex-col gap-6 sm:flex-row sm:items-start">
                 <div className="flex flex-col items-center gap-3">
-                  <Avatar name={profile.name} src={profile.avatar} size="xl" />
-                  <Badge variant="default">{getRoleLabel(profile.role)}</Badge>
+                  <Avatar name={profile.nameEn} size="xl" />
+                  <Badge variant={getRoleBadgeVariant(profile.role)}>
+                    {getRoleLabel(profile.role)}
+                  </Badge>
                 </div>
                 <div className="flex-1 grid gap-4 sm:grid-cols-2">
                   <div>
@@ -216,20 +220,26 @@ export default function ProfilePage() {
                   <div>
                     <p className="text-sm text-neutral-500">{t("request.form.personalInfo.employeeCode")}</p>
                     <p className="font-medium text-neutral-900 dark:text-white">
-                      {profile.employeeCode}
+                      {profile.employeeCode || "-"}
                     </p>
                   </div>
-                  <div>
-                    <p className="text-sm text-neutral-500">{t("request.form.personalInfo.department")}</p>
-                    <p className="font-medium text-neutral-900 dark:text-white">
-                      {isRTL ? profile.departmentAr : profile.department}
-                    </p>
+                  <div className="flex items-start gap-2">
+                    <Building className="h-4 w-4 text-neutral-400 mt-0.5" />
+                    <div>
+                      <p className="text-sm text-neutral-500">{t("request.form.personalInfo.department")}</p>
+                      <p className="font-medium text-neutral-900 dark:text-white">
+                        {isRTL ? profile.departmentAr || profile.departmentEn : profile.departmentEn || "-"}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm text-neutral-500">{t("request.form.personalInfo.jobTitle")}</p>
-                    <p className="font-medium text-neutral-900 dark:text-white">
-                      {isRTL ? profile.jobTitleAr : profile.jobTitle}
-                    </p>
+                  <div className="flex items-start gap-2">
+                    <Briefcase className="h-4 w-4 text-neutral-400 mt-0.5" />
+                    <div>
+                      <p className="text-sm text-neutral-500">{t("request.form.personalInfo.jobTitle")}</p>
+                      <p className="font-medium text-neutral-900 dark:text-white">
+                        {isRTL ? profile.jobTitleAr || profile.jobTitleEn : profile.jobTitleEn || "-"}
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -247,17 +257,12 @@ export default function ProfilePage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
-                    <Phone className="h-5 w-5 text-neutral-400" />
-                    <div>
-                      <p className="text-sm text-neutral-500">{t("request.form.personalInfo.phone")}</p>
-                      <p className="font-medium" dir="ltr">{profile.phone}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
                     <Calendar className="h-5 w-5 text-neutral-400" />
                     <div>
-                      <p className="text-sm text-neutral-500">{isRTL ? "تاريخ التعيين" : "Hire Date"}</p>
-                      <p className="font-medium">{formatDate(profile.hireDate, locale)}</p>
+                      <p className="text-sm text-neutral-500">{isRTL ? "تاريخ التعيين" : "Joining Date"}</p>
+                      <p className="font-medium">
+                        {profile.joiningDate ? formatDate(new Date(profile.joiningDate), locale) : "-"}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -287,26 +292,23 @@ export default function ProfilePage() {
                     {t("request.form.personalInfo.scfhsNumber")}
                   </label>
                   <Input
-                    value={editedProfile.scfhsNumber || profile.scfhsNumber}
+                    value={editedScfhs}
                     onChange={(e) => handleScfhsChange(e.target.value)}
-                    placeholder="SCFHS-XXXXX"
+                    placeholder="XX-XXXXXX"
                     icon={<Shield className="h-4 w-4" />}
                   />
+                  <p className="mt-1 text-xs text-neutral-500">
+                    {isRTL ? "صيغة: XX-XXXXXX" : "Format: XX-XXXXXX"}
+                  </p>
                 </div>
                 <div>
                   <label className="mb-2 block text-sm font-medium text-neutral-700 dark:text-neutral-300">
-                    {t("request.form.personalInfo.scfhsExpiry")}
+                    {isRTL ? "حالة الحساب" : "Account Status"}
                   </label>
-                  <div className="flex h-10 items-center gap-2 rounded-lg border border-neutral-300 bg-neutral-50 px-3 dark:border-neutral-700 dark:bg-neutral-800">
-                    <Calendar className="h-4 w-4 text-neutral-400" />
-                    <span className="text-neutral-700 dark:text-neutral-300">
-                      {formatDate(profile.scfhsExpiry, locale)}
-                    </span>
-                    {new Date() > new Date(profile.scfhsExpiry.getTime() - 30 * 24 * 60 * 60 * 1000) && (
-                      <Badge variant="warning" className="ml-auto">
-                        {isRTL ? "ينتهي قريباً" : "Expiring Soon"}
-                      </Badge>
-                    )}
+                  <div className="flex h-10 items-center gap-2">
+                    <Badge variant={profile.isActive ? "success" : "error"}>
+                      {profile.isActive ? (isRTL ? "نشط" : "Active") : (isRTL ? "غير نشط" : "Inactive")}
+                    </Badge>
                   </div>
                 </div>
               </div>
@@ -327,7 +329,7 @@ export default function ProfilePage() {
                   {t("admin.systemSettings.language")}
                 </label>
                 <Select
-                  value={editedProfile.preferences?.language || profile.preferences.language}
+                  value={preferences.language}
                   onChange={(e) =>
                     handlePreferenceChange("language", e.target.value as "en" | "ar")
                   }
@@ -350,10 +352,7 @@ export default function ProfilePage() {
                     </span>
                     <input
                       type="checkbox"
-                      checked={
-                        editedProfile.preferences?.emailNotifications ??
-                        profile.preferences.emailNotifications
-                      }
+                      checked={preferences.emailNotifications}
                       onChange={(e) =>
                         handlePreferenceChange("emailNotifications", e.target.checked)
                       }
@@ -366,10 +365,7 @@ export default function ProfilePage() {
                     </span>
                     <input
                       type="checkbox"
-                      checked={
-                        editedProfile.preferences?.systemNotifications ??
-                        profile.preferences.systemNotifications
-                      }
+                      checked={preferences.systemNotifications}
                       onChange={(e) =>
                         handlePreferenceChange("systemNotifications", e.target.checked)
                       }
@@ -400,74 +396,32 @@ export default function ProfilePage() {
                   </span>
                 </div>
                 <span className="text-lg font-semibold text-neutral-900 dark:text-white">
-                  {profile.statistics.totalRequests}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="h-5 w-5 text-success-500" />
-                  <span className="text-sm text-neutral-600 dark:text-neutral-400">
-                    {t("dashboard.statistics.approvedRequests")}
-                  </span>
-                </div>
-                <span className="text-lg font-semibold text-success-600">
-                  {profile.statistics.approvedRequests}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Clock className="h-5 w-5 text-warning-500" />
-                  <span className="text-sm text-neutral-600 dark:text-neutral-400">
-                    {t("dashboard.statistics.pendingRequests")}
-                  </span>
-                </div>
-                <span className="text-lg font-semibold text-warning-600">
-                  {profile.statistics.pendingRequests}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <XCircle className="h-5 w-5 text-error-500" />
-                  <span className="text-sm text-neutral-600 dark:text-neutral-400">
-                    {t("dashboard.statistics.rejectedRequests")}
-                  </span>
-                </div>
-                <span className="text-lg font-semibold text-error-600">
-                  {profile.statistics.rejectedRequests}
+                  {profile._count.privilegeRequests}
                 </span>
               </div>
             </LiquidGlassCardContent>
           </LiquidGlassCard>
 
           {/* Approval Stats (for approvers) */}
-          {(profile.role === "approver" || profile.role === "admin") &&
-            profile.statistics.approvalsGiven !== undefined && (
-              <LiquidGlassCard>
-                <LiquidGlassCardHeader>
-                  <LiquidGlassCardTitle>
-                    {isRTL ? "إحصائيات الموافقات" : "Approval Statistics"}
-                  </LiquidGlassCardTitle>
-                </LiquidGlassCardHeader>
-                <LiquidGlassCardContent className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-neutral-600 dark:text-neutral-400">
-                      {isRTL ? "إجمالي الموافقات" : "Total Approvals Given"}
-                    </span>
-                    <span className="text-lg font-semibold text-neutral-900 dark:text-white">
-                      {profile.statistics.approvalsGiven}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-neutral-600 dark:text-neutral-400">
-                      {isRTL ? "هذا الشهر" : "This Month"}
-                    </span>
-                    <span className="text-lg font-semibold text-primary-600">
-                      {profile.statistics.approvalsThisMonth}
-                    </span>
-                  </div>
-                </LiquidGlassCardContent>
-              </LiquidGlassCard>
-            )}
+          {["ADMIN", "MEDICAL_DIRECTOR", "HEAD_OF_DEPT", "HEAD_OF_SECTION", "COMMITTEE_MEMBER"].includes(profile.role) && (
+            <LiquidGlassCard>
+              <LiquidGlassCardHeader>
+                <LiquidGlassCardTitle>
+                  {isRTL ? "إحصائيات الموافقات" : "Approval Statistics"}
+                </LiquidGlassCardTitle>
+              </LiquidGlassCardHeader>
+              <LiquidGlassCardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-neutral-600 dark:text-neutral-400">
+                    {isRTL ? "إجمالي الموافقات" : "Total Approvals Given"}
+                  </span>
+                  <span className="text-lg font-semibold text-neutral-900 dark:text-white">
+                    {profile._count.approvals}
+                  </span>
+                </div>
+              </LiquidGlassCardContent>
+            </LiquidGlassCard>
+          )}
         </div>
       </div>
     </div>

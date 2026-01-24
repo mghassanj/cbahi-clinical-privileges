@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar } from "@/components/ui/avatar";
 import { Select } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Filter,
   UserCog,
@@ -19,160 +20,128 @@ import {
   XCircle,
 } from "lucide-react";
 
-type UserRole = "employee" | "approver" | "admin";
-type UserStatus = "active" | "inactive" | "pending";
+type UserRole = "EMPLOYEE" | "HEAD_OF_SECTION" | "HEAD_OF_DEPT" | "COMMITTEE_MEMBER" | "MEDICAL_DIRECTOR" | "ADMIN";
+type UserStatus = "ACTIVE" | "INACTIVE" | "PENDING";
 
 interface User {
   id: string;
-  name: string;
-  nameAr: string;
+  nameEn: string;
+  nameAr: string | null;
   email: string;
-  department: string;
-  departmentAr: string;
+  departmentEn: string | null;
+  departmentAr: string | null;
   role: UserRole;
   status: UserStatus;
-  lastLogin: Date | null;
-  createdAt: Date;
-  avatar?: string;
+  isActive: boolean;
+  lastSyncedAt: string | null;
+  createdAt: string;
+  _count: {
+    privilegeRequests: number;
+    approvals: number;
+  };
 }
-
-// Mock data
-const mockUsers: User[] = [
-  {
-    id: "1",
-    name: "Dr. Ahmed Al-Rashid",
-    nameAr: "د. أحمد الراشد",
-    email: "ahmed.rashid@hospital.com",
-    department: "Dental Department",
-    departmentAr: "قسم طب الأسنان",
-    role: "admin",
-    status: "active",
-    lastLogin: new Date(Date.now() - 1000 * 60 * 30),
-    createdAt: new Date(2023, 0, 15),
-  },
-  {
-    id: "2",
-    name: "Dr. Sara Ahmed",
-    nameAr: "د. سارة أحمد",
-    email: "sara.ahmed@hospital.com",
-    department: "Orthodontics",
-    departmentAr: "تقويم الأسنان",
-    role: "approver",
-    status: "active",
-    lastLogin: new Date(Date.now() - 1000 * 60 * 60 * 2),
-    createdAt: new Date(2023, 2, 10),
-  },
-  {
-    id: "3",
-    name: "Dr. Mohammed Ali",
-    nameAr: "د. محمد علي",
-    email: "mohammed.ali@hospital.com",
-    department: "Oral Surgery",
-    departmentAr: "جراحة الفم",
-    role: "employee",
-    status: "active",
-    lastLogin: new Date(Date.now() - 1000 * 60 * 60 * 24),
-    createdAt: new Date(2023, 5, 20),
-  },
-  {
-    id: "4",
-    name: "Dr. Fatima Hassan",
-    nameAr: "د. فاطمة حسن",
-    email: "fatima.hassan@hospital.com",
-    department: "Periodontics",
-    departmentAr: "علاج اللثة",
-    role: "approver",
-    status: "active",
-    lastLogin: new Date(Date.now() - 1000 * 60 * 60 * 48),
-    createdAt: new Date(2023, 3, 5),
-  },
-  {
-    id: "5",
-    name: "Dr. Abdullah Hassan",
-    nameAr: "د. عبدالله حسن",
-    email: "abdullah.hassan@hospital.com",
-    department: "Dental Department",
-    departmentAr: "قسم طب الأسنان",
-    role: "approver",
-    status: "inactive",
-    lastLogin: new Date(Date.now() - 1000 * 60 * 60 * 24 * 30),
-    createdAt: new Date(2022, 8, 12),
-  },
-  {
-    id: "6",
-    name: "Dr. Noura Al-Rashid",
-    nameAr: "د. نورة الراشد",
-    email: "noura.rashid@hospital.com",
-    department: "Prosthodontics",
-    departmentAr: "الاستعاضة السنية",
-    role: "employee",
-    status: "pending",
-    lastLogin: null,
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2),
-  },
-];
 
 export default function UsersPage() {
   const t = useTranslations();
   const locale = useLocale();
   const isRTL = locale === "ar";
 
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [users, setUsers] = React.useState<User[]>([]);
+  const [error, setError] = React.useState<string | null>(null);
+  const [totalUsers, setTotalUsers] = React.useState(0);
   const [roleFilter, setRoleFilter] = React.useState<string>("all");
   const [statusFilter, setStatusFilter] = React.useState<string>("all");
   const [departmentFilter, setDepartmentFilter] = React.useState<string>("all");
   const [selectedUser, setSelectedUser] = React.useState<User | null>(null);
   const [showRoleModal, setShowRoleModal] = React.useState(false);
 
+  // Fetch users from API
+  React.useEffect(() => {
+    async function fetchUsers() {
+      try {
+        setIsLoading(true);
+        const params = new URLSearchParams();
+        if (roleFilter !== "all") params.append("role", roleFilter);
+        if (statusFilter !== "all") params.append("status", statusFilter);
+        params.append("limit", "100");
+
+        const response = await fetch(`/api/users?${params.toString()}`);
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch users");
+        }
+
+        const result = await response.json();
+        setUsers(result.data || []);
+        setTotalUsers(result.statistics?.total || result.data?.length || 0);
+      } catch (err) {
+        console.error("Error fetching users:", err);
+        setError("Failed to load users");
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    fetchUsers();
+  }, [roleFilter, statusFilter]);
+
   const filteredUsers = React.useMemo(() => {
-    return mockUsers.filter((user) => {
-      if (roleFilter !== "all" && user.role !== roleFilter) return false;
-      if (statusFilter !== "all" && user.status !== statusFilter) return false;
-      if (departmentFilter !== "all" && user.department !== departmentFilter) return false;
+    return users.filter((user) => {
+      if (departmentFilter !== "all" && user.departmentEn !== departmentFilter) return false;
       return true;
     });
-  }, [roleFilter, statusFilter, departmentFilter]);
+  }, [users, departmentFilter]);
 
-  const departments = Array.from(new Set(mockUsers.map((u) => u.department)));
+  const departments = Array.from(new Set(users.map((u) => u.departmentEn).filter(Boolean)));
 
   const getRoleLabel = (role: UserRole) => {
     const labels: Record<UserRole, { en: string; ar: string }> = {
-      employee: { en: "Employee", ar: "موظف" },
-      approver: { en: "Approver", ar: "معتمد" },
-      admin: { en: "Administrator", ar: "مسؤول" },
+      EMPLOYEE: { en: "Employee", ar: "موظف" },
+      HEAD_OF_SECTION: { en: "Head of Section", ar: "رئيس قسم" },
+      HEAD_OF_DEPT: { en: "Head of Department", ar: "رئيس إدارة" },
+      COMMITTEE_MEMBER: { en: "Committee Member", ar: "عضو لجنة" },
+      MEDICAL_DIRECTOR: { en: "Medical Director", ar: "المدير الطبي" },
+      ADMIN: { en: "Administrator", ar: "مسؤول" },
     };
-    return isRTL ? labels[role].ar : labels[role].en;
+    return isRTL ? labels[role]?.ar || role : labels[role]?.en || role;
   };
 
   const getRoleBadgeVariant = (role: UserRole) => {
     const variants: Record<UserRole, "default" | "secondary" | "warning"> = {
-      admin: "default",
-      approver: "warning",
-      employee: "secondary",
+      ADMIN: "default",
+      MEDICAL_DIRECTOR: "default",
+      HEAD_OF_DEPT: "warning",
+      HEAD_OF_SECTION: "warning",
+      COMMITTEE_MEMBER: "warning",
+      EMPLOYEE: "secondary",
     };
-    return variants[role];
+    return variants[role] || "secondary";
   };
 
-  const getStatusLabel = (status: UserStatus) => {
+  const getStatusLabel = (status: UserStatus, isActive: boolean) => {
+    if (!isActive) return isRTL ? "غير نشط" : "Inactive";
     const labels: Record<UserStatus, { en: string; ar: string }> = {
-      active: { en: "Active", ar: "نشط" },
-      inactive: { en: "Inactive", ar: "غير نشط" },
-      pending: { en: "Pending", ar: "معلق" },
+      ACTIVE: { en: "Active", ar: "نشط" },
+      INACTIVE: { en: "Inactive", ar: "غير نشط" },
+      PENDING: { en: "Pending", ar: "معلق" },
     };
-    return isRTL ? labels[status].ar : labels[status].en;
+    return isRTL ? labels[status]?.ar || status : labels[status]?.en || status;
   };
 
-  const getStatusBadgeVariant = (status: UserStatus) => {
+  const getStatusBadgeVariant = (status: UserStatus, isActive: boolean) => {
+    if (!isActive) return "secondary";
     const variants: Record<UserStatus, "success" | "secondary" | "warning"> = {
-      active: "success",
-      inactive: "secondary",
-      pending: "warning",
+      ACTIVE: "success",
+      INACTIVE: "secondary",
+      PENDING: "warning",
     };
-    return variants[status];
+    return variants[status] || "secondary";
   };
 
-  const formatLastLogin = (date: Date | null) => {
-    if (!date) return isRTL ? "لم يسجل دخول بعد" : "Never logged in";
-    const diff = Date.now() - date.getTime();
+  const formatLastSync = (date: string | null) => {
+    if (!date) return isRTL ? "لم تتم المزامنة" : "Never synced";
+    const diff = Date.now() - new Date(date).getTime();
     const minutes = Math.floor(diff / 1000 / 60);
     if (minutes < 60) return isRTL ? `منذ ${minutes} دقيقة` : `${minutes} min ago`;
     const hours = Math.floor(minutes / 60);
@@ -193,10 +162,10 @@ export default function UsersPage() {
       headerAr: "المستخدم",
       cell: (item) => (
         <div className="flex items-center gap-3">
-          <Avatar name={item.name} src={item.avatar} size="sm" />
+          <Avatar name={item.nameEn} size="sm" />
           <div>
             <p className="font-medium text-neutral-900 dark:text-white">
-              {isRTL ? item.nameAr : item.name}
+              {isRTL ? item.nameAr || item.nameEn : item.nameEn}
             </p>
             <p className="text-sm text-neutral-500">{item.email}</p>
           </div>
@@ -209,7 +178,7 @@ export default function UsersPage() {
       headerAr: "القسم",
       cell: (item) => (
         <span className="text-neutral-600 dark:text-neutral-400">
-          {isRTL ? item.departmentAr : item.department}
+          {isRTL ? item.departmentAr || item.departmentEn : item.departmentEn || "-"}
         </span>
       ),
     },
@@ -229,23 +198,23 @@ export default function UsersPage() {
       header: "Status",
       headerAr: "الحالة",
       cell: (item) => (
-        <Badge variant={getStatusBadgeVariant(item.status)}>
-          {item.status === "active" ? (
+        <Badge variant={getStatusBadgeVariant(item.status, item.isActive)}>
+          {item.isActive ? (
             <CheckCircle className="mr-1 h-3 w-3 rtl:ml-1 rtl:mr-0" />
           ) : (
             <XCircle className="mr-1 h-3 w-3 rtl:ml-1 rtl:mr-0" />
           )}
-          {getStatusLabel(item.status)}
+          {getStatusLabel(item.status, item.isActive)}
         </Badge>
       ),
     },
     {
-      key: "lastLogin",
-      header: "Last Login",
-      headerAr: "آخر دخول",
+      key: "lastSync",
+      header: "Last Sync",
+      headerAr: "آخر مزامنة",
       cell: (item) => (
         <span className="text-sm text-neutral-500">
-          {formatLastLogin(item.lastLogin)}
+          {formatLastSync(item.lastSyncedAt)}
         </span>
       ),
     },
@@ -271,6 +240,25 @@ export default function UsersPage() {
     },
   ];
 
+  if (isLoading) {
+    return <UsersPageSkeleton />;
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12">
+        <p className="text-neutral-500">{error}</p>
+        <Button
+          variant="outline"
+          className="mt-4"
+          onClick={() => window.location.reload()}
+        >
+          {t("common.actions.retry")}
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Page Header */}
@@ -280,8 +268,8 @@ export default function UsersPage() {
         </h1>
         <p className="mt-1 text-neutral-500 dark:text-neutral-400">
           {isRTL
-            ? `إدارة ${mockUsers.length} مستخدم مسجل في النظام`
-            : `Manage ${mockUsers.length} users registered in the system`}
+            ? `إدارة ${totalUsers} مستخدم مسجل في النظام`
+            : `Manage ${totalUsers} users registered in the system`}
         </p>
       </div>
 
@@ -296,12 +284,15 @@ export default function UsersPage() {
         <Select
           value={roleFilter}
           onChange={(e) => setRoleFilter(e.target.value)}
-          className="w-36"
+          className="w-40"
         >
           <option value="all">{isRTL ? "كل الأدوار" : "All Roles"}</option>
-          <option value="admin">{isRTL ? "مسؤول" : "Administrator"}</option>
-          <option value="approver">{isRTL ? "معتمد" : "Approver"}</option>
-          <option value="employee">{isRTL ? "موظف" : "Employee"}</option>
+          <option value="ADMIN">{isRTL ? "مسؤول" : "Administrator"}</option>
+          <option value="MEDICAL_DIRECTOR">{isRTL ? "المدير الطبي" : "Medical Director"}</option>
+          <option value="HEAD_OF_DEPT">{isRTL ? "رئيس إدارة" : "Head of Department"}</option>
+          <option value="HEAD_OF_SECTION">{isRTL ? "رئيس قسم" : "Head of Section"}</option>
+          <option value="COMMITTEE_MEMBER">{isRTL ? "عضو لجنة" : "Committee Member"}</option>
+          <option value="EMPLOYEE">{isRTL ? "موظف" : "Employee"}</option>
         </Select>
         <Select
           value={statusFilter}
@@ -309,9 +300,9 @@ export default function UsersPage() {
           className="w-36"
         >
           <option value="all">{isRTL ? "كل الحالات" : "All Status"}</option>
-          <option value="active">{isRTL ? "نشط" : "Active"}</option>
-          <option value="inactive">{isRTL ? "غير نشط" : "Inactive"}</option>
-          <option value="pending">{isRTL ? "معلق" : "Pending"}</option>
+          <option value="ACTIVE">{isRTL ? "نشط" : "Active"}</option>
+          <option value="INACTIVE">{isRTL ? "غير نشط" : "Inactive"}</option>
+          <option value="PENDING">{isRTL ? "معلق" : "Pending"}</option>
         </Select>
         <Select
           value={departmentFilter}
@@ -320,7 +311,7 @@ export default function UsersPage() {
         >
           <option value="all">{isRTL ? "كل الأقسام" : "All Departments"}</option>
           {departments.map((dept) => (
-            <option key={dept} value={dept}>
+            <option key={dept} value={dept || ""}>
               {dept}
             </option>
           ))}
@@ -345,7 +336,7 @@ export default function UsersPage() {
         data={filteredUsers}
         columns={columns}
         searchPlaceholder={isRTL ? "البحث عن مستخدم..." : "Search users..."}
-        searchKey="name"
+        searchKey="nameEn"
         emptyMessage={isRTL ? "لا يوجد مستخدمون" : "No users found"}
       />
 
@@ -357,6 +348,13 @@ export default function UsersPage() {
             setShowRoleModal(false);
             setSelectedUser(null);
           }}
+          onSave={(userId, newRole) => {
+            setUsers((prev) =>
+              prev.map((u) =>
+                u.id === userId ? { ...u, role: newRole as UserRole } : u
+              )
+            );
+          }}
         />
       )}
     </div>
@@ -366,9 +364,11 @@ export default function UsersPage() {
 function RoleAssignmentModal({
   user,
   onClose,
+  onSave,
 }: {
   user: User;
   onClose: () => void;
+  onSave: (userId: string, role: string) => void;
 }) {
   const t = useTranslations();
   const locale = useLocale();
@@ -376,13 +376,30 @@ function RoleAssignmentModal({
 
   const [selectedRole, setSelectedRole] = React.useState<UserRole>(user.role);
   const [isSaving, setIsSaving] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
 
   const handleSave = async () => {
     setIsSaving(true);
-    // TODO: API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    setIsSaving(false);
-    onClose();
+    setError(null);
+    try {
+      const response = await fetch("/api/users", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: user.id, role: selectedRole }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.message || "Failed to update role");
+      }
+
+      onSave(user.id, selectedRole);
+      onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to update role");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -395,15 +412,21 @@ function RoleAssignmentModal({
 
           <div className="mb-4">
             <div className="flex items-center gap-3">
-              <Avatar name={user.name} size="md" />
+              <Avatar name={user.nameEn} size="md" />
               <div>
                 <p className="font-medium text-neutral-900 dark:text-white">
-                  {isRTL ? user.nameAr : user.name}
+                  {isRTL ? user.nameAr || user.nameEn : user.nameEn}
                 </p>
                 <p className="text-sm text-neutral-500">{user.email}</p>
               </div>
             </div>
           </div>
+
+          {error && (
+            <div className="mb-4 rounded-lg bg-error-50 p-3 text-sm text-error-700 dark:bg-error-900/20 dark:text-error-400">
+              {error}
+            </div>
+          )}
 
           <div className="mb-6">
             <label className="mb-2 block text-sm font-medium text-neutral-700 dark:text-neutral-300">
@@ -414,18 +437,25 @@ function RoleAssignmentModal({
               onChange={(e) => setSelectedRole(e.target.value as UserRole)}
               className="w-full"
             >
-              <option value="employee">{isRTL ? "موظف" : "Employee"}</option>
-              <option value="approver">{isRTL ? "معتمد" : "Approver"}</option>
-              <option value="admin">{isRTL ? "مسؤول" : "Administrator"}</option>
+              <option value="EMPLOYEE">{isRTL ? "موظف" : "Employee"}</option>
+              <option value="HEAD_OF_SECTION">{isRTL ? "رئيس قسم" : "Head of Section"}</option>
+              <option value="HEAD_OF_DEPT">{isRTL ? "رئيس إدارة" : "Head of Department"}</option>
+              <option value="COMMITTEE_MEMBER">{isRTL ? "عضو لجنة" : "Committee Member"}</option>
+              <option value="MEDICAL_DIRECTOR">{isRTL ? "المدير الطبي" : "Medical Director"}</option>
+              <option value="ADMIN">{isRTL ? "مسؤول" : "Administrator"}</option>
             </Select>
             <p className="mt-2 text-sm text-neutral-500">
-              {selectedRole === "admin"
+              {selectedRole === "ADMIN"
                 ? isRTL
                   ? "المسؤولون لديهم صلاحية كاملة لإدارة النظام"
                   : "Administrators have full system management access"
-                : selectedRole === "approver"
+                : selectedRole === "MEDICAL_DIRECTOR"
                 ? isRTL
-                  ? "المعتمدون يمكنهم مراجعة والموافقة على طلبات الامتيازات"
+                  ? "المدير الطبي لديه صلاحية الموافقة النهائية على الطلبات"
+                  : "Medical Directors have final approval authority"
+                : ["HEAD_OF_DEPT", "HEAD_OF_SECTION", "COMMITTEE_MEMBER"].includes(selectedRole)
+                ? isRTL
+                  ? "يمكنهم مراجعة والموافقة على طلبات الامتيازات"
                   : "Approvers can review and approve privilege requests"
                 : isRTL
                 ? "الموظفون يمكنهم تقديم طلبات الامتيازات"
@@ -443,6 +473,23 @@ function RoleAssignmentModal({
           </div>
         </LiquidGlassCardContent>
       </LiquidGlassCard>
+    </div>
+  );
+}
+
+function UsersPageSkeleton() {
+  return (
+    <div className="space-y-6">
+      <div>
+        <Skeleton className="h-8 w-48" />
+        <Skeleton className="mt-2 h-4 w-64" />
+      </div>
+      <div className="flex gap-3">
+        <Skeleton className="h-10 w-36" />
+        <Skeleton className="h-10 w-36" />
+        <Skeleton className="h-10 w-44" />
+      </div>
+      <Skeleton className="h-96 w-full" />
     </div>
   );
 }

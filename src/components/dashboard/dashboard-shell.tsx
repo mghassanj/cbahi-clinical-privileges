@@ -57,16 +57,20 @@ const DashboardShell: React.FC<DashboardShellProps> = ({ children, user }) => {
 
   const isRTL = locale === "ar";
 
-  // Mock user for demo
-  const currentUser: DashboardUser = user || {
-    id: "1",
-    name: "Dr. Ahmed Al-Rashid",
-    nameAr: "د. أحمد الراشد",
-    email: "ahmed.rashid@hospital.com",
-    role: "admin",
-    department: "Dental",
-    avatar: undefined,
-  };
+  // Use authenticated user data - no fallback to mock data
+  const currentUser: DashboardUser | null = user || null;
+
+  // Show loading state if no user is available (should be handled by auth)
+  if (!currentUser) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-neutral-50 dark:bg-neutral-950">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto" />
+          <p className="mt-4 text-neutral-600 dark:text-neutral-400">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   const displayName = isRTL && currentUser.nameAr ? currentUser.nameAr : currentUser.name;
 

@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar } from "@/components/ui/avatar";
 import { Select } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   LayoutGrid,
   List,
@@ -21,105 +22,24 @@ import {
 
 interface PendingApproval {
   id: string;
-  applicant: {
-    name: string;
-    nameAr: string;
-    email: string;
-    department: string;
-    departmentAr: string;
-    avatar?: string;
+  request: {
+    id: string;
+    type: string;
+    applicant: {
+      id: string;
+      nameEn: string;
+      nameAr: string;
+      email: string;
+      departmentEn: string | null;
+      departmentAr: string | null;
+    };
+    requestedPrivileges: Array<{ privilege: { id: string } }>;
   };
-  type: "initial" | "renewal" | "expansion" | "temporary";
-  submittedDate: Date;
   daysPending: number;
-  privilegeCount: number;
   isEscalated: boolean;
-  priority: "normal" | "high" | "urgent";
+  escalationLevel: number;
+  createdAt: string;
 }
-
-// Mock data
-const mockApprovals: PendingApproval[] = [
-  {
-    id: "REQ-2024-010",
-    applicant: {
-      name: "Dr. Sara Ahmed",
-      nameAr: "د. سارة أحمد",
-      email: "sara@hospital.com",
-      department: "Orthodontics",
-      departmentAr: "تقويم الأسنان",
-    },
-    type: "initial",
-    submittedDate: new Date(Date.now() - 1000 * 60 * 60 * 24 * 1),
-    daysPending: 1,
-    privilegeCount: 28,
-    isEscalated: false,
-    priority: "normal",
-  },
-  {
-    id: "REQ-2024-011",
-    applicant: {
-      name: "Dr. Mohammed Ali",
-      nameAr: "د. محمد علي",
-      email: "mohammed@hospital.com",
-      department: "Oral Surgery",
-      departmentAr: "جراحة الفم",
-    },
-    type: "expansion",
-    submittedDate: new Date(Date.now() - 1000 * 60 * 60 * 24 * 5),
-    daysPending: 5,
-    privilegeCount: 12,
-    isEscalated: true,
-    priority: "urgent",
-  },
-  {
-    id: "REQ-2024-012",
-    applicant: {
-      name: "Dr. Fatima Hassan",
-      nameAr: "د. فاطمة حسن",
-      email: "fatima@hospital.com",
-      department: "Periodontics",
-      departmentAr: "علاج اللثة",
-    },
-    type: "renewal",
-    submittedDate: new Date(Date.now() - 1000 * 60 * 60 * 24 * 3),
-    daysPending: 3,
-    privilegeCount: 35,
-    isEscalated: false,
-    priority: "high",
-  },
-  {
-    id: "REQ-2024-013",
-    applicant: {
-      name: "Dr. Ahmad Al-Harbi",
-      nameAr: "د. أحمد الحربي",
-      email: "ahmad@hospital.com",
-      department: "Endodontics",
-      departmentAr: "علاج الجذور",
-    },
-    type: "temporary",
-    submittedDate: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2),
-    daysPending: 2,
-    privilegeCount: 8,
-    isEscalated: false,
-    priority: "normal",
-  },
-  {
-    id: "REQ-2024-014",
-    applicant: {
-      name: "Dr. Noura Al-Rashid",
-      nameAr: "د. نورة الراشد",
-      email: "noura@hospital.com",
-      department: "Prosthodontics",
-      departmentAr: "الاستعاضة السنية",
-    },
-    type: "initial",
-    submittedDate: new Date(Date.now() - 1000 * 60 * 60 * 24 * 4),
-    daysPending: 4,
-    privilegeCount: 42,
-    isEscalated: true,
-    priority: "urgent",
-  },
-];
 
 type ViewMode = "table" | "kanban";
 
@@ -129,31 +49,60 @@ export default function ApprovalsPage() {
   const router = useRouter();
   const isRTL = locale === "ar";
 
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [approvals, setApprovals] = React.useState<PendingApproval[]>([]);
+  const [error, setError] = React.useState<string | null>(null);
   const [viewMode, setViewMode] = React.useState<ViewMode>("table");
   const [departmentFilter, setDepartmentFilter] = React.useState<string>("all");
   const [priorityFilter, setPriorityFilter] = React.useState<string>("all");
 
+  // Fetch approvals from API
+  React.useEffect(() => {
+    async function fetchApprovals() {
+      try {
+        setIsLoading(true);
+        const response = await fetch("/api/approvals");
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch approvals");
+        }
+
+        const result = await response.json();
+        setApprovals(result.data || []);
+      } catch (err) {
+        console.error("Error fetching approvals:", err);
+        setError("Failed to load approvals");
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    fetchApprovals();
+  }, []);
+
   const filteredApprovals = React.useMemo(() => {
-    return mockApprovals.filter((approval) => {
-      if (departmentFilter !== "all" && approval.applicant.department !== departmentFilter) return false;
-      if (priorityFilter !== "all" && approval.priority !== priorityFilter) return false;
+    return approvals.filter((approval) => {
+      if (departmentFilter !== "all" && approval.request.applicant.departmentEn !== departmentFilter) return false;
+      if (priorityFilter === "escalated" && !approval.isEscalated) return false;
+      if (priorityFilter === "urgent" && approval.daysPending <= 3 && !approval.isEscalated) return false;
+      if (priorityFilter === "normal" && (approval.daysPending > 3 || approval.isEscalated)) return false;
       return true;
     });
-  }, [departmentFilter, priorityFilter]);
+  }, [approvals, departmentFilter, priorityFilter]);
 
-  const escalatedCount = mockApprovals.filter((a) => a.isEscalated).length;
+  const escalatedCount = approvals.filter((a) => a.isEscalated).length;
 
   const getTypeLabel = (type: string) => {
     const labels: Record<string, { en: string; ar: string }> = {
-      initial: { en: "Initial", ar: "أولي" },
-      renewal: { en: "Renewal", ar: "تجديد" },
-      expansion: { en: "Expansion", ar: "توسيع" },
-      temporary: { en: "Temporary", ar: "مؤقت" },
+      NEW: { en: "Initial", ar: "أولي" },
+      RENEWAL: { en: "Renewal", ar: "تجديد" },
+      EXPANSION: { en: "Expansion", ar: "توسيع" },
+      TEMPORARY: { en: "Temporary", ar: "مؤقت" },
     };
-    return isRTL ? labels[type]?.ar : labels[type]?.en;
+    return isRTL ? labels[type]?.ar || type : labels[type]?.en || type;
   };
 
-  const getPriorityBadge = (priority: string, isEscalated: boolean) => {
+  const getPriorityBadge = (daysPending: number, isEscalated: boolean) => {
     if (isEscalated) {
       return (
         <Badge variant="error" className="gap-1">
@@ -162,19 +111,23 @@ export default function ApprovalsPage() {
         </Badge>
       );
     }
-    const variants: Record<string, "warning" | "default" | "secondary"> = {
-      urgent: "warning",
-      high: "default",
-      normal: "secondary",
-    };
-    const labels: Record<string, { en: string; ar: string }> = {
-      urgent: { en: "Urgent", ar: "عاجل" },
-      high: { en: "High", ar: "عالي" },
-      normal: { en: "Normal", ar: "عادي" },
-    };
+    if (daysPending > 5) {
+      return (
+        <Badge variant="warning">
+          {isRTL ? "عاجل" : "Urgent"}
+        </Badge>
+      );
+    }
+    if (daysPending > 3) {
+      return (
+        <Badge variant="default">
+          {isRTL ? "عالي" : "High"}
+        </Badge>
+      );
+    }
     return (
-      <Badge variant={variants[priority]}>
-        {isRTL ? labels[priority]?.ar : labels[priority]?.en}
+      <Badge variant="secondary">
+        {isRTL ? "عادي" : "Normal"}
       </Badge>
     );
   };
@@ -186,13 +139,13 @@ export default function ApprovalsPage() {
       headerAr: "مقدم الطلب",
       cell: (item) => (
         <div className="flex items-center gap-3">
-          <Avatar name={item.applicant.name} size="sm" />
+          <Avatar name={item.request.applicant.nameEn} size="sm" />
           <div>
             <p className="font-medium text-neutral-900 dark:text-white">
-              {isRTL ? item.applicant.nameAr : item.applicant.name}
+              {isRTL ? item.request.applicant.nameAr || item.request.applicant.nameEn : item.request.applicant.nameEn}
             </p>
             <p className="text-sm text-neutral-500">
-              {isRTL ? item.applicant.departmentAr : item.applicant.department}
+              {isRTL ? item.request.applicant.departmentAr || item.request.applicant.departmentEn : item.request.applicant.departmentEn || "-"}
             </p>
           </div>
         </div>
@@ -204,7 +157,7 @@ export default function ApprovalsPage() {
       headerAr: "رقم الطلب",
       cell: (item) => (
         <span className="font-medium text-primary-600 dark:text-primary-400">
-          {item.id}
+          {item.request.id.slice(0, 8)}...
         </span>
       ),
     },
@@ -213,7 +166,7 @@ export default function ApprovalsPage() {
       header: "Type",
       headerAr: "النوع",
       cell: (item) => (
-        <Badge variant="outline">{getTypeLabel(item.type)}</Badge>
+        <Badge variant="outline">{getTypeLabel(item.request.type)}</Badge>
       ),
     },
     {
@@ -222,7 +175,7 @@ export default function ApprovalsPage() {
       headerAr: "الامتيازات",
       cell: (item) => (
         <span className="text-neutral-600 dark:text-neutral-400">
-          {item.privilegeCount}
+          {item.request.requestedPrivileges?.length || 0}
         </span>
       ),
     },
@@ -243,14 +196,14 @@ export default function ApprovalsPage() {
       key: "priority",
       header: "Priority",
       headerAr: "الأولوية",
-      cell: (item) => getPriorityBadge(item.priority, item.isEscalated),
+      cell: (item) => getPriorityBadge(item.daysPending, item.isEscalated),
     },
     {
       key: "actions",
       header: "Actions",
       headerAr: "الإجراءات",
       cell: (item) => (
-        <Link href={`/${locale}/approvals/${item.id}`}>
+        <Link href={`/${locale}/approvals/${item.request.id}`}>
           <Button size="sm">
             {isRTL ? "مراجعة" : "Review"}
             <ChevronRight className="ml-1 h-4 w-4 rtl:ml-0 rtl:mr-1 rtl:rotate-180" />
@@ -260,7 +213,26 @@ export default function ApprovalsPage() {
     },
   ];
 
-  const departments = Array.from(new Set(mockApprovals.map((a) => a.applicant.department)));
+  const departments = Array.from(new Set(approvals.map((a) => a.request.applicant.departmentEn).filter(Boolean)));
+
+  if (isLoading) {
+    return <ApprovalsPageSkeleton />;
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12">
+        <p className="text-neutral-500">{error}</p>
+        <Button
+          variant="outline"
+          className="mt-4"
+          onClick={() => window.location.reload()}
+        >
+          {t("common.actions.retry")}
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -271,7 +243,7 @@ export default function ApprovalsPage() {
             {t("approvals.title")}
           </h1>
           <p className="mt-1 text-neutral-500 dark:text-neutral-400">
-            {mockApprovals.length} {isRTL ? "طلب في انتظار موافقتك" : "requests awaiting your approval"}
+            {approvals.length} {isRTL ? "طلب في انتظار موافقتك" : "requests awaiting your approval"}
             {escalatedCount > 0 && (
               <span className="ml-2 text-error-600 dark:text-error-400">
                 ({escalatedCount} {isRTL ? "مصعد" : "escalated"})
@@ -312,7 +284,7 @@ export default function ApprovalsPage() {
         >
           <option value="all">{isRTL ? "كل الأقسام" : "All Departments"}</option>
           {departments.map((dept) => (
-            <option key={dept} value={dept}>
+            <option key={dept} value={dept || ""}>
               {dept}
             </option>
           ))}
@@ -323,8 +295,8 @@ export default function ApprovalsPage() {
           className="w-36"
         >
           <option value="all">{isRTL ? "كل الأولويات" : "All Priorities"}</option>
+          <option value="escalated">{isRTL ? "مصعد" : "Escalated"}</option>
           <option value="urgent">{isRTL ? "عاجل" : "Urgent"}</option>
-          <option value="high">{isRTL ? "عالي" : "High"}</option>
           <option value="normal">{isRTL ? "عادي" : "Normal"}</option>
         </Select>
         {(departmentFilter !== "all" || priorityFilter !== "all") && (
@@ -349,7 +321,7 @@ export default function ApprovalsPage() {
           searchPlaceholder={isRTL ? "البحث عن طلب..." : "Search requests..."}
           searchKey="id"
           emptyMessage={isRTL ? "لا توجد طلبات معلقة" : "No pending approvals"}
-          onRowClick={(item) => router.push(`/${locale}/approvals/${item.id}`)}
+          onRowClick={(item) => router.push(`/${locale}/approvals/${item.request.id}`)}
         />
       ) : (
         <KanbanView approvals={filteredApprovals} />
@@ -362,18 +334,18 @@ function KanbanView({ approvals }: { approvals: PendingApproval[] }) {
   const locale = useLocale();
   const isRTL = locale === "ar";
 
-  const urgentItems = approvals.filter((a) => a.isEscalated || a.priority === "urgent");
-  const highItems = approvals.filter((a) => !a.isEscalated && a.priority === "high");
-  const normalItems = approvals.filter((a) => !a.isEscalated && a.priority === "normal");
+  const urgentItems = approvals.filter((a) => a.isEscalated || a.daysPending > 5);
+  const highItems = approvals.filter((a) => !a.isEscalated && a.daysPending > 3 && a.daysPending <= 5);
+  const normalItems = approvals.filter((a) => !a.isEscalated && a.daysPending <= 3);
 
   const getTypeLabel = (type: string) => {
     const labels: Record<string, { en: string; ar: string }> = {
-      initial: { en: "Initial", ar: "أولي" },
-      renewal: { en: "Renewal", ar: "تجديد" },
-      expansion: { en: "Expansion", ar: "توسيع" },
-      temporary: { en: "Temporary", ar: "مؤقت" },
+      NEW: { en: "Initial", ar: "أولي" },
+      RENEWAL: { en: "Renewal", ar: "تجديد" },
+      EXPANSION: { en: "Expansion", ar: "توسيع" },
+      TEMPORARY: { en: "Temporary", ar: "مؤقت" },
     };
-    return isRTL ? labels[type]?.ar : labels[type]?.en;
+    return isRTL ? labels[type]?.ar || type : labels[type]?.en || type;
   };
 
   const KanbanColumn = ({
@@ -405,16 +377,16 @@ function KanbanView({ approvals }: { approvals: PendingApproval[] }) {
         </div>
         <div className="space-y-3">
           {items.map((item) => (
-            <Link key={item.id} href={`/${locale}/approvals/${item.id}`}>
+            <Link key={item.id} href={`/${locale}/approvals/${item.request.id}`}>
               <LiquidGlassCard hover className="p-4">
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3">
-                    <Avatar name={item.applicant.name} size="sm" />
+                    <Avatar name={item.request.applicant.nameEn} size="sm" />
                     <div>
                       <p className="font-medium text-neutral-900 dark:text-white">
-                        {isRTL ? item.applicant.nameAr : item.applicant.name}
+                        {isRTL ? item.request.applicant.nameAr || item.request.applicant.nameEn : item.request.applicant.nameEn}
                       </p>
-                      <p className="text-xs text-neutral-500">{item.id}</p>
+                      <p className="text-xs text-neutral-500">{item.request.id.slice(0, 8)}...</p>
                     </div>
                   </div>
                   {item.isEscalated && (
@@ -423,7 +395,7 @@ function KanbanView({ approvals }: { approvals: PendingApproval[] }) {
                 </div>
                 <div className="mt-3 flex items-center justify-between text-sm">
                   <Badge variant="outline" className="text-xs">
-                    {getTypeLabel(item.type)}
+                    {getTypeLabel(item.request.type)}
                   </Badge>
                   <span className="text-neutral-500">
                     {item.daysPending} {isRTL ? "أيام" : "days"}
@@ -462,6 +434,28 @@ function KanbanView({ approvals }: { approvals: PendingApproval[] }) {
         items={normalItems}
         variant="default"
       />
+    </div>
+  );
+}
+
+function ApprovalsPageSkeleton() {
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <Skeleton className="h-8 w-48" />
+          <Skeleton className="mt-2 h-4 w-64" />
+        </div>
+        <div className="flex gap-2">
+          <Skeleton className="h-10 w-10" />
+          <Skeleton className="h-10 w-10" />
+        </div>
+      </div>
+      <div className="flex gap-3">
+        <Skeleton className="h-10 w-44" />
+        <Skeleton className="h-10 w-36" />
+      </div>
+      <Skeleton className="h-96 w-full" />
     </div>
   );
 }

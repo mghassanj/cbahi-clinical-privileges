@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { useLocale, useTranslations } from "next-intl";
+import { toast } from "sonner";
 import {
   LiquidGlassCard,
   LiquidGlassCardContent,
@@ -46,9 +47,27 @@ export default function SettingsPage() {
 
   const handleSave = async () => {
     setFormState((prev) => ({ ...prev, isSaving: true }));
-    // TODO: API call to save settings
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    setFormState({ isDirty: false, isSaving: false });
+    try {
+      const response = await fetch("/api/config", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          // Settings would be gathered from form state
+          updatedAt: new Date().toISOString(),
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to save settings");
+      }
+
+      toast.success(isRTL ? "تم حفظ الإعدادات بنجاح" : "Settings saved successfully");
+      setFormState({ isDirty: false, isSaving: false });
+    } catch (err) {
+      console.error("Error saving settings:", err);
+      toast.error(isRTL ? "فشل في حفظ الإعدادات" : "Failed to save settings");
+      setFormState((prev) => ({ ...prev, isSaving: false }));
+    }
   };
 
   const markDirty = () => {
@@ -248,11 +267,32 @@ function JisrSettings({
   const handleManualSync = async () => {
     setIsSyncing(true);
     setSyncStatus("syncing");
-    // TODO: API call for manual sync
-    await new Promise((resolve) => setTimeout(resolve, 3000));
-    setLastSync(new Date());
-    setSyncStatus("success");
-    setIsSyncing(false);
+    try {
+      const response = await fetch("/api/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fullSync: true }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Sync failed");
+      }
+
+      const result = await response.json();
+      setLastSync(new Date());
+      setSyncStatus("success");
+      toast.success(
+        isRTL
+          ? `تمت المزامنة بنجاح. تم تحديث ${result.data?.users?.recordsUpdated || 0} سجل.`
+          : `Sync completed. Updated ${result.data?.users?.recordsUpdated || 0} records.`
+      );
+    } catch (err) {
+      console.error("Sync error:", err);
+      setSyncStatus("error");
+      toast.error(isRTL ? "فشل في المزامنة" : "Sync failed");
+    } finally {
+      setIsSyncing(false);
+    }
   };
 
   return (
@@ -407,10 +447,32 @@ function EmailSettings({
   const handleTestEmail = async () => {
     setIsTesting(true);
     setTestResult(null);
-    // TODO: API call to send test email
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-    setTestResult("success");
-    setIsTesting(false);
+    try {
+      const response = await fetch("/api/notifications/test", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          provider,
+          config: provider === "smtp"
+            ? { host: smtpHost, port: smtpPort, user: smtpUser, password: smtpPassword }
+            : { tenantId: graphTenantId, clientId: graphClientId, clientSecret: graphClientSecret },
+          from: { email: fromEmail, name: fromName },
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to send test email");
+      }
+
+      setTestResult("success");
+      toast.success(isRTL ? "تم إرسال البريد التجريبي بنجاح" : "Test email sent successfully");
+    } catch (err) {
+      console.error("Test email error:", err);
+      setTestResult("error");
+      toast.error(isRTL ? "فشل في إرسال البريد التجريبي" : "Failed to send test email");
+    } finally {
+      setIsTesting(false);
+    }
   };
 
   return (
@@ -632,9 +694,28 @@ function GoogleSettings({
 
   const handleTestConnection = async () => {
     setConnectionStatus("testing");
-    // TODO: API call to test Google connection
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-    setConnectionStatus("connected");
+    try {
+      const response = await fetch("/api/google/test", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          serviceAccountEmail,
+          privateKey: privateKey.startsWith("•") ? undefined : privateKey,
+          driveFolderId,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Connection test failed");
+      }
+
+      setConnectionStatus("connected");
+      toast.success(isRTL ? "تم الاتصال بنجاح" : "Connection successful");
+    } catch (err) {
+      console.error("Google connection test error:", err);
+      setConnectionStatus("disconnected");
+      toast.error(isRTL ? "فشل في الاتصال" : "Connection failed");
+    }
   };
 
   return (

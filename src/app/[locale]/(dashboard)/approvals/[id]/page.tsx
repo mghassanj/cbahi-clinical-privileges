@@ -3,6 +3,7 @@
 import * as React from "react";
 import { useRouter, useParams } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
+import { toast } from "sonner";
 import {
   LiquidGlassCard,
   LiquidGlassCardContent,
@@ -44,85 +45,56 @@ interface PrivilegeForApproval {
 
 interface PreviousApproval {
   id: string;
-  role: string;
-  roleAr: string;
+  level: string;
+  status: "APPROVED" | "REJECTED" | "PENDING";
+  comments: string | null;
+  decidedAt: string | null;
   approver: {
-    name: string;
+    nameEn: string;
     nameAr: string;
-  };
-  decision: "approved" | "rejected" | "modifications_requested";
-  comments: string;
-  date: Date;
+  } | null;
 }
 
 interface ApprovalDetails {
   id: string;
-  type: "initial" | "renewal" | "expansion" | "temporary";
+  type: string;
   daysPending: number;
   isEscalated: boolean;
   applicant: {
-    name: string;
+    nameEn: string;
     nameAr: string;
     email: string;
-    phone: string;
-    department: string;
+    departmentEn: string;
     departmentAr: string;
     employeeCode: string;
-    scfhsNumber: string;
-    scfhsExpiry: Date;
+    scfhsNo: string | null;
+    jobTitleEn: string;
+    jobTitleAr: string;
   };
   privileges: PrivilegeForApproval[];
   documents: Array<{
     id: string;
-    name: string;
+    fileName: string;
     type: string;
-    size: string;
+    fileSize: number;
+    driveFileUrl?: string;
   }>;
   previousApprovals: PreviousApproval[];
-  submittedDate: Date;
+  submittedAt: string | null;
+  createdAt: string;
 }
 
-// Mock data
-const mockApprovalDetails: ApprovalDetails = {
-  id: "REQ-2024-011",
-  type: "expansion",
-  daysPending: 5,
-  isEscalated: true,
-  applicant: {
-    name: "Dr. Mohammed Ali",
-    nameAr: "د. محمد علي",
-    email: "mohammed@hospital.com",
-    phone: "+966 50 987 6543",
-    department: "Oral Surgery",
-    departmentAr: "جراحة الفم",
-    employeeCode: "EMP-045",
-    scfhsNumber: "SCFHS-67890",
-    scfhsExpiry: new Date(2025, 11, 31),
-  },
-  privileges: [
-    { id: "1", code: "SURG-005", nameEn: "Impacted Tooth Removal - Partial Bony", nameAr: "إزالة السن المنطمر - عظمي جزئي", category: "Oral Surgery", isGranted: null, requiresSpecialQualification: true },
-    { id: "2", code: "SURG-006", nameEn: "Impacted Tooth Removal - Full Bony", nameAr: "إزالة السن المنطمر - عظمي كامل", category: "Oral Surgery", isGranted: null, requiresSpecialQualification: true },
-    { id: "3", code: "SURG-016", nameEn: "Cyst Enucleation", nameAr: "استئصال الكيس", category: "Oral Surgery", isGranted: null, requiresSpecialQualification: true },
-    { id: "4", code: "SURG-017", nameEn: "Torus Removal", nameAr: "إزالة النتوء العظمي", category: "Oral Surgery", isGranted: null, requiresSpecialQualification: true },
-    { id: "5", code: "SURG-018", nameEn: "Bone Grafting - Pre-implant", nameAr: "ترقيع العظم - ما قبل الزراعة", category: "Oral Surgery", isGranted: null, requiresSpecialQualification: true },
-  ],
-  documents: [
-    { id: "1", name: "Board_Certificate_Oral_Surgery.pdf", type: "PDF", size: "2.1 MB" },
-    { id: "2", name: "Advanced_Training_Certificate.pdf", type: "PDF", size: "1.5 MB" },
-    { id: "3", name: "Case_Log_2024.pdf", type: "PDF", size: "3.2 MB" },
-  ],
-  previousApprovals: [
-    {
-      id: "1",
-      role: "Department Head",
-      roleAr: "رئيس القسم",
-      approver: { name: "Dr. Abdullah Hassan", nameAr: "د. عبدالله حسن" },
-      decision: "approved",
-      comments: "Dr. Mohammed has demonstrated excellent surgical skills and has completed the required training for these advanced procedures. I recommend approval.",
-      date: new Date(Date.now() - 1000 * 60 * 60 * 24 * 3),
-    },
-  ],
-  submittedDate: new Date(Date.now() - 1000 * 60 * 60 * 24 * 5),
+const levelLabels: Record<string, { en: string; ar: string }> = {
+  HEAD_OF_SECTION: { en: "Head of Section", ar: "رئيس القسم" },
+  HEAD_OF_DEPT: { en: "Department Head", ar: "رئيس الإدارة" },
+  COMMITTEE: { en: "Committee", ar: "اللجنة" },
+  MEDICAL_DIRECTOR: { en: "Medical Director", ar: "المدير الطبي" },
+};
+
+const formatFileSize = (bytes: number) => {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 };
 
 export default function ApprovalDetailsPage() {
@@ -133,18 +105,94 @@ export default function ApprovalDetailsPage() {
   const isRTL = locale === "ar";
 
   const [isLoading, setIsLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
   const [approval, setApproval] = React.useState<ApprovalDetails | null>(null);
   const [privileges, setPrivileges] = React.useState<PrivilegeForApproval[]>([]);
   const [comments, setComments] = React.useState("");
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   React.useEffect(() => {
-    const timer = setTimeout(() => {
-      setApproval(mockApprovalDetails);
-      setPrivileges(mockApprovalDetails.privileges);
-      setIsLoading(false);
-    }, 500);
-    return () => clearTimeout(timer);
+    async function fetchApprovalDetails() {
+      try {
+        setIsLoading(true);
+        setError(null);
+
+        // Fetch the request details (the approval is for a request)
+        const response = await fetch(`/api/requests/${params.id}`);
+        const result = await response.json();
+
+        if (!response.ok) {
+          setError(result.message || "Failed to fetch approval details");
+          return;
+        }
+
+        const request = result.data;
+
+        // Calculate days pending
+        const createdDate = new Date(request.createdAt);
+        const daysPending = Math.floor((Date.now() - createdDate.getTime()) / (1000 * 60 * 60 * 24));
+
+        // Check if escalated from escalations
+        const isEscalated = request.escalations?.some((e: { level1Sent: boolean }) => e.level1Sent) || false;
+
+        // Transform the data to match our interface
+        const approvalDetails: ApprovalDetails = {
+          id: request.id,
+          type: request.type,
+          daysPending,
+          isEscalated,
+          applicant: {
+            nameEn: request.applicant.nameEn,
+            nameAr: request.applicant.nameAr || request.applicant.nameEn,
+            email: request.applicant.email,
+            departmentEn: request.applicant.departmentEn || "",
+            departmentAr: request.applicant.departmentAr || request.applicant.departmentEn || "",
+            employeeCode: request.applicant.employeeCode,
+            scfhsNo: request.applicant.scfhsNo,
+            jobTitleEn: request.applicant.jobTitleEn || "",
+            jobTitleAr: request.applicant.jobTitleAr || request.applicant.jobTitleEn || "",
+          },
+          privileges: request.requestedPrivileges?.map((rp: { privilege: { id: string; code: string; nameEn: string; nameAr: string; category: string; requiresSpecialQualification: boolean } }) => ({
+            id: rp.privilege.id,
+            code: rp.privilege.code,
+            nameEn: rp.privilege.nameEn,
+            nameAr: rp.privilege.nameAr,
+            category: rp.privilege.category,
+            isGranted: null,
+            requiresSpecialQualification: rp.privilege.requiresSpecialQualification || false,
+          })) || [],
+          documents: request.attachments?.map((att: { id: string; fileName: string; type: string; fileSize: number; driveFileUrl?: string }) => ({
+            id: att.id,
+            fileName: att.fileName,
+            type: att.type,
+            fileSize: att.fileSize,
+            driveFileUrl: att.driveFileUrl,
+          })) || [],
+          previousApprovals: request.approvals?.filter((a: { status: string }) => a.status !== "PENDING").map((a: { id: string; level: string; status: string; comments: string | null; decidedAt: string | null; approver: { nameEn: string; nameAr: string } | null }) => ({
+            id: a.id,
+            level: a.level,
+            status: a.status,
+            comments: a.comments,
+            decidedAt: a.decidedAt,
+            approver: a.approver,
+          })) || [],
+          submittedAt: request.submittedAt,
+          createdAt: request.createdAt,
+        };
+
+        setApproval(approvalDetails);
+        setPrivileges(approvalDetails.privileges);
+      } catch (err) {
+        console.error("Error fetching approval details:", err);
+        setError("Failed to load approval details");
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    if (params.id) {
+      fetchApprovalDetails();
+    }
   }, [params.id]);
 
   const handlePrivilegeToggle = (privilegeId: string, granted: boolean) => {
@@ -163,25 +211,80 @@ export default function ApprovalDetailsPage() {
 
   const handleSubmitDecision = async (decision: "approve" | "reject" | "modifications") => {
     if (!comments.trim() && decision !== "approve") {
-      alert(isRTL ? "يرجى إضافة تعليق" : "Please add a comment");
+      toast.error(isRTL ? "يرجى إضافة تعليق" : "Please add a comment");
       return;
     }
 
     setIsSubmitting(true);
-    // TODO: API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    setIsSubmitting(false);
-    router.push(`/${locale}/approvals`);
+    try {
+      // Map decision to API status
+      const statusMap = {
+        approve: "APPROVED",
+        reject: "REJECTED",
+        modifications: "RETURNED",
+      };
+
+      // Get the privilege decisions
+      const privilegeDecisions = privileges.map((p) => ({
+        privilegeId: p.id,
+        isGranted: p.isGranted ?? (decision === "approve"),
+        denyReason: p.isGranted === false ? comments : undefined,
+      }));
+
+      const response = await fetch(`/api/requests/${params.id}/approve`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          status: statusMap[decision],
+          comments: comments.trim() || undefined,
+          privilegeDecisions,
+        }),
+      });
+
+      if (!response.ok) {
+        const result = await response.json();
+        throw new Error(result.message || "Failed to submit decision");
+      }
+
+      toast.success(
+        decision === "approve"
+          ? isRTL
+            ? "تمت الموافقة على الطلب بنجاح"
+            : "Request approved successfully"
+          : decision === "reject"
+          ? isRTL
+            ? "تم رفض الطلب"
+            : "Request rejected"
+          : isRTL
+          ? "تم إرجاع الطلب للتعديلات"
+          : "Request returned for modifications"
+      );
+
+      router.push(`/${locale}/approvals`);
+    } catch (err) {
+      console.error("Error submitting decision:", err);
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : isRTL
+          ? "فشل في إرسال القرار"
+          : "Failed to submit decision"
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const getTypeLabel = (type: string) => {
     const labels: Record<string, { en: string; ar: string }> = {
-      initial: { en: "Initial Privileging", ar: "امتياز أولي" },
-      renewal: { en: "Renewal", ar: "تجديد" },
-      expansion: { en: "Expansion of Privileges", ar: "توسيع الامتيازات" },
-      temporary: { en: "Temporary Privileges", ar: "امتيازات مؤقتة" },
+      NEW: { en: "Initial Privileging", ar: "امتياز أولي" },
+      RENEWAL: { en: "Renewal", ar: "تجديد" },
+      ADDITION: { en: "Expansion of Privileges", ar: "توسيع الامتيازات" },
+      TEMPORARY: { en: "Temporary Privileges", ar: "امتيازات مؤقتة" },
     };
-    return isRTL ? labels[type]?.ar : labels[type]?.en;
+    return isRTL ? labels[type]?.ar || type : labels[type]?.en || type;
   };
 
   const allDecided = privileges.every((p) => p.isGranted !== null);
@@ -192,10 +295,10 @@ export default function ApprovalDetailsPage() {
     return <ApprovalDetailsSkeleton />;
   }
 
-  if (!approval) {
+  if (error || !approval) {
     return (
       <div className="flex flex-col items-center justify-center py-12">
-        <p className="text-neutral-500">{t("common.messages.noData")}</p>
+        <p className="text-neutral-500">{error || t("common.messages.noData")}</p>
         <Button
           variant="outline"
           className="mt-4"
@@ -265,18 +368,18 @@ export default function ApprovalDetailsPage() {
             </LiquidGlassCardHeader>
             <LiquidGlassCardContent>
               <div className="flex items-start gap-4">
-                <Avatar name={approval.applicant.name} size="lg" />
+                <Avatar name={approval.applicant.nameEn} size="lg" />
                 <div className="flex-1 grid gap-3 sm:grid-cols-2">
                   <div className="flex items-center gap-2">
                     <User className="h-4 w-4 text-neutral-400" />
                     <span className="font-medium">
-                      {isRTL ? approval.applicant.nameAr : approval.applicant.name}
+                      {isRTL ? approval.applicant.nameAr : approval.applicant.nameEn}
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Building className="h-4 w-4 text-neutral-400" />
                     <span>
-                      {isRTL ? approval.applicant.departmentAr : approval.applicant.department}
+                      {isRTL ? approval.applicant.departmentAr : approval.applicant.departmentEn}
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
@@ -285,7 +388,7 @@ export default function ApprovalDetailsPage() {
                   </div>
                   <div className="flex items-center gap-2">
                     <Shield className="h-4 w-4 text-neutral-400" />
-                    <span>{approval.applicant.scfhsNumber}</span>
+                    <span>{approval.applicant.scfhsNo || "-"}</span>
                   </div>
                 </div>
               </div>
@@ -371,31 +474,41 @@ export default function ApprovalDetailsPage() {
               </LiquidGlassCardTitle>
             </LiquidGlassCardHeader>
             <LiquidGlassCardContent className="p-0">
-              <div className="divide-y divide-neutral-200 dark:divide-neutral-800">
-                {approval.documents.map((doc) => (
-                  <div
-                    key={doc.id}
-                    className="flex items-center justify-between p-4"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary-100 text-primary-600">
-                        <FileText className="h-5 w-5" />
+              {approval.documents.length === 0 ? (
+                <div className="p-8 text-center text-neutral-500">
+                  {isRTL ? "لا توجد مستندات مرفقة" : "No documents attached"}
+                </div>
+              ) : (
+                <div className="divide-y divide-neutral-200 dark:divide-neutral-800">
+                  {approval.documents.map((doc) => (
+                    <div
+                      key={doc.id}
+                      className="flex items-center justify-between p-4"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary-100 text-primary-600">
+                          <FileText className="h-5 w-5" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-neutral-900 dark:text-white">
+                            {doc.fileName}
+                          </p>
+                          <p className="text-sm text-neutral-500">
+                            {doc.type} • {formatFileSize(doc.fileSize)}
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="font-medium text-neutral-900 dark:text-white">
-                          {doc.name}
-                        </p>
-                        <p className="text-sm text-neutral-500">
-                          {doc.type} • {doc.size}
-                        </p>
-                      </div>
+                      {doc.driveFileUrl && (
+                        <a href={doc.driveFileUrl} target="_blank" rel="noopener noreferrer">
+                          <Button variant="ghost" size="icon">
+                            <Download className="h-4 w-4" />
+                          </Button>
+                        </a>
+                      )}
                     </div>
-                    <Button variant="ghost" size="icon">
-                      <Download className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </LiquidGlassCardContent>
           </LiquidGlassCard>
 
@@ -417,16 +530,16 @@ export default function ApprovalDetailsPage() {
                       <div className="flex items-center gap-3">
                         <div
                           className={`flex h-8 w-8 items-center justify-center rounded-full ${
-                            prev.decision === "approved"
+                            prev.status === "APPROVED"
                               ? "bg-success-100 text-success-600"
-                              : prev.decision === "rejected"
+                              : prev.status === "REJECTED"
                               ? "bg-error-100 text-error-600"
                               : "bg-warning-100 text-warning-600"
                           }`}
                         >
-                          {prev.decision === "approved" ? (
+                          {prev.status === "APPROVED" ? (
                             <CheckCircle className="h-4 w-4" />
-                          ) : prev.decision === "rejected" ? (
+                          ) : prev.status === "REJECTED" ? (
                             <XCircle className="h-4 w-4" />
                           ) : (
                             <RotateCcw className="h-4 w-4" />
@@ -434,16 +547,20 @@ export default function ApprovalDetailsPage() {
                         </div>
                         <div>
                           <p className="font-medium text-neutral-900 dark:text-white">
-                            {isRTL ? prev.approver.nameAr : prev.approver.name}
+                            {prev.approver
+                              ? (isRTL ? prev.approver.nameAr : prev.approver.nameEn)
+                              : (isRTL ? "غير معين" : "Unassigned")}
                           </p>
                           <p className="text-sm text-neutral-500">
-                            {isRTL ? prev.roleAr : prev.role}
+                            {isRTL ? levelLabels[prev.level]?.ar || prev.level : levelLabels[prev.level]?.en || prev.level}
                           </p>
                         </div>
                       </div>
-                      <span className="text-sm text-neutral-500">
-                        {formatDate(prev.date, locale)}
-                      </span>
+                      {prev.decidedAt && (
+                        <span className="text-sm text-neutral-500">
+                          {formatDate(new Date(prev.decidedAt), locale)}
+                        </span>
+                      )}
                     </div>
                     {prev.comments && (
                       <div className="mt-3 rounded-lg bg-neutral-50 p-3 text-sm text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300">

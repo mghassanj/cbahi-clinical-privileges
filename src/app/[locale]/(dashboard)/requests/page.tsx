@@ -4,10 +4,21 @@ import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
+import { toast } from "sonner";
 import { DataTable, Column } from "@/components/dashboard/data-table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogClose,
+} from "@/components/ui/dialog";
 import { formatDate } from "@/lib/utils";
 import {
   Plus,
@@ -17,75 +28,29 @@ import {
   Filter,
 } from "lucide-react";
 
-type RequestStatus = "draft" | "pending" | "in_review" | "approved" | "rejected" | "cancelled";
-type RequestType = "initial" | "renewal" | "expansion" | "temporary";
+type RequestStatus = "DRAFT" | "PENDING" | "IN_REVIEW" | "APPROVED" | "REJECTED" | "CANCELLED";
+type RequestType = "NEW" | "RENEWAL" | "EXPANSION" | "TEMPORARY";
 
 interface PrivilegeRequest {
   id: string;
   type: RequestType;
   status: RequestStatus;
-  submittedDate: Date | null;
-  createdDate: Date;
-  privilegeCount: number;
-  currentApprover?: string;
-  currentApproverAr?: string;
+  submittedAt: string | null;
+  createdAt: string;
+  requestedPrivileges: Array<{ privilege: { id: string } }>;
+  applicant: {
+    nameEn: string;
+    nameAr: string;
+  };
 }
 
-// Mock data - replace with API calls
-const mockRequests: PrivilegeRequest[] = [
-  {
-    id: "REQ-2024-001",
-    type: "initial",
-    status: "approved",
-    submittedDate: new Date(2024, 0, 15),
-    createdDate: new Date(2024, 0, 10),
-    privilegeCount: 25,
-  },
-  {
-    id: "REQ-2024-002",
-    type: "renewal",
-    status: "pending",
-    submittedDate: new Date(2024, 1, 20),
-    createdDate: new Date(2024, 1, 18),
-    privilegeCount: 30,
-    currentApprover: "Dr. Abdullah Hassan",
-    currentApproverAr: "د. عبدالله حسن",
-  },
-  {
-    id: "REQ-2024-003",
-    type: "expansion",
-    status: "in_review",
-    submittedDate: new Date(2024, 2, 5),
-    createdDate: new Date(2024, 2, 1),
-    privilegeCount: 15,
-    currentApprover: "Department Head",
-    currentApproverAr: "رئيس القسم",
-  },
-  {
-    id: "REQ-2024-004",
-    type: "temporary",
-    status: "rejected",
-    submittedDate: new Date(2024, 2, 10),
-    createdDate: new Date(2024, 2, 8),
-    privilegeCount: 10,
-  },
-  {
-    id: "REQ-2024-005",
-    type: "initial",
-    status: "draft",
-    submittedDate: null,
-    createdDate: new Date(2024, 2, 15),
-    privilegeCount: 20,
-  },
-];
-
-const statusVariants: Record<RequestStatus, "default" | "secondary" | "success" | "warning" | "error"> = {
-  draft: "secondary",
-  pending: "warning",
-  in_review: "default",
-  approved: "success",
-  rejected: "error",
-  cancelled: "secondary",
+const statusVariants: Record<string, "default" | "secondary" | "success" | "warning" | "error"> = {
+  DRAFT: "secondary",
+  PENDING: "warning",
+  IN_REVIEW: "default",
+  APPROVED: "success",
+  REJECTED: "error",
+  CANCELLED: "secondary",
 };
 
 export default function RequestsPage() {
@@ -94,29 +59,103 @@ export default function RequestsPage() {
   const router = useRouter();
   const isRTL = locale === "ar";
 
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [requests, setRequests] = React.useState<PrivilegeRequest[]>([]);
+  const [error, setError] = React.useState<string | null>(null);
   const [statusFilter, setStatusFilter] = React.useState<string>("all");
   const [typeFilter, setTypeFilter] = React.useState<string>("all");
+  const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
+  const [requestToDelete, setRequestToDelete] = React.useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = React.useState(false);
+
+  // Fetch requests from API
+  React.useEffect(() => {
+    async function fetchRequests() {
+      try {
+        setIsLoading(true);
+        const params = new URLSearchParams();
+        if (statusFilter !== "all") params.append("status", statusFilter);
+
+        const response = await fetch(`/api/requests?${params.toString()}`);
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch requests");
+        }
+
+        const result = await response.json();
+        setRequests(result.data || []);
+      } catch (err) {
+        console.error("Error fetching requests:", err);
+        setError("Failed to load requests");
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    fetchRequests();
+  }, [statusFilter]);
+
+  // Handle delete request
+  const handleDeleteRequest = async () => {
+    if (!requestToDelete) return;
+
+    setIsDeleting(true);
+    try {
+      const response = await fetch(`/api/requests/${requestToDelete}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        const result = await response.json();
+        throw new Error(result.message || "Failed to delete request");
+      }
+
+      // Remove from local state
+      setRequests((prev) => prev.filter((r) => r.id !== requestToDelete));
+      toast.success(isRTL ? "تم حذف الطلب بنجاح" : "Request deleted successfully");
+    } catch (err) {
+      console.error("Error deleting request:", err);
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : isRTL
+          ? "فشل في حذف الطلب"
+          : "Failed to delete request"
+      );
+    } finally {
+      setIsDeleting(false);
+      setDeleteDialogOpen(false);
+      setRequestToDelete(null);
+    }
+  };
 
   const filteredRequests = React.useMemo(() => {
-    return mockRequests.filter((request) => {
-      if (statusFilter !== "all" && request.status !== statusFilter) return false;
+    return requests.filter((request) => {
       if (typeFilter !== "all" && request.type !== typeFilter) return false;
       return true;
     });
-  }, [statusFilter, typeFilter]);
+  }, [requests, typeFilter]);
 
   const getTypeLabel = (type: RequestType) => {
     const labels: Record<RequestType, { en: string; ar: string }> = {
-      initial: { en: "Initial", ar: "أولي" },
-      renewal: { en: "Renewal", ar: "تجديد" },
-      expansion: { en: "Expansion", ar: "توسيع" },
-      temporary: { en: "Temporary", ar: "مؤقت" },
+      NEW: { en: "Initial", ar: "أولي" },
+      RENEWAL: { en: "Renewal", ar: "تجديد" },
+      EXPANSION: { en: "Expansion", ar: "توسيع" },
+      TEMPORARY: { en: "Temporary", ar: "مؤقت" },
     };
-    return isRTL ? labels[type].ar : labels[type].en;
+    return isRTL ? labels[type]?.ar || type : labels[type]?.en || type;
   };
 
   const getStatusLabel = (status: RequestStatus) => {
-    return t(`common.status.${status}`);
+    const labels: Record<RequestStatus, { en: string; ar: string }> = {
+      DRAFT: { en: "Draft", ar: "مسودة" },
+      PENDING: { en: "Pending", ar: "قيد الانتظار" },
+      IN_REVIEW: { en: "In Review", ar: "قيد المراجعة" },
+      APPROVED: { en: "Approved", ar: "موافق عليه" },
+      REJECTED: { en: "Rejected", ar: "مرفوض" },
+      CANCELLED: { en: "Cancelled", ar: "ملغى" },
+    };
+    return isRTL ? labels[status]?.ar || status : labels[status]?.en || status;
   };
 
   const columns: Column<PrivilegeRequest>[] = [
@@ -126,7 +165,7 @@ export default function RequestsPage() {
       headerAr: "رقم الطلب",
       cell: (item) => (
         <span className="font-medium text-primary-600 dark:text-primary-400">
-          {item.id}
+          {item.id.slice(0, 8)}...
         </span>
       ),
     },
@@ -143,7 +182,7 @@ export default function RequestsPage() {
       header: "Status",
       headerAr: "الحالة",
       cell: (item) => (
-        <Badge variant={statusVariants[item.status]}>
+        <Badge variant={statusVariants[item.status] || "secondary"}>
           {getStatusLabel(item.status)}
         </Badge>
       ),
@@ -154,17 +193,17 @@ export default function RequestsPage() {
       headerAr: "الامتيازات",
       cell: (item) => (
         <span className="text-neutral-600 dark:text-neutral-400">
-          {item.privilegeCount} {isRTL ? "امتياز" : "privileges"}
+          {item.requestedPrivileges?.length || 0} {isRTL ? "امتياز" : "privileges"}
         </span>
       ),
     },
     {
-      key: "submittedDate",
+      key: "submittedAt",
       header: "Submitted",
       headerAr: "تاريخ الإرسال",
       cell: (item) => (
         <span className="text-neutral-600 dark:text-neutral-400">
-          {item.submittedDate ? formatDate(item.submittedDate, locale) : "-"}
+          {item.submittedAt ? formatDate(new Date(item.submittedAt), locale) : "-"}
         </span>
       ),
     },
@@ -179,7 +218,7 @@ export default function RequestsPage() {
               <Eye className="h-4 w-4" />
             </Button>
           </Link>
-          {item.status === "draft" && (
+          {item.status === "DRAFT" && (
             <>
               <Link href={`/${locale}/requests/${item.id}/edit`}>
                 <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -192,7 +231,8 @@ export default function RequestsPage() {
                 className="h-8 w-8 text-error-600 hover:text-error-700"
                 onClick={(e) => {
                   e.stopPropagation();
-                  // TODO: Handle delete
+                  setRequestToDelete(item.id);
+                  setDeleteDialogOpen(true);
                 }}
               >
                 <Trash2 className="h-4 w-4" />
@@ -203,6 +243,25 @@ export default function RequestsPage() {
       ),
     },
   ];
+
+  if (isLoading) {
+    return <RequestsPageSkeleton />;
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12">
+        <p className="text-neutral-500">{error}</p>
+        <Button
+          variant="outline"
+          className="mt-4"
+          onClick={() => window.location.reload()}
+        >
+          {t("common.actions.retry")}
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -238,11 +297,11 @@ export default function RequestsPage() {
           className="w-40"
         >
           <option value="all">{isRTL ? "كل الحالات" : "All Status"}</option>
-          <option value="draft">{t("common.status.draft")}</option>
-          <option value="pending">{t("common.status.pending")}</option>
-          <option value="in_review">{t("common.status.in_review")}</option>
-          <option value="approved">{t("common.status.approved")}</option>
-          <option value="rejected">{t("common.status.rejected")}</option>
+          <option value="DRAFT">{isRTL ? "مسودة" : "Draft"}</option>
+          <option value="PENDING">{isRTL ? "قيد الانتظار" : "Pending"}</option>
+          <option value="IN_REVIEW">{isRTL ? "قيد المراجعة" : "In Review"}</option>
+          <option value="APPROVED">{isRTL ? "موافق عليه" : "Approved"}</option>
+          <option value="REJECTED">{isRTL ? "مرفوض" : "Rejected"}</option>
         </Select>
         <Select
           value={typeFilter}
@@ -250,10 +309,10 @@ export default function RequestsPage() {
           className="w-40"
         >
           <option value="all">{isRTL ? "كل الأنواع" : "All Types"}</option>
-          <option value="initial">{isRTL ? "أولي" : "Initial"}</option>
-          <option value="renewal">{isRTL ? "تجديد" : "Renewal"}</option>
-          <option value="expansion">{isRTL ? "توسيع" : "Expansion"}</option>
-          <option value="temporary">{isRTL ? "مؤقت" : "Temporary"}</option>
+          <option value="NEW">{isRTL ? "أولي" : "Initial"}</option>
+          <option value="RENEWAL">{isRTL ? "تجديد" : "Renewal"}</option>
+          <option value="EXPANSION">{isRTL ? "توسيع" : "Expansion"}</option>
+          <option value="TEMPORARY">{isRTL ? "مؤقت" : "Temporary"}</option>
         </Select>
         {(statusFilter !== "all" || typeFilter !== "all") && (
           <Button
@@ -290,6 +349,58 @@ export default function RequestsPage() {
         }}
         onRowClick={(item) => router.push(`/${locale}/requests/${item.id}`)}
       />
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogClose />
+          <DialogHeader>
+            <DialogTitle>
+              {isRTL ? "حذف الطلب" : "Delete Request"}
+            </DialogTitle>
+            <DialogDescription>
+              {isRTL
+                ? "هل أنت متأكد من حذف هذا الطلب؟ لا يمكن التراجع عن هذا الإجراء."
+                : "Are you sure you want to delete this request? This action cannot be undone."}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setDeleteDialogOpen(false)}
+              disabled={isDeleting}
+            >
+              {t("common.actions.cancel")}
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteRequest}
+              isLoading={isDeleting}
+            >
+              {t("common.actions.delete")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
+function RequestsPageSkeleton() {
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <Skeleton className="h-8 w-48" />
+          <Skeleton className="mt-2 h-4 w-64" />
+        </div>
+        <Skeleton className="h-10 w-40" />
+      </div>
+      <div className="flex gap-3">
+        <Skeleton className="h-10 w-40" />
+        <Skeleton className="h-10 w-40" />
+      </div>
+      <Skeleton className="h-96 w-full" />
     </div>
   );
 }

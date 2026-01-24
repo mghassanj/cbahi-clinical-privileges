@@ -7,6 +7,11 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import type { PrivilegeSelectionData } from "@/hooks/usePrivilegeRequest";
 import {
+  dentalPrivileges,
+  PrivilegeCategory,
+  type DentalPrivilege,
+} from "@/data/privileges";
+import {
   Search,
   AlertTriangle,
   ChevronDown,
@@ -19,226 +24,35 @@ export interface StepPrivilegeSelectionProps {
   errors?: string | null;
 }
 
-// Mock privileges data - in production, this would come from the database
-const PRIVILEGE_CATEGORIES = [
-  {
-    id: "core",
-    nameEn: "Core Privileges",
-    nameAr: "الامتيازات الأساسية",
-    privileges: [
-      {
-        id: "core-1",
-        code: "COR-001",
-        nameEn: "Comprehensive Oral Examination",
-        nameAr: "الفحص الشامل للفم",
-        requiresSpecialQualification: false,
-      },
-      {
-        id: "core-2",
-        code: "COR-002",
-        nameEn: "Diagnosis and Treatment Planning",
-        nameAr: "التشخيص وتخطيط العلاج",
-        requiresSpecialQualification: false,
-      },
-      {
-        id: "core-3",
-        code: "COR-003",
-        nameEn: "Local Anesthesia Administration",
-        nameAr: "إعطاء التخدير الموضعي",
-        requiresSpecialQualification: false,
-      },
-      {
-        id: "core-4",
-        code: "COR-004",
-        nameEn: "Preventive Dental Care",
-        nameAr: "الرعاية الوقائية للأسنان",
-        requiresSpecialQualification: false,
-      },
-      {
-        id: "core-5",
-        code: "COR-005",
-        nameEn: "Emergency Dental Care",
-        nameAr: "رعاية الأسنان الطارئة",
-        requiresSpecialQualification: false,
-      },
-    ],
-  },
-  {
-    id: "restorative",
-    nameEn: "Restorative Dentistry",
-    nameAr: "طب الأسنان الترميمي",
-    privileges: [
-      {
-        id: "rest-1",
-        code: "RES-001",
-        nameEn: "Direct Restorations (Amalgam/Composite)",
-        nameAr: "الترميمات المباشرة (حشوات)",
-        requiresSpecialQualification: false,
-      },
-      {
-        id: "rest-2",
-        code: "RES-002",
-        nameEn: "Indirect Restorations (Inlays/Onlays)",
-        nameAr: "الترميمات غير المباشرة",
-        requiresSpecialQualification: false,
-      },
-      {
-        id: "rest-3",
-        code: "RES-003",
-        nameEn: "Crown Preparation and Placement",
-        nameAr: "تحضير وتركيب التيجان",
-        requiresSpecialQualification: false,
-      },
-      {
-        id: "rest-4",
-        code: "RES-004",
-        nameEn: "Fixed Partial Dentures (Bridges)",
-        nameAr: "الجسور الثابتة",
-        requiresSpecialQualification: false,
-      },
-    ],
-  },
-  {
-    id: "pediatric",
-    nameEn: "Pediatric Dentistry",
-    nameAr: "طب أسنان الأطفال",
-    privileges: [
-      {
-        id: "ped-1",
-        code: "PED-001",
-        nameEn: "Pediatric Oral Examination",
-        nameAr: "فحص الفم للأطفال",
-        requiresSpecialQualification: false,
-      },
-      {
-        id: "ped-2",
-        code: "PED-002",
-        nameEn: "Pulpotomy/Pulpectomy (Primary Teeth)",
-        nameAr: "علاج عصب الأسنان اللبنية",
-        requiresSpecialQualification: false,
-      },
-      {
-        id: "ped-3",
-        code: "PED-003",
-        nameEn: "Space Maintainers",
-        nameAr: "حافظات المسافة",
-        requiresSpecialQualification: false,
-      },
-      {
-        id: "ped-4",
-        code: "PED-004",
-        nameEn: "Behavior Management",
-        nameAr: "إدارة سلوك الأطفال",
-        requiresSpecialQualification: true,
-      },
-    ],
-  },
-  {
-    id: "endodontics",
-    nameEn: "Endodontics",
-    nameAr: "علاج الجذور",
-    privileges: [
-      {
-        id: "endo-1",
-        code: "END-001",
-        nameEn: "Root Canal Treatment (Single Canal)",
-        nameAr: "علاج قناة الجذر (قناة واحدة)",
-        requiresSpecialQualification: false,
-      },
-      {
-        id: "endo-2",
-        code: "END-002",
-        nameEn: "Root Canal Treatment (Multi-Canal)",
-        nameAr: "علاج قنوات الجذور (متعددة القنوات)",
-        requiresSpecialQualification: false,
-      },
-      {
-        id: "endo-3",
-        code: "END-003",
-        nameEn: "Endodontic Retreatment",
-        nameAr: "إعادة علاج الجذور",
-        requiresSpecialQualification: true,
-      },
-      {
-        id: "endo-4",
-        code: "END-004",
-        nameEn: "Apical Surgery",
-        nameAr: "جراحة قمة الجذر",
-        requiresSpecialQualification: true,
-      },
-    ],
-  },
-  {
-    id: "periodontics",
-    nameEn: "Periodontics",
-    nameAr: "علاج اللثة",
-    privileges: [
-      {
-        id: "perio-1",
-        code: "PER-001",
-        nameEn: "Scaling and Root Planing",
-        nameAr: "تنظيف الجير وكشط الجذور",
-        requiresSpecialQualification: false,
-      },
-      {
-        id: "perio-2",
-        code: "PER-002",
-        nameEn: "Gingivectomy/Gingivoplasty",
-        nameAr: "استئصال/تجميل اللثة",
-        requiresSpecialQualification: false,
-      },
-      {
-        id: "perio-3",
-        code: "PER-003",
-        nameEn: "Periodontal Flap Surgery",
-        nameAr: "جراحة شريحة اللثة",
-        requiresSpecialQualification: true,
-      },
-      {
-        id: "perio-4",
-        code: "PER-004",
-        nameEn: "Bone Grafting",
-        nameAr: "ترقيع العظام",
-        requiresSpecialQualification: true,
-      },
-    ],
-  },
-  {
-    id: "oral-surgery",
-    nameEn: "Oral Surgery",
-    nameAr: "جراحة الفم",
-    privileges: [
-      {
-        id: "surg-1",
-        code: "SUR-001",
-        nameEn: "Simple Extractions",
-        nameAr: "خلع الأسنان البسيط",
-        requiresSpecialQualification: false,
-      },
-      {
-        id: "surg-2",
-        code: "SUR-002",
-        nameEn: "Surgical Extractions",
-        nameAr: "خلع الأسنان الجراحي",
-        requiresSpecialQualification: false,
-      },
-      {
-        id: "surg-3",
-        code: "SUR-003",
-        nameEn: "Impacted Tooth Removal",
-        nameAr: "إزالة الأسنان المطمورة",
-        requiresSpecialQualification: true,
-      },
-      {
-        id: "surg-4",
-        code: "SUR-004",
-        nameEn: "Biopsy and Lesion Removal",
-        nameAr: "الخزعة وإزالة الآفات",
-        requiresSpecialQualification: true,
-      },
-    ],
-  },
-];
+// Category display names for UI
+const CATEGORY_NAMES: Record<PrivilegeCategory, { nameEn: string; nameAr: string }> = {
+  [PrivilegeCategory.CORE]: { nameEn: "Core Privileges", nameAr: "الامتيازات الأساسية" },
+  [PrivilegeCategory.RESTORATIVE]: { nameEn: "Restorative Dentistry", nameAr: "طب الأسنان الترميمي" },
+  [PrivilegeCategory.PEDIATRIC]: { nameEn: "Pediatric Dentistry", nameAr: "طب أسنان الأطفال" },
+  [PrivilegeCategory.ORTHODONTICS]: { nameEn: "Orthodontics", nameAr: "تقويم الأسنان" },
+  [PrivilegeCategory.PROSTHODONTICS]: { nameEn: "Prosthodontics", nameAr: "التركيبات السنية" },
+  [PrivilegeCategory.PERIODONTICS]: { nameEn: "Periodontics", nameAr: "علاج اللثة" },
+  [PrivilegeCategory.ORAL_SURGERY]: { nameEn: "Oral Surgery", nameAr: "جراحة الفم" },
+  [PrivilegeCategory.ENDODONTICS]: { nameEn: "Endodontics", nameAr: "علاج الجذور" },
+  [PrivilegeCategory.ORAL_MEDICINE]: { nameEn: "Oral Medicine", nameAr: "طب الفم" },
+  [PrivilegeCategory.RADIOLOGY]: { nameEn: "Radiology", nameAr: "الأشعة" },
+};
+
+// Group privileges by category from the real data catalog
+const PRIVILEGE_CATEGORIES = Object.values(PrivilegeCategory).map((category) => ({
+  id: category.toLowerCase(),
+  nameEn: CATEGORY_NAMES[category].nameEn,
+  nameAr: CATEGORY_NAMES[category].nameAr,
+  privileges: dentalPrivileges
+    .filter((p) => p.category === category)
+    .map((p) => ({
+      id: p.id,
+      code: p.code,
+      nameEn: p.nameEn,
+      nameAr: p.nameAr,
+      requiresSpecialQualification: p.requiresSpecialQualification,
+    })),
+}));
 
 export function StepPrivilegeSelection({
   data,
