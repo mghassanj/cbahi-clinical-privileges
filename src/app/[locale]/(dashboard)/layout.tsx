@@ -1,5 +1,3 @@
-import { NextIntlClientProvider } from "next-intl";
-import { getMessages } from "next-intl/server";
 import { notFound, redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { DashboardShell, type UserRole } from "@/components/dashboard/dashboard-shell";
@@ -21,9 +19,6 @@ export default async function DashboardLayout({
   if (!locales.includes(locale)) {
     notFound();
   }
-
-  // Fetch messages for the current locale
-  const messages = await getMessages();
 
   // Get actual session
   const session = await getServerSession(authOptions);
@@ -51,11 +46,7 @@ export default async function DashboardLayout({
     avatar: undefined,
   };
 
-  return (
-    <NextIntlClientProvider messages={messages} locale={locale}>
-      <DashboardShell user={user}>{children}</DashboardShell>
-    </NextIntlClientProvider>
-  );
+  return <DashboardShell user={user}>{children}</DashboardShell>;
 }
 
 export function generateStaticParams() {

@@ -26,7 +26,7 @@ export default async function LocaleLayout({
 
   return (
     <div dir={direction} lang={locale} className="min-h-screen">
-      <NextIntlClientProvider messages={messages}>
+      <NextIntlClientProvider messages={messages} locale={locale}>
         {children}
       </NextIntlClientProvider>
     </div>
