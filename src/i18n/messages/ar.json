@@ -63,7 +63,12 @@
       "confirmDelete": "هل أنت متأكد من حذف هذا العنصر؟",
       "unsavedChanges": "لديك تغييرات غير محفوظة. هل أنت متأكد من المغادرة؟",
       "success": "تمت العملية بنجاح",
-      "error": "حدث خطأ"
+      "error": "حدث خطأ",
+      "saveDraftSuccess": "تم حفظ المسودة بنجاح",
+      "saveDraftFailed": "فشل في حفظ المسودة",
+      "loadDraftFailed": "فشل في تحميل المسودة",
+      "submitFailed": "فشل في إرسال الطلب",
+      "validationFailed": "فشل التحقق من صحة البيانات"
     },
     "actions": {
       "filter": "تصفية",
@@ -124,6 +129,10 @@
         "jobTitle": "المسمى الوظيفي",
         "email": "البريد الإلكتروني",
         "scfhsNumber": "رقم الهيئة السعودية للتخصصات الصحية"
+      },
+      "applicationType": {
+        "title": "نوع الطلب",
+        "description": "اختر نوع طلب الامتياز السريري الذي تريد تقديمه."
       },
       "privileges": {
         "title": "الامتيازات",

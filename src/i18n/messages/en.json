@@ -63,7 +63,12 @@
       "confirmDelete": "Are you sure you want to delete this item?",
       "unsavedChanges": "You have unsaved changes. Are you sure you want to leave?",
       "success": "Operation completed successfully",
-      "error": "An error occurred"
+      "error": "An error occurred",
+      "saveDraftSuccess": "Draft saved successfully",
+      "saveDraftFailed": "Failed to save draft",
+      "loadDraftFailed": "Failed to load draft",
+      "submitFailed": "Failed to submit request",
+      "validationFailed": "Validation failed"
     },
     "actions": {
       "filter": "Filter",
@@ -124,6 +129,10 @@
         "jobTitle": "Job Title",
         "email": "Email Address",
         "scfhsNumber": "SCFHS Number"
+      },
+      "applicationType": {
+        "title": "Application Type",
+        "description": "Select the type of clinical privilege request you want to submit."
       },
       "privileges": {
         "title": "Privileges",

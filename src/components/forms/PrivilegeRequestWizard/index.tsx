@@ -46,6 +46,14 @@ const WIZARD_STEPS = [
   { key: "review", label: "Review", labelAr: "المراجعة" },
 ];
 
+// Map of error message patterns to translation keys
+const ERROR_TRANSLATION_MAP: Record<string, string> = {
+  "Failed to save draft": "saveDraftFailed",
+  "Failed to load draft": "loadDraftFailed",
+  "Failed to submit request": "submitFailed",
+  "Validation failed": "validationFailed",
+};
+
 export function PrivilegeRequestWizard({
   draftId,
   initialData,
@@ -56,6 +64,16 @@ export function PrivilegeRequestWizard({
   const tCommon = useTranslations("common");
   const locale = useLocale() as "en" | "ar";
   const isRTL = locale === "ar";
+
+  // Translate error messages using the map
+  const translateError = (error: string | null): string | null => {
+    if (!error) return null;
+    const translationKey = ERROR_TRANSLATION_MAP[error];
+    if (translationKey) {
+      return tCommon(`messages.${translationKey}`);
+    }
+    return error;
+  };
 
   const wizard = usePrivilegeRequest(draftId);
 
@@ -207,7 +225,7 @@ export function PrivilegeRequestWizard({
           {wizard.error && (
             <div className="mb-6 rounded-lg bg-red-50 border border-red-200 p-4 dark:bg-red-900/20 dark:border-red-800">
               <p className="text-sm text-red-600 dark:text-red-400">
-                {wizard.error}
+                {translateError(wizard.error)}
               </p>
             </div>
           )}
