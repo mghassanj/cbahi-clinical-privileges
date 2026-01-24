@@ -21,7 +21,7 @@ const LOCALES = ["en", "ar"] as const;
 const DEFAULT_LOCALE = "en";
 
 // Routes that require authentication
-const PROTECTED_ROUTES = ["/dashboard", "/admin", "/requests", "/approvals"];
+const PROTECTED_ROUTES = ["/", "/admin", "/requests", "/approvals", "/profile"];
 
 // Routes that require admin role
 const ADMIN_ROUTES = ["/admin"];
@@ -199,23 +199,23 @@ export async function middleware(request: NextRequest) {
   // Check admin role for admin routes
   if (requiresAdmin(pathname) && token) {
     if (token.role !== "ADMIN") {
-      const dashboardUrl = buildRedirectUrl(request, "/dashboard", locale);
-      return NextResponse.redirect(dashboardUrl);
+      const homeUrl = buildRedirectUrl(request, "/", locale);
+      return NextResponse.redirect(homeUrl);
     }
   }
 
   // Check approver role for approval routes
   if (requiresApprover(pathname) && token) {
     if (!APPROVER_ROLES.includes(token.role as UserRole)) {
-      const dashboardUrl = buildRedirectUrl(request, "/dashboard", locale);
-      return NextResponse.redirect(dashboardUrl);
+      const homeUrl = buildRedirectUrl(request, "/", locale);
+      return NextResponse.redirect(homeUrl);
     }
   }
 
   // Redirect authenticated users away from login page
   if (token && pathWithoutLocale.startsWith("/login")) {
-    const dashboardUrl = buildRedirectUrl(request, "/dashboard", locale);
-    return NextResponse.redirect(dashboardUrl);
+    const homeUrl = buildRedirectUrl(request, "/", locale);
+    return NextResponse.redirect(homeUrl);
   }
 
   // Add user info to headers for server components
