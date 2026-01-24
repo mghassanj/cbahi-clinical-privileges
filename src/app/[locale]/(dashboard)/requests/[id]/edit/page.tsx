@@ -12,26 +12,18 @@ interface RequestData {
   id: string;
   type: string;
   status: string;
-  requestedPrivileges: Array<{
-    privilege: {
-      id: string;
-      code: string;
-      nameEn: string;
-      nameAr: string;
-    };
-  }>;
-  attachments: Array<{
-    id: string;
-    fileName: string;
-    type: string;
-    driveFileUrl?: string;
-  }>;
   applicant: {
     id: string;
     nameEn: string;
     nameAr: string;
     email: string;
-    scfhsNo?: string;
+    employeeCode?: string;
+    department?: string;
+    departmentAr?: string;
+    jobTitle?: string;
+    jobTitleAr?: string;
+    location?: string;
+    locationAr?: string;
   };
 }
 
@@ -104,37 +96,18 @@ export default function EditRequestPage() {
     );
   }
 
-  // Prepare initial data for the wizard
+  // Prepare initial data for the wizard - only personal info fields
   const initialData = {
-    requestType: requestData.type as "NEW" | "RENEWAL" | "EXPANSION" | "TEMPORARY",
-    selectedPrivileges: requestData.requestedPrivileges.map((rp) => rp.privilege.id),
-    documents: requestData.attachments.reduce(
-      (acc, att) => {
-        // Map attachment type to document field
-        const typeMap: Record<string, string> = {
-          CV: "cv",
-          MEDICAL_LICENSE: "medicalLicense",
-          BOARD_CERTIFICATE: "boardCertificate",
-          SPECIALTY_CERTIFICATE: "specialtyCertificate",
-          SCFHS_LICENSE: "scfhsRegistration",
-          EXPERIENCE_LETTER: "experienceLetter",
-          TRAINING_CERTIFICATE: "trainingCertificate",
-          OTHER: "additionalCertifications",
-        };
-        const field = typeMap[att.type] || "additionalCertifications";
-        if (!acc[field]) {
-          acc[field] = [];
-        }
-        acc[field].push({
-          id: att.id,
-          name: att.fileName,
-          url: att.driveFileUrl,
-        });
-        return acc;
-      },
-      {} as Record<string, Array<{ id: string; name: string; url?: string }>>
-    ),
-    scfhsNumber: requestData.applicant.scfhsNo || "",
+    nameEn: requestData.applicant.nameEn,
+    nameAr: requestData.applicant.nameAr,
+    employeeCode: requestData.applicant.employeeCode,
+    department: requestData.applicant.department,
+    departmentAr: requestData.applicant.departmentAr,
+    jobTitle: requestData.applicant.jobTitle,
+    jobTitleAr: requestData.applicant.jobTitleAr,
+    location: requestData.applicant.location,
+    locationAr: requestData.applicant.locationAr,
+    email: requestData.applicant.email,
   };
 
   return (
@@ -158,13 +131,12 @@ export default function EditRequestPage() {
         </div>
       </div>
 
-      {/* Wizard in edit mode */}
+      {/* Wizard - loads the draft request by ID */}
       <PrivilegeRequestWizard
-        mode="edit"
-        requestId={requestData.id}
+        draftId={requestData.id}
         initialData={initialData}
-        onComplete={() => router.push(`/${locale}/requests/${requestData.id}`)}
-        onCancel={() => router.push(`/${locale}/requests`)}
+        onSubmitSuccess={() => router.push(`/${locale}/requests/${requestData.id}`)}
+        onSaveDraft={() => router.push(`/${locale}/requests`)}
       />
     </div>
   );
