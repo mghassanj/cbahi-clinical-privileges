@@ -18,6 +18,7 @@ declare module "next-auth" {
       email: string;
       name: string;
       nameAr?: string | null;
+      photoUrl?: string | null;
       role: UserRole;
       status: UserStatus;
       departmentId?: number | null;
@@ -38,6 +39,7 @@ declare module "next-auth" {
     email: string;
     name: string;
     nameAr?: string | null;
+    photoUrl?: string | null;
     role: UserRole;
     status: UserStatus;
     departmentId?: number | null;
@@ -59,6 +61,7 @@ declare module "next-auth/jwt" {
     email: string;
     name: string;
     nameAr?: string | null;
+    photoUrl?: string | null;
     role: UserRole;
     status: UserStatus;
     departmentId?: number | null;

@@ -40,11 +40,11 @@ export default async function DashboardLayout({
   const user = {
     id: session.user.id,
     name: session.user.name || "",
-    nameAr: session.user.nameAr || undefined,
+    nameAr: session.user.nameAr || session.user.name || "",
     email: session.user.email,
     role: mapRole(session.user.role),
     department: session.user.departmentEn || undefined,
-    avatar: undefined,
+    avatar: session.user.photoUrl || undefined,
   };
 
   return <DashboardShell user={user}>{children}</DashboardShell>;

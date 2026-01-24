@@ -368,6 +368,7 @@ if (TESTING_MODE) {
           email: user.email,
           name: user.nameEn,
           nameAr: user.nameAr,
+          photoUrl: user.photoUrl,
           role: user.role,
           status: user.status,
           departmentId: user.departmentId,
@@ -464,6 +465,7 @@ export const authOptions: NextAuthOptions = {
             email: true,
             nameEn: true,
             nameAr: true,
+            photoUrl: true,
             role: true,
             status: true,
             departmentId: true,
@@ -481,6 +483,7 @@ export const authOptions: NextAuthOptions = {
           token.email = jisrUser.email;
           token.name = jisrUser.nameEn;
           token.nameAr = jisrUser.nameAr;
+          token.photoUrl = jisrUser.photoUrl;
           token.role = jisrUser.role;
           token.status = jisrUser.status;
           token.departmentId = jisrUser.departmentId;
@@ -506,6 +509,7 @@ export const authOptions: NextAuthOptions = {
           email: token.email as string,
           name: token.name as string,
           nameAr: token.nameAr as string | null,
+          photoUrl: token.photoUrl as string | null,
           role: token.role as UserRole,
           status: token.status as UserStatus,
           departmentId: token.departmentId as number | null,
