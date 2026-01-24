@@ -52,9 +52,9 @@
     "time": {
       "today": "Today",
       "yesterday": "Yesterday",
-      "daysAgo": "{{count}} days ago",
-      "hoursAgo": "{{count}} hours ago",
-      "minutesAgo": "{{count}} minutes ago",
+      "daysAgo": "{count} days ago",
+      "hoursAgo": "{count} hours ago",
+      "minutesAgo": "{count} minutes ago",
       "justNow": "Just now",
       "thisWeek": "This week",
       "thisMonth": "This month",
@@ -70,9 +70,9 @@
       "error": "An error occurred"
     },
     "pagination": {
-      "showing": "Showing {{from}} to {{to}} of {{total}} results",
+      "showing": "Showing {from} to {to} of {total} results",
       "itemsPerPage": "Items per page",
-      "page": "Page {{current}} of {{total}}"
+      "page": "Page {current} of {total}"
     }
   },
   "auth": {
@@ -84,9 +84,9 @@
       "sendMagicLink": "Send Magic Link",
       "sendingLink": "Sending link...",
       "checkEmail": "Check Your Email",
-      "checkEmailMessage": "We've sent a sign-in link to {{email}}. Click the link in the email to access your account.",
+      "checkEmailMessage": "We've sent a sign-in link to {email}. Click the link in the email to access your account.",
       "resendLink": "Resend Link",
-      "resendIn": "Resend in {{seconds}}s",
+      "resendIn": "Resend in {seconds}s",
       "differentEmail": "Use a different email",
       "linkSent": "Magic link sent successfully",
       "welcomeBack": "Welcome back!",
@@ -107,7 +107,7 @@
     }
   },
   "dashboard": {
-    "welcome": "Welcome, {{name}}",
+    "welcome": "Welcome, {name}",
     "overview": "Overview",
     "pendingApprovals": "Pending Approvals",
     "recentActivity": "Recent Activity",
@@ -121,7 +121,7 @@
       "approvedRequests": "Approved Requests",
       "rejectedRequests": "Rejected Requests",
       "averageProcessingTime": "Avg. Processing Time",
-      "daysToProcess": "{{days}} days"
+      "daysToProcess": "{days} days"
     },
     "charts": {
       "requestsByMonth": "Requests by Month",
@@ -179,7 +179,7 @@
         "title": "Select Privileges",
         "description": "Choose the clinical privileges you are requesting",
         "searchPrivileges": "Search privileges...",
-        "selectedCount": "{{count}} privileges selected",
+        "selectedCount": "{count} privileges selected",
         "selectAll": "Select All",
         "deselectAll": "Deselect All",
         "expandAll": "Expand All",
@@ -206,8 +206,8 @@
         "dragDrop": "Drag and drop files here",
         "or": "or",
         "browseFiles": "Browse Files",
-        "supportedFormats": "Supported formats: PDF, JPG, PNG (max {{size}}MB)",
-        "uploadProgress": "Uploading... {{progress}}%",
+        "supportedFormats": "Supported formats: PDF, JPG, PNG (max {size}MB)",
+        "uploadProgress": "Uploading... {progress}%",
         "uploadComplete": "Upload complete",
         "uploadFailed": "Upload failed",
         "removeFile": "Remove file",
@@ -248,8 +248,8 @@
       "selectPrivileges": "Please select at least one privilege",
       "uploadRequired": "Please upload the required documents",
       "agreeToTerms": "You must agree to the terms and conditions",
-      "fileTooLarge": "File size exceeds the maximum limit of {{size}}MB",
-      "invalidFileType": "Invalid file type. Allowed types: {{types}}"
+      "fileTooLarge": "File size exceeds the maximum limit of {size}MB",
+      "invalidFileType": "Invalid file type. Allowed types: {types}"
     },
     "status": {
       "draftSaved": "Draft saved successfully",
@@ -410,7 +410,7 @@
         "privilegeExpiring": "Your Privileges are Expiring Soon",
         "magicLink": "Your Sign-In Link for CBAHI System"
       },
-      "greeting": "Dear {{name}},",
+      "greeting": "Dear {name},",
       "closing": "Best regards,",
       "team": "CBAHI Privileging Team",
       "footer": "This is an automated message. Please do not reply directly to this email.",
@@ -443,10 +443,10 @@
       "message": "The server encountered an error. Please try again later."
     },
     "validation": {
-      "required": "{{field}} is required",
-      "minLength": "{{field}} must be at least {{min}} characters",
-      "maxLength": "{{field}} must not exceed {{max}} characters",
-      "pattern": "{{field}} format is invalid",
+      "required": "{field} is required",
+      "minLength": "{field} must be at least {min} characters",
+      "maxLength": "{field} must not exceed {max} characters",
+      "pattern": "{field} format is invalid",
       "email": "Please enter a valid email address",
       "phone": "Please enter a valid phone number",
       "date": "Please enter a valid date",

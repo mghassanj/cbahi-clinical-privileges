@@ -52,9 +52,9 @@
     "time": {
       "today": "اليوم",
       "yesterday": "أمس",
-      "daysAgo": "منذ {{count}} أيام",
-      "hoursAgo": "منذ {{count}} ساعات",
-      "minutesAgo": "منذ {{count}} دقائق",
+      "daysAgo": "منذ {count} أيام",
+      "hoursAgo": "منذ {count} ساعات",
+      "minutesAgo": "منذ {count} دقائق",
       "justNow": "الآن",
       "thisWeek": "هذا الأسبوع",
       "thisMonth": "هذا الشهر",
@@ -70,9 +70,9 @@
       "error": "حدث خطأ"
     },
     "pagination": {
-      "showing": "عرض {{from}} إلى {{to}} من {{total}} نتيجة",
+      "showing": "عرض {from} إلى {to} من {total} نتيجة",
       "itemsPerPage": "عدد العناصر في الصفحة",
-      "page": "صفحة {{current}} من {{total}}"
+      "page": "صفحة {current} من {total}"
     }
   },
   "auth": {
@@ -84,9 +84,9 @@
       "sendMagicLink": "إرسال رابط الدخول",
       "sendingLink": "جارٍ الإرسال...",
       "checkEmail": "تحقق من بريدك الإلكتروني",
-      "checkEmailMessage": "تم إرسال رابط تسجيل الدخول إلى {{email}}. اضغط على الرابط في البريد للوصول إلى حسابك.",
+      "checkEmailMessage": "تم إرسال رابط تسجيل الدخول إلى {email}. اضغط على الرابط في البريد للوصول إلى حسابك.",
       "resendLink": "إعادة إرسال الرابط",
-      "resendIn": "إعادة الإرسال خلال {{seconds}} ثانية",
+      "resendIn": "إعادة الإرسال خلال {seconds} ثانية",
       "differentEmail": "استخدام بريد إلكتروني آخر",
       "linkSent": "تم إرسال رابط الدخول بنجاح",
       "welcomeBack": "مرحباً بعودتك!",
@@ -107,7 +107,7 @@
     }
   },
   "dashboard": {
-    "welcome": "مرحباً، {{name}}",
+    "welcome": "مرحباً، {name}",
     "overview": "نظرة عامة",
     "pendingApprovals": "الموافقات المعلقة",
     "recentActivity": "النشاط الأخير",
@@ -121,7 +121,7 @@
       "approvedRequests": "الطلبات المعتمدة",
       "rejectedRequests": "الطلبات المرفوضة",
       "averageProcessingTime": "متوسط وقت المعالجة",
-      "daysToProcess": "{{days}} أيام"
+      "daysToProcess": "{days} أيام"
     },
     "charts": {
       "requestsByMonth": "الطلبات حسب الشهر",
@@ -179,7 +179,7 @@
         "title": "اختيار الامتيازات",
         "description": "اختر الامتيازات السريرية التي تطلبها",
         "searchPrivileges": "البحث في الامتيازات...",
-        "selectedCount": "تم اختيار {{count}} امتياز",
+        "selectedCount": "تم اختيار {count} امتياز",
         "selectAll": "تحديد الكل",
         "deselectAll": "إلغاء تحديد الكل",
         "expandAll": "توسيع الكل",
@@ -206,8 +206,8 @@
         "dragDrop": "اسحب وأفلت الملفات هنا",
         "or": "أو",
         "browseFiles": "استعراض الملفات",
-        "supportedFormats": "الصيغ المدعومة: PDF، JPG، PNG (الحد الأقصى {{size}} ميجابايت)",
-        "uploadProgress": "جارٍ الرفع... {{progress}}%",
+        "supportedFormats": "الصيغ المدعومة: PDF، JPG، PNG (الحد الأقصى {size} ميجابايت)",
+        "uploadProgress": "جارٍ الرفع... {progress}%",
         "uploadComplete": "اكتمل الرفع",
         "uploadFailed": "فشل الرفع",
         "removeFile": "إزالة الملف",
@@ -248,8 +248,8 @@
       "selectPrivileges": "يرجى اختيار امتياز واحد على الأقل",
       "uploadRequired": "يرجى رفع المستندات المطلوبة",
       "agreeToTerms": "يجب الموافقة على الشروط والأحكام",
-      "fileTooLarge": "حجم الملف يتجاوز الحد الأقصى {{size}} ميجابايت",
-      "invalidFileType": "نوع الملف غير صالح. الأنواع المسموح بها: {{types}}"
+      "fileTooLarge": "حجم الملف يتجاوز الحد الأقصى {size} ميجابايت",
+      "invalidFileType": "نوع الملف غير صالح. الأنواع المسموح بها: {types}"
     },
     "status": {
       "draftSaved": "تم حفظ المسودة بنجاح",
@@ -410,7 +410,7 @@
         "privilegeExpiring": "امتيازاتك على وشك الانتهاء",
         "magicLink": "رابط تسجيل الدخول لنظام سباهي"
       },
-      "greeting": "{{name}} العزيز/ة،",
+      "greeting": "{name} العزيز/ة،",
       "closing": "مع أطيب التحيات،",
       "team": "فريق نظام الامتيازات - سباهي",
       "footer": "هذه رسالة آلية. يرجى عدم الرد مباشرة على هذا البريد.",
@@ -443,10 +443,10 @@
       "message": "واجه الخادم خطأً. يرجى المحاولة لاحقاً."
     },
     "validation": {
-      "required": "{{field}} مطلوب",
-      "minLength": "{{field}} يجب أن يكون {{min}} أحرف على الأقل",
-      "maxLength": "{{field}} يجب ألا يتجاوز {{max}} حرفاً",
-      "pattern": "صيغة {{field}} غير صحيحة",
+      "required": "{field} مطلوب",
+      "minLength": "{field} يجب أن يكون {min} أحرف على الأقل",
+      "maxLength": "{field} يجب ألا يتجاوز {max} حرفاً",
+      "pattern": "صيغة {field} غير صحيحة",
       "email": "يرجى إدخال بريد إلكتروني صحيح",
       "phone": "يرجى إدخال رقم هاتف صحيح",
       "date": "يرجى إدخال تاريخ صحيح",
