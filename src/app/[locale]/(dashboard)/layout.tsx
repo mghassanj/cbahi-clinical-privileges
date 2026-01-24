@@ -1,7 +1,9 @@
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages } from "next-intl/server";
-import { notFound } from "next/navigation";
-import { DashboardShell } from "@/components/dashboard/dashboard-shell";
+import { notFound, redirect } from "next/navigation";
+import { getServerSession } from "next-auth";
+import { DashboardShell, type UserRole } from "@/components/dashboard/dashboard-shell";
+import { authOptions } from "@/lib/auth";
 
 // Supported locales
 const locales = ["en", "ar"];
@@ -23,20 +25,29 @@ export default async function DashboardLayout({
   // Fetch messages for the current locale
   const messages = await getMessages();
 
-  // TODO: Add authentication check here
-  // const session = await getServerSession(authOptions);
-  // if (!session) {
-  //   redirect(`/${locale}/login`);
-  // }
+  // Get actual session
+  const session = await getServerSession(authOptions);
+  if (!session?.user) {
+    redirect(`/${locale}/login`);
+  }
 
-  // Mock user data - replace with actual session user
+  // Map Prisma role to dashboard role type
+  const mapRole = (role: string): UserRole => {
+    if (role === "ADMIN") return "admin";
+    if (["MEDICAL_DIRECTOR", "HEAD_OF_DEPT", "HEAD_OF_SECTION", "COMMITTEE_MEMBER"].includes(role)) {
+      return "approver";
+    }
+    return "employee";
+  };
+
+  // Use actual session user data
   const user = {
-    id: "1",
-    name: "Dr. Ahmed Al-Rashid",
-    nameAr: "د. أحمد الراشد",
-    email: "ahmed.rashid@hospital.com",
-    role: "admin" as const,
-    department: "Dental",
+    id: session.user.id,
+    name: session.user.name || "",
+    nameAr: session.user.nameAr || undefined,
+    email: session.user.email,
+    role: mapRole(session.user.role),
+    department: session.user.departmentEn || undefined,
     avatar: undefined,
   };
 

@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
 import { useLocale, useTranslations } from "next-intl";
 import { BentoGrid, BentoGridItem } from "@/components/dashboard/bento-grid";
 import { StatCard } from "@/components/dashboard/stat-card";
@@ -120,19 +121,24 @@ export default function DashboardPage() {
   const t = useTranslations();
   const locale = useLocale();
   const isRTL = locale === "ar";
-  const [isLoading, setIsLoading] = React.useState(true);
+  const { data: session, status } = useSession();
 
-  // Mock user role - replace with actual session
-  const userRole = "admin" as UserRole;
-  const userName = isRTL ? "د. أحمد الراشد" : "Dr. Ahmed Al-Rashid";
+  // Map Prisma role to dashboard role type
+  const mapRole = (role: string): UserRole => {
+    if (role === "ADMIN") return "admin";
+    if (["MEDICAL_DIRECTOR", "HEAD_OF_DEPT", "HEAD_OF_SECTION", "COMMITTEE_MEMBER"].includes(role)) {
+      return "approver";
+    }
+    return "employee";
+  };
 
-  React.useEffect(() => {
-    // Simulate loading
-    const timer = setTimeout(() => setIsLoading(false), 500);
-    return () => clearTimeout(timer);
-  }, []);
+  // Get user data from session
+  const userRole = session?.user?.role ? mapRole(session.user.role) : "employee";
+  const userName = isRTL && session?.user?.nameAr
+    ? session.user.nameAr
+    : session?.user?.name || "";
 
-  if (isLoading) {
+  if (status === "loading") {
     return <DashboardSkeleton />;
   }
 

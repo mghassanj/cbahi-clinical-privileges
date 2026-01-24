@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, Tajawal } from "next/font/google";
+import { SessionProvider } from "@/components/providers/session-provider";
 import "./globals.css";
 
 // Inter font for English
@@ -68,7 +69,7 @@ export default function RootLayout({
       <body
         className={`${inter.variable} ${tajawal.variable} font-sans antialiased min-h-screen`}
       >
-        {children}
+        <SessionProvider>{children}</SessionProvider>
       </body>
     </html>
   );
