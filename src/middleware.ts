@@ -180,8 +180,10 @@ export async function middleware(request: NextRequest) {
   }
 
   // Get session token
-  // Detect if we're on HTTPS by checking the request URL
-  const isSecure = request.nextUrl.protocol === "https:";
+  // Check if we're behind a proxy (Railway, Vercel, etc.) using X-Forwarded-Proto header
+  // Fall back to checking the request URL protocol
+  const forwardedProto = request.headers.get("x-forwarded-proto");
+  const isSecure = forwardedProto === "https" || request.nextUrl.protocol === "https:";
 
   // Use explicit cookie name based on protocol
   // next-auth uses "__Secure-next-auth.session-token" for HTTPS, "next-auth.session-token" for HTTP
