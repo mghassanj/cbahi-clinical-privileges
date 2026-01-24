@@ -1,9 +1,9 @@
 /**
- * CBAHI Clinical Privileges - File Delete API
+ * CBAHI Clinical Privileges - File API
  *
- * DELETE - Delete file from Google Drive
- *          Removes file from Drive and database record
- * GET    - Get file info
+ * DELETE - Delete file from storage (Google Drive or local)
+ *          Removes file from storage and database record
+ * GET    - Get file info or serve local file content
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -12,6 +12,12 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { createGoogleDriveService } from "@/lib/google-drive";
 import { UserRole } from "@prisma/client";
+import { readFile, unlink } from "fs/promises";
+import { existsSync } from "fs";
+import path from "path";
+
+// Local upload directory (must match the one in route.ts)
+const UPLOAD_DIR = process.env.UPLOAD_DIR || "/tmp/uploads";
 
 // ============================================================================
 // DELETE - Delete File
@@ -111,51 +117,79 @@ export async function DELETE(
       }
     }
 
-    // Check if Google Drive is configured
-    const serviceAccountKey = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
-    if (!serviceAccountKey) {
-      return NextResponse.json(
-        {
-          error: "Google Drive not configured",
-          message: "Google Drive integration is not configured. Please contact administrator.",
-        },
-        { status: 500 }
-      );
-    }
+    // Check if this is a local file
+    if (fileId.startsWith("local_")) {
+      // Parse local file ID: local_{userId}_{timestamp}
+      const parts = fileId.split("_");
+      if (parts.length >= 3) {
+        const userId = parts[1];
+        const userDir = path.join(UPLOAD_DIR, userId);
 
-    // Initialize Google Drive service
-    let driveService;
-    try {
-      driveService = createGoogleDriveService({
-        rootFolderName: "CBAHI Clinical Privileges",
-        rootFolderId: process.env.GOOGLE_DRIVE_ROOT_FOLDER_ID,
-      });
-    } catch (error) {
-      console.error("Failed to initialize Google Drive service:", error);
-      return NextResponse.json(
-        {
-          error: "Google Drive error",
-          message: "Failed to connect to Google Drive",
-        },
-        { status: 500 }
-      );
-    }
+        // Find and delete the file
+        if (existsSync(userDir)) {
+          const { readdirSync } = await import("fs");
+          const files = readdirSync(userDir);
+          const timestamp = parts.slice(2).join("_");
+          const matchingFile = files.find((f: string) => f.startsWith(timestamp));
 
-    // Delete file from Google Drive
-    try {
-      await driveService.deleteFile(fileId);
-    } catch (error) {
-      console.error("Failed to delete file from Google Drive:", error);
-      // If file doesn't exist in Drive, continue to clean up database record
-      const errorMessage = error instanceof Error ? error.message : "Unknown error";
-      if (!errorMessage.includes("File not found") && !errorMessage.includes("404")) {
+          if (matchingFile) {
+            const filePath = path.join(userDir, matchingFile);
+            try {
+              await unlink(filePath);
+            } catch (error) {
+              console.error("Failed to delete local file:", error);
+              // Continue to clean up database record
+            }
+          }
+        }
+      }
+    } else {
+      // Google Drive file - check if configured
+      const serviceAccountKey = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
+      if (!serviceAccountKey) {
         return NextResponse.json(
           {
-            error: "Delete failed",
-            message: "Failed to delete file from Google Drive",
+            error: "Google Drive not configured",
+            message: "Google Drive integration is not configured. Please contact administrator.",
           },
           { status: 500 }
         );
+      }
+
+      // Initialize Google Drive service
+      let driveService;
+      try {
+        driveService = createGoogleDriveService({
+          rootFolderName: "CBAHI Clinical Privileges",
+          rootFolderId: process.env.GOOGLE_DRIVE_ROOT_FOLDER_ID,
+        });
+      } catch (error) {
+        console.error("Failed to initialize Google Drive service:", error);
+        return NextResponse.json(
+          {
+            error: "Google Drive error",
+            message: "Failed to connect to Google Drive",
+          },
+          { status: 500 }
+        );
+      }
+
+      // Delete file from Google Drive
+      try {
+        await driveService.deleteFile(fileId);
+      } catch (error) {
+        console.error("Failed to delete file from Google Drive:", error);
+        // If file doesn't exist in Drive, continue to clean up database record
+        const errorMessage = error instanceof Error ? error.message : "Unknown error";
+        if (!errorMessage.includes("File not found") && !errorMessage.includes("404")) {
+          return NextResponse.json(
+            {
+              error: "Delete failed",
+              message: "Failed to delete file from Google Drive",
+            },
+            { status: 500 }
+          );
+        }
       }
     }
 
@@ -232,6 +266,76 @@ export async function GET(
       );
     }
 
+    // Check if download parameter is present (to serve file content)
+    const url = new URL(request.url);
+    const download = url.searchParams.get("download") === "true";
+
+    // Check if this is a local file
+    if (fileId.startsWith("local_")) {
+      // Parse local file ID: local_{userId}_{timestamp}
+      const parts = fileId.split("_");
+      if (parts.length >= 3) {
+        const userId = parts[1];
+        const timestamp = parts.slice(2).join("_");
+        const userDir = path.join(UPLOAD_DIR, userId);
+
+        if (existsSync(userDir)) {
+          const { readdirSync } = await import("fs");
+          const files = readdirSync(userDir);
+          const matchingFile = files.find((f: string) => f.startsWith(timestamp));
+
+          if (matchingFile) {
+            const filePath = path.join(userDir, matchingFile);
+
+            // If download requested, serve the file content
+            if (download) {
+              try {
+                const fileBuffer = await readFile(filePath);
+                const mimeType = getMimeType(matchingFile);
+
+                return new NextResponse(fileBuffer, {
+                  headers: {
+                    "Content-Type": mimeType,
+                    "Content-Disposition": `attachment; filename="${encodeURIComponent(matchingFile)}"`,
+                    "Content-Length": fileBuffer.length.toString(),
+                  },
+                });
+              } catch (error) {
+                console.error("Failed to read local file:", error);
+                return NextResponse.json(
+                  { error: "File not found", message: "File not found" },
+                  { status: 404 }
+                );
+              }
+            }
+
+            // Return file info
+            const { statSync } = await import("fs");
+            const stats = statSync(filePath);
+
+            return NextResponse.json({
+              success: true,
+              data: {
+                id: fileId,
+                driveFileId: fileId,
+                name: matchingFile,
+                type: getMimeType(matchingFile),
+                size: stats.size,
+                url: `/api/uploads/${fileId}?download=true`,
+                storageType: "local",
+                uploadedAt: stats.birthtime,
+              },
+            });
+          }
+        }
+      }
+
+      return NextResponse.json(
+        { error: "File not found", message: "File not found" },
+        { status: 404 }
+      );
+    }
+
     // Check database for attachment info
     const attachment = await prisma.attachment.findFirst({
       where: { driveFileId: fileId },
@@ -298,4 +402,19 @@ export async function GET(
       { status: 500 }
     );
   }
+}
+
+// Helper function to determine MIME type from file extension
+function getMimeType(fileName: string): string {
+  const ext = path.extname(fileName).toLowerCase();
+  const mimeTypes: Record<string, string> = {
+    ".pdf": "application/pdf",
+    ".jpg": "image/jpeg",
+    ".jpeg": "image/jpeg",
+    ".png": "image/png",
+    ".gif": "image/gif",
+    ".doc": "application/msword",
+    ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  };
+  return mimeTypes[ext] || "application/octet-stream";
 }
