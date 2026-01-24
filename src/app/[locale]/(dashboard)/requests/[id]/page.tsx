@@ -26,7 +26,9 @@ import {
   Building,
   Mail,
   Shield,
+  Award,
 } from "lucide-react";
+import { CertificateViewer } from "@/components/custom/certificate-viewer";
 
 type RequestStatus = "DRAFT" | "PENDING" | "IN_REVIEW" | "APPROVED" | "REJECTED" | "CANCELLED";
 
@@ -411,6 +413,30 @@ export default function RequestDetailsPage() {
               )}
             </LiquidGlassCardContent>
           </LiquidGlassCard>
+
+          {/* Certificate Section - Only shown when request is approved */}
+          {request.status === "APPROVED" && (
+            <LiquidGlassCard>
+              <LiquidGlassCardHeader>
+                <div className="flex items-center gap-2">
+                  <Award className="h-5 w-5 text-success-600" />
+                  <LiquidGlassCardTitle>
+                    {isRTL ? "شهادة الامتيازات" : "Privileges Certificate"}
+                  </LiquidGlassCardTitle>
+                </div>
+              </LiquidGlassCardHeader>
+              <LiquidGlassCardContent>
+                <CertificateViewer
+                  requestId={request.id}
+                  requestStatus={request.status}
+                  applicantName={request.applicant.nameEn}
+                  applicantNameAr={request.applicant.nameAr}
+                  applicantEmail={request.applicant.email}
+                  locale={isRTL ? "ar" : "en"}
+                />
+              </LiquidGlassCardContent>
+            </LiquidGlassCard>
+          )}
         </div>
 
         {/* Right Column - Approval Timeline */}

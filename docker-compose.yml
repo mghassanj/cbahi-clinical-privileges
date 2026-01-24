@@ -1,0 +1,86 @@
+# =============================================================================
+# CBAHI Clinical Privileges - Docker Compose for Local Development
+# =============================================================================
+
+version: "3.8"
+
+services:
+  # ---------------------------------------------------------------------------
+  # Application Service
+  # ---------------------------------------------------------------------------
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://cbahi_user:cbahi_password@db:5432/cbahi_db?schema=public
+      - NEXTAUTH_URL=http://localhost:3000
+      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET:-development-secret-change-in-production}
+    env_file:
+      - .env.local
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/.next
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - cbahi-network
+    command: npm run dev
+
+  # ---------------------------------------------------------------------------
+  # PostgreSQL Database Service
+  # ---------------------------------------------------------------------------
+  db:
+    image: postgres:16-alpine
+    container_name: cbahi-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: cbahi_user
+      POSTGRES_PASSWORD: cbahi_password
+      POSTGRES_DB: cbahi_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cbahi_user -d cbahi_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - cbahi-network
+
+  # ---------------------------------------------------------------------------
+  # Adminer - Database Management UI (Optional)
+  # ---------------------------------------------------------------------------
+  adminer:
+    image: adminer:latest
+    container_name: cbahi-adminer
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+    networks:
+      - cbahi-network
+    profiles:
+      - tools
+
+# -----------------------------------------------------------------------------
+# Volumes
+# -----------------------------------------------------------------------------
+volumes:
+  postgres_data:
+    name: cbahi-postgres-data
+
+# -----------------------------------------------------------------------------
+# Networks
+# -----------------------------------------------------------------------------
+networks:
+  cbahi-network:
+    name: cbahi-network
+    driver: bridge

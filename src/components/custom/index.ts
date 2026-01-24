@@ -71,3 +71,10 @@ export type {
 // Escalation Banner
 export { EscalationBanner } from "./escalation-banner";
 export type { EscalationBannerProps } from "./escalation-banner";
+
+// Certificate Viewer
+export {
+  CertificateViewer,
+  CertificateStatusBadge,
+} from "./certificate-viewer";
+export type { CertificateViewerProps } from "./certificate-viewer";

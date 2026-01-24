@@ -1,0 +1,27 @@
+# =============================================================================
+# CBAHI Clinical Privileges - Development Dockerfile
+# Used with docker-compose for local development
+# =============================================================================
+
+FROM node:20-alpine
+
+# Install system dependencies
+RUN apk add --no-cache libc6-compat openssl
+
+WORKDIR /app
+
+# Copy package files
+COPY package.json package-lock.json ./
+COPY prisma ./prisma/
+
+# Install all dependencies
+RUN npm ci && npx prisma generate
+
+# Copy remaining files
+COPY . .
+
+# Expose development port
+EXPOSE 3000
+
+# Default command (can be overridden in docker-compose)
+CMD ["npm", "run", "dev"]

@@ -4,6 +4,9 @@ const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Enable standalone output for Docker deployment
+  output: "standalone",
+
   // Environment variables available to Edge Runtime (middleware)
   env: {
     NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET,
