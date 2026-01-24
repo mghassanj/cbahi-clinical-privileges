@@ -44,7 +44,7 @@ yarn-error.log*
 next-env.d.ts
 
 # prisma
-/prisma/migrations
+# Note: migrations should be tracked in version control
 
 # uploads
 /uploads
