@@ -110,6 +110,17 @@
     "filters": {
       "allStatus": "All Status",
       "allTypes": "All Types"
+    },
+    "form": {
+      "privileges": {
+        "title": "Privileges",
+        "description": "Select the clinical privileges you are requesting. Privileges marked with a warning require special qualifications.",
+        "searchPrivileges": "Search privileges...",
+        "selectedCount": "{count} privilege(s) selected",
+        "selectAll": "Select all",
+        "deselectAll": "Deselect all",
+        "noResults": "No matching privileges found"
+      }
     }
   },
   "approvals": {
