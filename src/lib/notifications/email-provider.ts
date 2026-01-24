@@ -306,7 +306,11 @@ export class MicrosoftGraphProvider implements EmailProvider {
 // ============================================================================
 
 /**
- * Mock email provider for testing purposes
+ * Mock email provider for testing purposes.
+ *
+ * WARNING: This class is for testing/development only and should NOT be used
+ * in production environments. The index.ts conditionally exports this class
+ * only when NODE_ENV !== 'production'.
  */
 export class MockEmailProvider implements EmailProvider {
   private sentEmails: EmailMessage[] = [];

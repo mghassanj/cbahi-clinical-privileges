@@ -57,7 +57,6 @@ export default function RequestsPage() {
   const t = useTranslations();
   const locale = useLocale();
   const router = useRouter();
-  const isRTL = locale === "ar";
 
   const [isLoading, setIsLoading] = React.useState(true);
   const [requests, setRequests] = React.useState<PrivilegeRequest[]>([]);
@@ -112,15 +111,13 @@ export default function RequestsPage() {
 
       // Remove from local state
       setRequests((prev) => prev.filter((r) => r.id !== requestToDelete));
-      toast.success(isRTL ? "تم حذف الطلب بنجاح" : "Request deleted successfully");
+      toast.success(t("request.deleteSuccess"));
     } catch (err) {
       console.error("Error deleting request:", err);
       toast.error(
         err instanceof Error
           ? err.message
-          : isRTL
-          ? "فشل في حذف الطلب"
-          : "Failed to delete request"
+          : t("request.deleteError")
       );
     } finally {
       setIsDeleting(false);
@@ -137,25 +134,11 @@ export default function RequestsPage() {
   }, [requests, typeFilter]);
 
   const getTypeLabel = (type: RequestType) => {
-    const labels: Record<RequestType, { en: string; ar: string }> = {
-      NEW: { en: "Initial", ar: "أولي" },
-      RENEWAL: { en: "Renewal", ar: "تجديد" },
-      EXPANSION: { en: "Expansion", ar: "توسيع" },
-      TEMPORARY: { en: "Temporary", ar: "مؤقت" },
-    };
-    return isRTL ? labels[type]?.ar || type : labels[type]?.en || type;
+    return t(`request.types.${type}`);
   };
 
   const getStatusLabel = (status: RequestStatus) => {
-    const labels: Record<RequestStatus, { en: string; ar: string }> = {
-      DRAFT: { en: "Draft", ar: "مسودة" },
-      PENDING: { en: "Pending", ar: "قيد الانتظار" },
-      IN_REVIEW: { en: "In Review", ar: "قيد المراجعة" },
-      APPROVED: { en: "Approved", ar: "موافق عليه" },
-      REJECTED: { en: "Rejected", ar: "مرفوض" },
-      CANCELLED: { en: "Cancelled", ar: "ملغى" },
-    };
-    return isRTL ? labels[status]?.ar || status : labels[status]?.en || status;
+    return t(`request.statuses.${status}`);
   };
 
   const columns: Column<PrivilegeRequest>[] = [
@@ -193,7 +176,7 @@ export default function RequestsPage() {
       headerAr: "الامتيازات",
       cell: (item) => (
         <span className="text-neutral-600 dark:text-neutral-400">
-          {item.requestedPrivileges?.length || 0} {isRTL ? "امتياز" : "privileges"}
+          {item.requestedPrivileges?.length || 0} {t("request.privileges")}
         </span>
       ),
     },
@@ -272,7 +255,7 @@ export default function RequestsPage() {
             {t("common.navigation.requests")}
           </h1>
           <p className="mt-1 text-neutral-500 dark:text-neutral-400">
-            {isRTL ? "عرض وإدارة طلبات الامتيازات الخاصة بك" : "View and manage your privilege requests"}
+            {t("request.description")}
           </p>
         </div>
         <Link href={`/${locale}/requests/new`}>
@@ -296,23 +279,23 @@ export default function RequestsPage() {
           onChange={(e) => setStatusFilter(e.target.value)}
           className="w-40"
         >
-          <option value="all">{isRTL ? "كل الحالات" : "All Status"}</option>
-          <option value="DRAFT">{isRTL ? "مسودة" : "Draft"}</option>
-          <option value="PENDING">{isRTL ? "قيد الانتظار" : "Pending"}</option>
-          <option value="IN_REVIEW">{isRTL ? "قيد المراجعة" : "In Review"}</option>
-          <option value="APPROVED">{isRTL ? "موافق عليه" : "Approved"}</option>
-          <option value="REJECTED">{isRTL ? "مرفوض" : "Rejected"}</option>
+          <option value="all">{t("request.filters.allStatus")}</option>
+          <option value="DRAFT">{t("request.statuses.DRAFT")}</option>
+          <option value="PENDING">{t("request.statuses.PENDING")}</option>
+          <option value="IN_REVIEW">{t("request.statuses.IN_REVIEW")}</option>
+          <option value="APPROVED">{t("request.statuses.APPROVED")}</option>
+          <option value="REJECTED">{t("request.statuses.REJECTED")}</option>
         </Select>
         <Select
           value={typeFilter}
           onChange={(e) => setTypeFilter(e.target.value)}
           className="w-40"
         >
-          <option value="all">{isRTL ? "كل الأنواع" : "All Types"}</option>
-          <option value="NEW">{isRTL ? "أولي" : "Initial"}</option>
-          <option value="RENEWAL">{isRTL ? "تجديد" : "Renewal"}</option>
-          <option value="EXPANSION">{isRTL ? "توسيع" : "Expansion"}</option>
-          <option value="TEMPORARY">{isRTL ? "مؤقت" : "Temporary"}</option>
+          <option value="all">{t("request.filters.allTypes")}</option>
+          <option value="NEW">{t("request.types.NEW")}</option>
+          <option value="RENEWAL">{t("request.types.RENEWAL")}</option>
+          <option value="EXPANSION">{t("request.types.EXPANSION")}</option>
+          <option value="TEMPORARY">{t("request.types.TEMPORARY")}</option>
         </Select>
         {(statusFilter !== "all" || typeFilter !== "all") && (
           <Button
@@ -332,16 +315,12 @@ export default function RequestsPage() {
       <DataTable
         data={filteredRequests}
         columns={columns}
-        searchPlaceholder={isRTL ? "البحث عن طلب..." : "Search requests..."}
+        searchPlaceholder={t("request.searchPlaceholder")}
         searchKey="id"
         emptyMessage={
           statusFilter !== "all" || typeFilter !== "all"
-            ? isRTL
-              ? "لا توجد طلبات تطابق التصفية"
-              : "No requests match your filters"
-            : isRTL
-            ? "لم تقم بإنشاء أي طلبات بعد"
-            : "You haven't created any requests yet"
+            ? t("request.noMatchingRequests")
+            : t("request.noRequests")
         }
         emptyAction={{
           label: t("request.newRequest"),
@@ -356,12 +335,10 @@ export default function RequestsPage() {
           <DialogClose />
           <DialogHeader>
             <DialogTitle>
-              {isRTL ? "حذف الطلب" : "Delete Request"}
+              {t("request.deleteTitle")}
             </DialogTitle>
             <DialogDescription>
-              {isRTL
-                ? "هل أنت متأكد من حذف هذا الطلب؟ لا يمكن التراجع عن هذا الإجراء."
-                : "Are you sure you want to delete this request? This action cannot be undone."}
+              {t("request.deleteDescription")}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

@@ -4,6 +4,8 @@
  * Main orchestrator for sending notification emails.
  */
 
+import { logger } from '@/lib/logger';
+
 import {
   PrivilegeApplicationRequest,
   EmailMessage,
@@ -76,9 +78,14 @@ export class NotificationService {
     this.testingEmail = testEmail || null;
 
     if (enabled) {
-      console.log(`[NotificationService] Testing mode enabled. All emails will be sent to: ${testEmail || 'console only'}`);
+      logger.info('Testing mode enabled', {
+        service: 'NotificationService',
+        testEmail: testEmail || 'console only',
+      });
     } else {
-      console.log('[NotificationService] Testing mode disabled. Emails will be sent to actual recipients.');
+      logger.info('Testing mode disabled, emails will be sent to actual recipients', {
+        service: 'NotificationService',
+      });
     }
   }
 
@@ -125,13 +132,13 @@ export class NotificationService {
         subject = `[TEST - Original: ${recipients.join(', ')}] ${subject}`;
       } else {
         // Console-only mode
-        console.log('\n========== EMAIL NOTIFICATION (TEST MODE) ==========');
-        console.log(`To: ${recipients.join(', ')}`);
-        if (cc) console.log(`CC: ${cc.join(', ')}`);
-        console.log(`Subject: ${subject}`);
-        console.log('--- Text Body ---');
-        console.log(textBody);
-        console.log('=================================================\n');
+        logger.info('Email notification (test mode)', {
+          service: 'NotificationService',
+          to: recipients,
+          cc: cc || [],
+          subject,
+          textBody,
+        });
 
         return {
           success: true,
@@ -180,7 +187,11 @@ export class NotificationService {
       brand: defaultBrandConfig,
     });
 
-    console.log(`[NotificationService] Sending approval request notification to ${currentApprover.email} for request ${request.requestNumber}`);
+    logger.info('Sending approval request notification', {
+      service: 'NotificationService',
+      recipientEmail: currentApprover.email,
+      requestNumber: request.requestNumber,
+    });
 
     return this.sendEmail(
       [currentApprover.email],
@@ -208,7 +219,11 @@ export class NotificationService {
       brand: defaultBrandConfig,
     });
 
-    console.log(`[NotificationService] Sending approval progress notification to ${request.applicant.email} for request ${request.requestNumber}`);
+    logger.info('Sending approval progress notification', {
+      service: 'NotificationService',
+      recipientEmail: request.applicant.email,
+      requestNumber: request.requestNumber,
+    });
 
     return this.sendEmail(
       [request.applicant.email],
@@ -232,7 +247,11 @@ export class NotificationService {
       brand: defaultBrandConfig,
     });
 
-    console.log(`[NotificationService] Sending approval complete notification to ${request.applicant.email} for request ${request.requestNumber}`);
+    logger.info('Sending approval complete notification', {
+      service: 'NotificationService',
+      recipientEmail: request.applicant.email,
+      requestNumber: request.requestNumber,
+    });
 
     return this.sendEmail(
       [request.applicant.email],
@@ -280,7 +299,11 @@ export class NotificationService {
       brand: defaultBrandConfig,
     });
 
-    console.log(`[NotificationService] Sending rejection notification to ${request.applicant.email} for request ${request.requestNumber}`);
+    logger.info('Sending rejection notification', {
+      service: 'NotificationService',
+      recipientEmail: request.applicant.email,
+      requestNumber: request.requestNumber,
+    });
 
     return this.sendEmail(
       [request.applicant.email],
@@ -331,7 +354,11 @@ export class NotificationService {
       brand: defaultBrandConfig,
     });
 
-    console.log(`[NotificationService] Sending modifications requested notification to ${request.applicant.email} for request ${request.requestNumber}`);
+    logger.info('Sending modifications requested notification', {
+      service: 'NotificationService',
+      recipientEmail: request.applicant.email,
+      requestNumber: request.requestNumber,
+    });
 
     return this.sendEmail(
       [request.applicant.email],
@@ -373,7 +400,12 @@ export class NotificationService {
       ];
     }
 
-    console.log(`[NotificationService] Sending escalation (Level ${level}) notification to ${escalationInfo.escalatedTo.email} for request ${request.requestNumber}`);
+    logger.info('Sending escalation notification', {
+      service: 'NotificationService',
+      escalationLevel: level,
+      recipientEmail: escalationInfo.escalatedTo.email,
+      requestNumber: request.requestNumber,
+    });
 
     return this.sendEmail(
       [escalationInfo.escalatedTo.email],

@@ -17,6 +17,7 @@ import {
 } from './types';
 
 import { NotificationService, getNotificationService } from './notification-service';
+import { logger } from '@/lib/logger';
 
 // ============================================================================
 // Default Configuration
@@ -184,9 +185,11 @@ export class EscalationService {
         // Send to the approver's manager
         recipient = await this.getApproverManager(pending.approverId);
         if (!recipient) {
-          console.warn(
-            `[EscalationService] No manager found for approver ${pending.approverId}. Skipping manager escalation.`
-          );
+          logger.warn('No manager found for approver, skipping manager escalation', {
+            service: 'EscalationService',
+            approverId: pending.approverId,
+            requestId: pending.requestId,
+          });
           return { escalated: false, level: requiredLevel, error: 'No manager found' };
         }
         break;
@@ -195,9 +198,10 @@ export class EscalationService {
         // Send to HR contacts
         const hrContacts = await this.getHRContacts();
         if (hrContacts.length === 0) {
-          console.warn(
-            `[EscalationService] No HR contacts found. Skipping HR escalation.`
-          );
+          logger.warn('No HR contacts found, skipping HR escalation', {
+            service: 'EscalationService',
+            requestId: pending.requestId,
+          });
           return { escalated: false, level: requiredLevel, error: 'No HR contacts found' };
         }
         // Use the first HR contact as the primary recipient
@@ -241,22 +245,31 @@ export class EscalationService {
         );
         await this.saveEscalationRecord(record);
 
-        console.log(
-          `[EscalationService] Escalation (Level ${requiredLevel}) sent for request ${pending.requestId}`
-        );
+        logger.info('Escalation notification sent', {
+          service: 'EscalationService',
+          level: requiredLevel,
+          requestId: pending.requestId,
+          approverId: pending.approverId,
+        });
 
         return { escalated: true, level: requiredLevel };
       } else {
-        console.error(
-          `[EscalationService] Failed to send escalation for request ${pending.requestId}: ${result.error}`
-        );
+        logger.error('Failed to send escalation notification', {
+          service: 'EscalationService',
+          requestId: pending.requestId,
+          level: requiredLevel,
+          error: result.error,
+        });
         return { escalated: false, level: requiredLevel, error: result.error };
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      console.error(
-        `[EscalationService] Exception during escalation for request ${pending.requestId}: ${errorMessage}`
-      );
+      logger.error('Exception during escalation processing', {
+        service: 'EscalationService',
+        requestId: pending.requestId,
+        level: requiredLevel,
+        error: errorMessage,
+      });
       return { escalated: false, level: requiredLevel, error: errorMessage };
     }
   }
@@ -289,9 +302,10 @@ export class EscalationService {
 
     try {
       const pendingApprovals = await this.getPendingApprovals();
-      console.log(
-        `[EscalationService] Processing ${pendingApprovals.length} pending approvals`
-      );
+      logger.info('Processing pending approvals', {
+        service: 'EscalationService',
+        count: pendingApprovals.length,
+      });
 
       for (const pending of pendingApprovals) {
         results.processed++;
@@ -316,17 +330,20 @@ export class EscalationService {
         }
       }
 
-      console.log(
-        `[EscalationService] Escalation processing complete. ` +
-        `Processed: ${results.processed}, Escalated: ${results.escalated}, Errors: ${results.errors}`
-      );
+      logger.info('Escalation processing complete', {
+        service: 'EscalationService',
+        processed: results.processed,
+        escalated: results.escalated,
+        errors: results.errors,
+      });
 
       return results;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      console.error(
-        `[EscalationService] Critical error during escalation processing: ${errorMessage}`
-      );
+      logger.error('Critical error during escalation processing', {
+        service: 'EscalationService',
+        error: errorMessage,
+      });
       throw error;
     }
   }
@@ -353,9 +370,12 @@ export class EscalationService {
       }
     }
 
-    console.log(
-      `[EscalationService] Marked escalations as resolved for request ${requestId}, approver ${approverId}, resolution: ${resolution}`
-    );
+    logger.info('Marked escalations as resolved', {
+      service: 'EscalationService',
+      requestId,
+      approverId,
+      resolution,
+    });
   }
 
   /**
@@ -375,9 +395,11 @@ export class EscalationService {
       }
     }
 
-    console.log(
-      `[EscalationService] Marked all escalations as resolved for request ${requestId}, resolution: ${resolution}`
-    );
+    logger.info('Marked all escalations as resolved', {
+      service: 'EscalationService',
+      requestId,
+      resolution,
+    });
   }
 
   // ============================================================================
@@ -525,13 +547,16 @@ export class ScheduledEscalationRunner {
    */
   start(): void {
     if (this.isRunning) {
-      console.warn('[ScheduledEscalationRunner] Already running');
+      logger.warn('Scheduled escalation runner already running', {
+        service: 'ScheduledEscalationRunner',
+      });
       return;
     }
 
-    console.log(
-      `[ScheduledEscalationRunner] Starting with interval of ${this.intervalMs / 60000} minutes`
-    );
+    logger.info('Starting scheduled escalation runner', {
+      service: 'ScheduledEscalationRunner',
+      intervalMinutes: this.intervalMs / 60000,
+    });
 
     // Run immediately on start
     this.run();
@@ -555,23 +580,33 @@ export class ScheduledEscalationRunner {
     }
 
     this.isRunning = false;
-    console.log('[ScheduledEscalationRunner] Stopped');
+    logger.info('Scheduled escalation runner stopped', {
+      service: 'ScheduledEscalationRunner',
+    });
   }
 
   /**
    * Run a single escalation check
    */
   private async run(): Promise<void> {
-    console.log(`[ScheduledEscalationRunner] Running escalation check at ${new Date().toISOString()}`);
+    logger.info('Running escalation check', {
+      service: 'ScheduledEscalationRunner',
+      timestamp: new Date().toISOString(),
+    });
 
     try {
       const results = await this.escalationService.processAllEscalations();
-      console.log(
-        `[ScheduledEscalationRunner] Completed. ` +
-        `Processed: ${results.processed}, Escalated: ${results.escalated}, Errors: ${results.errors}`
-      );
+      logger.info('Escalation check completed', {
+        service: 'ScheduledEscalationRunner',
+        processed: results.processed,
+        escalated: results.escalated,
+        errors: results.errors,
+      });
     } catch (error) {
-      console.error('[ScheduledEscalationRunner] Error during escalation check:', error);
+      logger.error('Error during escalation check', {
+        service: 'ScheduledEscalationRunner',
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
     }
   }
 

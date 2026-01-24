@@ -53,7 +53,6 @@ export type { GenerateEmailParams } from './email-generator';
 export {
   GmailSmtpProvider,
   MicrosoftGraphProvider,
-  MockEmailProvider,
   RetryableEmailProvider,
   RateLimitedEmailProvider,
   getEmailProvider,
@@ -70,10 +69,25 @@ export type { EmailProvider } from './email-provider';
 export {
   NotificationService,
   createNotificationServiceFromEnv,
-  createMockNotificationService,
   getNotificationService,
   resetNotificationService,
 } from './notification-service';
+
+// ============================================================================
+// Test Utilities - Only exported in non-production environments
+// ============================================================================
+
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+export const MockEmailProvider = process.env.NODE_ENV !== 'production'
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  ? require('./email-provider').MockEmailProvider
+  : undefined;
+
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+export const createMockNotificationService = process.env.NODE_ENV !== 'production'
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  ? require('./notification-service').createMockNotificationService
+  : undefined;
 
 // ============================================================================
 // Escalation Service

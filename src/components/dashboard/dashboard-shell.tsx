@@ -142,6 +142,11 @@ const DashboardShell: React.FC<DashboardShellProps> = ({ children, user }) => {
             icon: Users,
           },
           {
+            href: `/${locale}/admin/privileges`,
+            label: t("admin.privileges.title") || "Privileges",
+            icon: CheckSquare,
+          },
+          {
             href: `/${locale}/admin/settings`,
             label: t("common.navigation.settings"),
             icon: Settings,
