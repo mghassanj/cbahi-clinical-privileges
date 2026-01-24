@@ -341,18 +341,10 @@ function CustomPrismaAdapter(): Adapter {
 // Build providers list based on mode
 const providers: NextAuthOptions["providers"] = [];
 
-// Always add Email provider (for production)
-providers.push(
-  EmailProvider({
-    server: process.env.EMAIL_SERVER || "",
-    from: process.env.EMAIL_FROM || "noreply@cbahi.gov.sa",
-    maxAge: 24 * 60 * 60, // 24 hours
-    sendVerificationRequest: customSendVerificationRequest,
-  })
-);
-
-// Add Credentials provider for testing mode
+// In testing mode, use Credentials provider (no adapter needed)
+// In production mode, use Email provider with adapter
 if (TESTING_MODE) {
+  // Add Credentials provider for testing mode (no adapter needed)
   providers.push(
     CredentialsProvider({
       id: "test-login",
@@ -387,6 +379,16 @@ if (TESTING_MODE) {
           isActive: user.isActive,
         };
       },
+    })
+  );
+} else {
+  // Add Email provider for production (requires adapter)
+  providers.push(
+    EmailProvider({
+      server: process.env.EMAIL_SERVER || "",
+      from: process.env.EMAIL_FROM || "noreply@cbahi.gov.sa",
+      maxAge: 24 * 60 * 60, // 24 hours
+      sendVerificationRequest: customSendVerificationRequest,
     })
   );
 }
