@@ -10,7 +10,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "start:prod": "prisma migrate deploy && node server.js",
+    "start:prod": "node .next/standalone/server.js",
     "lint": "next lint",
     "test": "jest",
     "test:watch": "jest --watch",
