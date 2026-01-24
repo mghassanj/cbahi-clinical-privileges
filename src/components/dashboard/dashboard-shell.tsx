@@ -54,9 +54,24 @@ const DashboardShell: React.FC<DashboardShellProps> = ({ children, user }) => {
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = React.useState(false);
   const [userMenuOpen, setUserMenuOpen] = React.useState(false);
+  const [pendingApprovalsCount, setPendingApprovalsCount] = React.useState<number | undefined>(undefined);
   const userMenuRef = React.useRef<HTMLDivElement>(null);
 
   const isRTL = locale === "ar";
+
+  // Fetch pending approvals count for approvers/admins
+  React.useEffect(() => {
+    if (user?.role === "approver" || user?.role === "admin") {
+      fetch("/api/approvals?limit=1")
+        .then((res) => res.json())
+        .then((data) => {
+          setPendingApprovalsCount(data.statistics?.pending || 0);
+        })
+        .catch(() => {
+          setPendingApprovalsCount(0);
+        });
+    }
+  }, [user?.role]);
 
   // Use authenticated user data - no fallback to mock data
   const currentUser: DashboardUser | null = user || null;
@@ -105,7 +120,7 @@ const DashboardShell: React.FC<DashboardShellProps> = ({ children, user }) => {
         href: `/${locale}/approvals`,
         label: t("common.navigation.approvals"),
         icon: CheckSquare,
-        badge: currentUser.role === "approver" || currentUser.role === "admin" ? 5 : undefined,
+        badge: pendingApprovalsCount && pendingApprovalsCount > 0 ? pendingApprovalsCount : undefined,
       },
     ];
 
