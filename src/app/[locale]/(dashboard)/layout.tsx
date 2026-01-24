@@ -8,13 +8,14 @@ const locales = ["en", "ar"];
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
-  params: { locale: string };
+  params: Promise<{ locale: string }>;
 }
 
 export default async function DashboardLayout({
   children,
-  params: { locale },
+  params,
 }: DashboardLayoutProps) {
+  const { locale } = await params;
   // Validate locale
   if (!locales.includes(locale)) {
     notFound();
