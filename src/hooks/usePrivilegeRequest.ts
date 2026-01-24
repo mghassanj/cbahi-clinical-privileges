@@ -35,9 +35,6 @@ export const applicationTypeSchema = z.object({
     message: "Please select an application type",
   }),
   reapplicationReason: z.string().optional(),
-  requestType: z.enum(["core", "non-core", "extra"], {
-    message: "Please select a request type",
-  }),
 });
 
 export const privilegeSelectionSchema = z.object({

@@ -172,19 +172,6 @@ export function StepReviewSubmit({
     return isRTL ? "إعادة التقديم" : "Reapplication";
   };
 
-  const getRequestTypeLabel = () => {
-    switch (applicationType.requestType) {
-      case "core":
-        return isRTL ? "امتيازات أساسية" : "Core Privileges";
-      case "non-core":
-        return isRTL ? "امتيازات غير أساسية" : "Non-Core Privileges";
-      case "extra":
-        return isRTL ? "امتيازات إضافية" : "Extra Privileges";
-      default:
-        return "-";
-    }
-  };
-
   return (
     <div className="space-y-6">
       {/* Description */}
@@ -284,14 +271,6 @@ export function StepReviewSubmit({
                 </dt>
                 <dd className="font-medium text-neutral-900 dark:text-neutral-100">
                   {getApplicationTypeLabel()}
-                </dd>
-              </div>
-              <div className="flex justify-between">
-                <dt className="text-neutral-500 dark:text-neutral-400">
-                  {isRTL ? "نوع الطلب" : "Request Type"}
-                </dt>
-                <dd className="font-medium text-neutral-900 dark:text-neutral-100">
-                  {getRequestTypeLabel()}
                 </dd>
               </div>
               {applicationType.applicationType === "reapplication" && (
