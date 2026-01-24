@@ -180,22 +180,28 @@ export async function middleware(request: NextRequest) {
   }
 
   // Get session token
-  // Check if we're behind a proxy (Railway, Vercel, etc.) using X-Forwarded-Proto header
-  // Fall back to checking the request URL protocol
-  const forwardedProto = request.headers.get("x-forwarded-proto");
-  const isSecure = forwardedProto === "https" || request.nextUrl.protocol === "https:";
+  // Try both cookie names since Railway proxy might cause issues
+  const secureCookieName = "__Secure-next-auth.session-token";
+  const regularCookieName = "next-auth.session-token";
 
-  // Use explicit cookie name based on protocol
-  // next-auth uses "__Secure-next-auth.session-token" for HTTPS, "next-auth.session-token" for HTTP
-  const cookieName = isSecure
-    ? "__Secure-next-auth.session-token"
-    : "next-auth.session-token";
+  // Check which cookie exists
+  const hasSecureCookie = request.cookies.has(secureCookieName);
+  const hasRegularCookie = request.cookies.has(regularCookieName);
+  const cookieName = hasSecureCookie ? secureCookieName : regularCookieName;
+
+  // Log cookie info for debugging
+  console.log("[Middleware] Secure cookie exists:", hasSecureCookie);
+  console.log("[Middleware] Regular cookie exists:", hasRegularCookie);
+  console.log("[Middleware] Using cookie name:", cookieName);
+  console.log("[Middleware] All cookies:", request.cookies.getAll().map(c => c.name));
 
   const token = await getToken({
     req: request,
     secret: secret,
     cookieName: cookieName,
   });
+
+  console.log("[Middleware] Token decoded:", !!token);
 
   // Redirect to login if not authenticated and accessing protected route
   if (requiresAuth(pathname) && !token) {
