@@ -112,6 +112,15 @@
       "allTypes": "All Types"
     },
     "form": {
+      "personalInfo": {
+        "title": "Personal Information",
+        "fullName": "Full Name",
+        "employeeCode": "Employee Code",
+        "department": "Department",
+        "jobTitle": "Job Title",
+        "email": "Email Address",
+        "scfhsNumber": "SCFHS Number"
+      },
       "privileges": {
         "title": "Privileges",
         "description": "Select the clinical privileges you are requesting. Privileges marked with a warning require special qualifications.",
@@ -191,6 +200,11 @@
     }
   },
   "admin": {
+    "title": "Administration",
+    "systemSettings": {
+      "title": "System Settings",
+      "language": "Language"
+    },
     "userManagement": {
       "title": "User Management",
       "users": "User Management",
