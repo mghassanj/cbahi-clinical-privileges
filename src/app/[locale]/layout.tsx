@@ -23,7 +23,7 @@ export default async function LocaleLayout({
     notFound();
   }
 
-  const messages = await getMessages();
+  const messages = await getMessages({ locale });
   const direction = getDirection(locale as Locale);
 
   return (
