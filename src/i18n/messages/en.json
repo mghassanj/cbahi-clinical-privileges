@@ -59,22 +59,83 @@
   },
   "common.actions": {
     "filter": "Filter",
-    "back": "Back"
+    "back": "Back",
+    "retry": "Retry",
+    "reset": "Reset",
+    "cancel": "Cancel",
+    "delete": "Delete"
   },
   "request": {
     "newRequest": "New Request",
-    "title": "Privilege Requests"
+    "title": "Privilege Requests",
+    "description": "View and manage your privilege requests",
+    "id": "Request ID",
+    "type": "Type",
+    "status": "Status",
+    "privileges": "Privileges",
+    "submitted": "Submitted",
+    "actions": "Actions",
+    "searchPlaceholder": "Search requests...",
+    "noRequests": "You haven't created any requests yet",
+    "noMatchingRequests": "No requests match your filters",
+    "deleteTitle": "Delete Request",
+    "deleteDescription": "Are you sure you want to delete this request? This action cannot be undone.",
+    "deleteSuccess": "Request deleted successfully",
+    "deleteError": "Failed to delete request",
+    "types": {
+      "NEW": "Initial",
+      "RENEWAL": "Renewal",
+      "EXPANSION": "Expansion",
+      "TEMPORARY": "Temporary"
+    },
+    "statuses": {
+      "DRAFT": "Draft",
+      "PENDING": "Pending",
+      "IN_REVIEW": "In Review",
+      "APPROVED": "Approved",
+      "REJECTED": "Rejected",
+      "CANCELLED": "Cancelled"
+    },
+    "filters": {
+      "allStatus": "All Status",
+      "allTypes": "All Types"
+    }
   },
   "approvals": {
     "title": "Approvals",
     "pending": "Pending Approvals",
     "approved": "Approved",
-    "rejected": "Rejected"
+    "rejected": "Rejected",
+    "description": "{count} requests awaiting your approval",
+    "escalatedCount": "{count} escalated",
+    "review": "Review",
+    "searchPlaceholder": "Search requests...",
+    "noPendingApprovals": "No pending approvals",
+    "noItems": "No items",
+    "filters": {
+      "allDepartments": "All Departments",
+      "allPriorities": "All Priorities"
+    },
+    "priority": {
+      "escalated": "Escalated",
+      "urgent": "Urgent",
+      "high": "High",
+      "normal": "Normal"
+    },
+    "kanban": {
+      "urgentEscalated": "Urgent / Escalated",
+      "highPriority": "High Priority",
+      "normal": "Normal"
+    },
+    "time": {
+      "days": "days"
+    }
   },
   "admin": {
     "userManagement": {
       "title": "User Management",
       "users": "User Management",
+      "description": "Manage {count} users registered in the system",
       "assignRole": "Assign Role",
       "changeStatus": "Change Status",
       "viewDetails": "View Details",
@@ -82,14 +143,160 @@
       "deleteUser": "Delete User",
       "filterByRole": "Filter by Role",
       "filterByStatus": "Filter by Status",
-      "filterByDepartment": "Filter by Department"
+      "filterByDepartment": "Filter by Department",
+      "searchPlaceholder": "Search users...",
+      "noUsers": "No users found",
+      "filters": {
+        "allRoles": "All Roles",
+        "allStatus": "All Status",
+        "allDepartments": "All Departments"
+      },
+      "roles": {
+        "EMPLOYEE": "Employee",
+        "HEAD_OF_SECTION": "Head of Section",
+        "HEAD_OF_DEPT": "Head of Department",
+        "COMMITTEE_MEMBER": "Committee Member",
+        "MEDICAL_DIRECTOR": "Medical Director",
+        "ADMIN": "Administrator"
+      },
+      "status": {
+        "ACTIVE": "Active",
+        "INACTIVE": "Inactive",
+        "PENDING": "Pending"
+      },
+      "lastSync": "Last Sync",
+      "neverSynced": "Never synced",
+      "timeAgo": {
+        "minutes": "{count} min ago",
+        "hours": "{count} hours ago",
+        "days": "{count} days ago"
+      },
+      "roleLabel": "Role",
+      "roleDescriptions": {
+        "ADMIN": "Administrators have full system management access",
+        "MEDICAL_DIRECTOR": "Medical Directors have final approval authority",
+        "APPROVER": "Approvers can review and approve privilege requests",
+        "EMPLOYEE": "Employees can submit privilege requests"
+      }
     },
     "settings": {
       "title": "System Settings",
+      "description": "Configure system settings and integrations",
       "general": "General Settings",
       "email": "Email Settings",
       "notifications": "Notification Settings",
-      "security": "Security Settings"
+      "security": "Security Settings",
+      "jisr": "Jisr HR",
+      "google": "Google",
+      "escalation": "Escalation",
+      "tabs": {
+        "general": "General",
+        "jisr": "Jisr HR",
+        "email": "Email",
+        "google": "Google",
+        "escalation": "Escalation"
+      },
+      "generalSettings": {
+        "title": "General Settings",
+        "appNameEn": "Application Name (English)",
+        "appNameAr": "Application Name (Arabic)",
+        "defaultLanguage": "Default Language",
+        "sessionTimeout": "Session Timeout (minutes)",
+        "dateFormat": "Date Format"
+      },
+      "jisrSettings": {
+        "title": "Jisr HR Integration",
+        "connectionStatus": "Connection Status",
+        "apiUrl": "API URL",
+        "apiKey": "API Key",
+        "syncInterval": "Sync Interval (minutes)",
+        "syncNow": "Sync Now",
+        "lastSync": "Last sync",
+        "neverSynced": "Never synced",
+        "connected": "Connected",
+        "disconnected": "Disconnected",
+        "syncing": "Syncing",
+        "error": "Error",
+        "syncSuccess": "Sync completed. Updated {count} records.",
+        "syncFailed": "Sync failed"
+      },
+      "emailSettings": {
+        "title": "Email Settings",
+        "provider": "Email Provider",
+        "smtpHost": "SMTP Host",
+        "smtpPort": "SMTP Port",
+        "username": "Username",
+        "password": "Password",
+        "tenantId": "Tenant ID",
+        "clientId": "Client ID",
+        "clientSecret": "Client Secret",
+        "fromEmail": "From Email",
+        "fromName": "From Name",
+        "sendTestEmail": "Send Test Email",
+        "testEmailSuccess": "Test email sent successfully",
+        "testEmailFailed": "Failed to send test email"
+      },
+      "googleSettings": {
+        "title": "Google Drive Integration",
+        "connectionStatus": "Connection Status",
+        "serviceAccount": "Service Account",
+        "serviceAccountEmail": "Service Account Email",
+        "privateKey": "Private Key",
+        "privateKeyHint": "Private key from service account JSON file",
+        "driveFolderId": "Drive Folder ID",
+        "driveFolderHint": "Folder where documents will be stored",
+        "templateIds": "Template IDs",
+        "certificateTemplate": "Certificate Template",
+        "reportTemplate": "Report Template",
+        "test": "Test",
+        "testing": "Testing",
+        "connected": "Connected",
+        "disconnected": "Disconnected",
+        "connectionSuccess": "Connection successful",
+        "connectionFailed": "Connection failed"
+      },
+      "escalationSettings": {
+        "title": "Escalation Settings",
+        "description": "These settings determine when pending requests are escalated to higher levels",
+        "warningThreshold": "Warning Threshold (days)",
+        "warningThresholdHint": "Days before showing warning to approver",
+        "escalationThreshold": "Escalation Threshold (days)",
+        "escalationThresholdHint": "Days before automatic escalation",
+        "hrEmail": "HR Escalation Email",
+        "adminEmail": "Admin Escalation Email",
+        "autoReminders": "Automatic Reminders",
+        "enableAutoReminders": "Enable Auto Reminders",
+        "enableAutoRemindersHint": "Send automatic reminders to approvers",
+        "reminderInterval": "Reminder Interval (hours)"
+      },
+      "messages": {
+        "saveSuccess": "Settings saved successfully",
+        "saveFailed": "Failed to save settings"
+      },
+      "time": {
+        "minutes": "minutes",
+        "hour": "hour",
+        "hours": "hours"
+      }
+    },
+    "privileges": {
+      "title": "Privileges",
+      "description": "Manage clinical privileges catalog",
+      "add": "Add Privilege",
+      "edit": "Edit Privilege",
+      "code": "Code",
+      "nameEn": "Name (English)",
+      "nameAr": "Name (Arabic)",
+      "category": "Category",
+      "privilegeDescription": "Description",
+      "specialQualification": "Requires Special Qualification",
+      "active": "Active",
+      "inactive": "Inactive",
+      "status": "Status",
+      "actions": "Actions",
+      "confirmDelete": "Are you sure you want to delete this privilege?",
+      "deactivated": "Privilege deactivated (in use)",
+      "deleted": "Privilege deleted"
     }
   },
   "auth": {
@@ -173,5 +380,26 @@
     "unauthorized": "You are not authorized to perform this action",
     "sessionExpired": "Your session has expired. Please log in again.",
     "networkError": "Network error. Please check your connection."
+  },
+  "profile": {
+    "title": "My Profile",
+    "description": "View and update your profile information",
+    "personalInfo": "Personal Information",
+    "contactInfo": "Contact Information",
+    "credentials": "Credentials",
+    "preferences": "Preferences",
+    "notificationPreferences": "Notification Preferences",
+    "emailNotifications": "Email Notifications",
+    "systemNotifications": "System Notifications",
+    "joiningDate": "Joining Date",
+    "accountStatus": "Account Status",
+    "scfhsFormat": "Format: XX-XXXXXX",
+    "syncedFromJisr": "Personal information is synced from Jisr HR system. To update this information, please contact HR department.",
+    "statistics": {
+      "myRequests": "My Request Statistics",
+      "totalRequests": "Total Requests",
+      "approvalStats": "Approval Statistics",
+      "totalApprovals": "Total Approvals Given"
+    }
   }
 }

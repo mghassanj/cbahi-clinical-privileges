@@ -96,15 +96,7 @@ export default function UsersPage() {
   const departments = Array.from(new Set(users.map((u) => u.departmentEn).filter(Boolean)));
 
   const getRoleLabel = (role: UserRole) => {
-    const labels: Record<UserRole, { en: string; ar: string }> = {
-      EMPLOYEE: { en: "Employee", ar: "موظف" },
-      HEAD_OF_SECTION: { en: "Head of Section", ar: "رئيس قسم" },
-      HEAD_OF_DEPT: { en: "Head of Department", ar: "رئيس إدارة" },
-      COMMITTEE_MEMBER: { en: "Committee Member", ar: "عضو لجنة" },
-      MEDICAL_DIRECTOR: { en: "Medical Director", ar: "المدير الطبي" },
-      ADMIN: { en: "Administrator", ar: "مسؤول" },
-    };
-    return isRTL ? labels[role]?.ar || role : labels[role]?.en || role;
+    return t(`admin.userManagement.roles.${role}`);
   };
 
   const getRoleBadgeVariant = (role: UserRole) => {
@@ -120,13 +112,8 @@ export default function UsersPage() {
   };
 
   const getStatusLabel = (status: UserStatus, isActive: boolean) => {
-    if (!isActive) return isRTL ? "غير نشط" : "Inactive";
-    const labels: Record<UserStatus, { en: string; ar: string }> = {
-      ACTIVE: { en: "Active", ar: "نشط" },
-      INACTIVE: { en: "Inactive", ar: "غير نشط" },
-      PENDING: { en: "Pending", ar: "معلق" },
-    };
-    return isRTL ? labels[status]?.ar || status : labels[status]?.en || status;
+    if (!isActive) return t("admin.userManagement.status.INACTIVE");
+    return t(`admin.userManagement.status.${status}`);
   };
 
   const getStatusBadgeVariant = (status: UserStatus, isActive: boolean) => {
@@ -140,14 +127,14 @@ export default function UsersPage() {
   };
 
   const formatLastSync = (date: string | null) => {
-    if (!date) return isRTL ? "لم تتم المزامنة" : "Never synced";
+    if (!date) return t("admin.userManagement.neverSynced");
     const diff = Date.now() - new Date(date).getTime();
     const minutes = Math.floor(diff / 1000 / 60);
-    if (minutes < 60) return isRTL ? `منذ ${minutes} دقيقة` : `${minutes} min ago`;
+    if (minutes < 60) return t("admin.userManagement.timeAgo.minutes", { count: minutes });
     const hours = Math.floor(minutes / 60);
-    if (hours < 24) return isRTL ? `منذ ${hours} ساعة` : `${hours} hours ago`;
+    if (hours < 24) return t("admin.userManagement.timeAgo.hours", { count: hours });
     const days = Math.floor(hours / 24);
-    return isRTL ? `منذ ${days} يوم` : `${days} days ago`;
+    return t("admin.userManagement.timeAgo.days", { count: days });
   };
 
   const handleAssignRole = (user: User) => {
@@ -267,9 +254,7 @@ export default function UsersPage() {
           {t("admin.userManagement.title")}
         </h1>
         <p className="mt-1 text-neutral-500 dark:text-neutral-400">
-          {isRTL
-            ? `إدارة ${totalUsers} مستخدم مسجل في النظام`
-            : `Manage ${totalUsers} users registered in the system`}
+          {t("admin.userManagement.description", { count: totalUsers })}
         </p>
       </div>
 
@@ -286,30 +271,30 @@ export default function UsersPage() {
           onChange={(e) => setRoleFilter(e.target.value)}
           className="w-40"
         >
-          <option value="all">{isRTL ? "كل الأدوار" : "All Roles"}</option>
-          <option value="ADMIN">{isRTL ? "مسؤول" : "Administrator"}</option>
-          <option value="MEDICAL_DIRECTOR">{isRTL ? "المدير الطبي" : "Medical Director"}</option>
-          <option value="HEAD_OF_DEPT">{isRTL ? "رئيس إدارة" : "Head of Department"}</option>
-          <option value="HEAD_OF_SECTION">{isRTL ? "رئيس قسم" : "Head of Section"}</option>
-          <option value="COMMITTEE_MEMBER">{isRTL ? "عضو لجنة" : "Committee Member"}</option>
-          <option value="EMPLOYEE">{isRTL ? "موظف" : "Employee"}</option>
+          <option value="all">{t("admin.userManagement.filters.allRoles")}</option>
+          <option value="ADMIN">{t("admin.userManagement.roles.ADMIN")}</option>
+          <option value="MEDICAL_DIRECTOR">{t("admin.userManagement.roles.MEDICAL_DIRECTOR")}</option>
+          <option value="HEAD_OF_DEPT">{t("admin.userManagement.roles.HEAD_OF_DEPT")}</option>
+          <option value="HEAD_OF_SECTION">{t("admin.userManagement.roles.HEAD_OF_SECTION")}</option>
+          <option value="COMMITTEE_MEMBER">{t("admin.userManagement.roles.COMMITTEE_MEMBER")}</option>
+          <option value="EMPLOYEE">{t("admin.userManagement.roles.EMPLOYEE")}</option>
         </Select>
         <Select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
           className="w-36"
         >
-          <option value="all">{isRTL ? "كل الحالات" : "All Status"}</option>
-          <option value="ACTIVE">{isRTL ? "نشط" : "Active"}</option>
-          <option value="INACTIVE">{isRTL ? "غير نشط" : "Inactive"}</option>
-          <option value="PENDING">{isRTL ? "معلق" : "Pending"}</option>
+          <option value="all">{t("admin.userManagement.filters.allStatus")}</option>
+          <option value="ACTIVE">{t("admin.userManagement.status.ACTIVE")}</option>
+          <option value="INACTIVE">{t("admin.userManagement.status.INACTIVE")}</option>
+          <option value="PENDING">{t("admin.userManagement.status.PENDING")}</option>
         </Select>
         <Select
           value={departmentFilter}
           onChange={(e) => setDepartmentFilter(e.target.value)}
           className="w-44"
         >
-          <option value="all">{isRTL ? "كل الأقسام" : "All Departments"}</option>
+          <option value="all">{t("admin.userManagement.filters.allDepartments")}</option>
           {departments.map((dept) => (
             <option key={dept} value={dept || ""}>
               {dept}
@@ -335,9 +320,9 @@ export default function UsersPage() {
       <DataTable
         data={filteredUsers}
         columns={columns}
-        searchPlaceholder={isRTL ? "البحث عن مستخدم..." : "Search users..."}
+        searchPlaceholder={t("admin.userManagement.searchPlaceholder")}
         searchKey="nameEn"
-        emptyMessage={isRTL ? "لا يوجد مستخدمون" : "No users found"}
+        emptyMessage={t("admin.userManagement.noUsers")}
       />
 
       {/* Role Assignment Modal */}
@@ -430,36 +415,28 @@ function RoleAssignmentModal({
 
           <div className="mb-6">
             <label className="mb-2 block text-sm font-medium text-neutral-700 dark:text-neutral-300">
-              {isRTL ? "الدور" : "Role"}
+              {t("admin.userManagement.roleLabel")}
             </label>
             <Select
               value={selectedRole}
               onChange={(e) => setSelectedRole(e.target.value as UserRole)}
               className="w-full"
             >
-              <option value="EMPLOYEE">{isRTL ? "موظف" : "Employee"}</option>
-              <option value="HEAD_OF_SECTION">{isRTL ? "رئيس قسم" : "Head of Section"}</option>
-              <option value="HEAD_OF_DEPT">{isRTL ? "رئيس إدارة" : "Head of Department"}</option>
-              <option value="COMMITTEE_MEMBER">{isRTL ? "عضو لجنة" : "Committee Member"}</option>
-              <option value="MEDICAL_DIRECTOR">{isRTL ? "المدير الطبي" : "Medical Director"}</option>
-              <option value="ADMIN">{isRTL ? "مسؤول" : "Administrator"}</option>
+              <option value="EMPLOYEE">{t("admin.userManagement.roles.EMPLOYEE")}</option>
+              <option value="HEAD_OF_SECTION">{t("admin.userManagement.roles.HEAD_OF_SECTION")}</option>
+              <option value="HEAD_OF_DEPT">{t("admin.userManagement.roles.HEAD_OF_DEPT")}</option>
+              <option value="COMMITTEE_MEMBER">{t("admin.userManagement.roles.COMMITTEE_MEMBER")}</option>
+              <option value="MEDICAL_DIRECTOR">{t("admin.userManagement.roles.MEDICAL_DIRECTOR")}</option>
+              <option value="ADMIN">{t("admin.userManagement.roles.ADMIN")}</option>
             </Select>
             <p className="mt-2 text-sm text-neutral-500">
               {selectedRole === "ADMIN"
-                ? isRTL
-                  ? "المسؤولون لديهم صلاحية كاملة لإدارة النظام"
-                  : "Administrators have full system management access"
+                ? t("admin.userManagement.roleDescriptions.ADMIN")
                 : selectedRole === "MEDICAL_DIRECTOR"
-                ? isRTL
-                  ? "المدير الطبي لديه صلاحية الموافقة النهائية على الطلبات"
-                  : "Medical Directors have final approval authority"
+                ? t("admin.userManagement.roleDescriptions.MEDICAL_DIRECTOR")
                 : ["HEAD_OF_DEPT", "HEAD_OF_SECTION", "COMMITTEE_MEMBER"].includes(selectedRole)
-                ? isRTL
-                  ? "يمكنهم مراجعة والموافقة على طلبات الامتيازات"
-                  : "Approvers can review and approve privilege requests"
-                : isRTL
-                ? "الموظفون يمكنهم تقديم طلبات الامتيازات"
-                : "Employees can submit privilege requests"}
+                ? t("admin.userManagement.roleDescriptions.APPROVER")
+                : t("admin.userManagement.roleDescriptions.EMPLOYEE")}
             </p>
           </div>
 

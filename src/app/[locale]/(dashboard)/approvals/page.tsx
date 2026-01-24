@@ -93,13 +93,7 @@ export default function ApprovalsPage() {
   const escalatedCount = approvals.filter((a) => a.isEscalated).length;
 
   const getTypeLabel = (type: string) => {
-    const labels: Record<string, { en: string; ar: string }> = {
-      NEW: { en: "Initial", ar: "أولي" },
-      RENEWAL: { en: "Renewal", ar: "تجديد" },
-      EXPANSION: { en: "Expansion", ar: "توسيع" },
-      TEMPORARY: { en: "Temporary", ar: "مؤقت" },
-    };
-    return isRTL ? labels[type]?.ar || type : labels[type]?.en || type;
+    return t(`request.types.${type}`);
   };
 
   const getPriorityBadge = (daysPending: number, isEscalated: boolean) => {
@@ -107,27 +101,27 @@ export default function ApprovalsPage() {
       return (
         <Badge variant="error" className="gap-1">
           <AlertTriangle className="h-3 w-3" />
-          {isRTL ? "مصعد" : "Escalated"}
+          {t("approvals.priority.escalated")}
         </Badge>
       );
     }
     if (daysPending > 5) {
       return (
         <Badge variant="warning">
-          {isRTL ? "عاجل" : "Urgent"}
+          {t("approvals.priority.urgent")}
         </Badge>
       );
     }
     if (daysPending > 3) {
       return (
         <Badge variant="default">
-          {isRTL ? "عالي" : "High"}
+          {t("approvals.priority.high")}
         </Badge>
       );
     }
     return (
       <Badge variant="secondary">
-        {isRTL ? "عادي" : "Normal"}
+        {t("approvals.priority.normal")}
       </Badge>
     );
   };
@@ -187,7 +181,7 @@ export default function ApprovalsPage() {
         <div className="flex items-center gap-2">
           <Clock className={`h-4 w-4 ${item.daysPending > 3 ? "text-warning-500" : "text-neutral-400"}`} />
           <span className={item.daysPending > 3 ? "font-medium text-warning-600" : "text-neutral-600"}>
-            {item.daysPending} {isRTL ? "أيام" : "days"}
+            {item.daysPending} {t("approvals.time.days")}
           </span>
         </div>
       ),
@@ -205,7 +199,7 @@ export default function ApprovalsPage() {
       cell: (item) => (
         <Link href={`/${locale}/approvals/${item.request.id}`}>
           <Button size="sm">
-            {isRTL ? "مراجعة" : "Review"}
+            {t("approvals.review")}
             <ChevronRight className="ml-1 h-4 w-4 rtl:ml-0 rtl:mr-1 rtl:rotate-180" />
           </Button>
         </Link>
@@ -243,10 +237,10 @@ export default function ApprovalsPage() {
             {t("approvals.title")}
           </h1>
           <p className="mt-1 text-neutral-500 dark:text-neutral-400">
-            {approvals.length} {isRTL ? "طلب في انتظار موافقتك" : "requests awaiting your approval"}
+            {t("approvals.description", { count: approvals.length })}
             {escalatedCount > 0 && (
-              <span className="ml-2 text-error-600 dark:text-error-400">
-                ({escalatedCount} {isRTL ? "مصعد" : "escalated"})
+              <span className="ml-2 text-error-600 dark:text-error-400 rtl:mr-2 rtl:ml-0">
+                ({t("approvals.escalatedCount", { count: escalatedCount })})
               </span>
             )}
           </p>
@@ -282,7 +276,7 @@ export default function ApprovalsPage() {
           onChange={(e) => setDepartmentFilter(e.target.value)}
           className="w-44"
         >
-          <option value="all">{isRTL ? "كل الأقسام" : "All Departments"}</option>
+          <option value="all">{t("approvals.filters.allDepartments")}</option>
           {departments.map((dept) => (
             <option key={dept} value={dept || ""}>
               {dept}
@@ -294,10 +288,10 @@ export default function ApprovalsPage() {
           onChange={(e) => setPriorityFilter(e.target.value)}
           className="w-36"
         >
-          <option value="all">{isRTL ? "كل الأولويات" : "All Priorities"}</option>
-          <option value="escalated">{isRTL ? "مصعد" : "Escalated"}</option>
-          <option value="urgent">{isRTL ? "عاجل" : "Urgent"}</option>
-          <option value="normal">{isRTL ? "عادي" : "Normal"}</option>
+          <option value="all">{t("approvals.filters.allPriorities")}</option>
+          <option value="escalated">{t("approvals.priority.escalated")}</option>
+          <option value="urgent">{t("approvals.priority.urgent")}</option>
+          <option value="normal">{t("approvals.priority.normal")}</option>
         </Select>
         {(departmentFilter !== "all" || priorityFilter !== "all") && (
           <Button
@@ -318,9 +312,9 @@ export default function ApprovalsPage() {
         <DataTable
           data={filteredApprovals}
           columns={columns}
-          searchPlaceholder={isRTL ? "البحث عن طلب..." : "Search requests..."}
+          searchPlaceholder={t("approvals.searchPlaceholder")}
           searchKey="id"
-          emptyMessage={isRTL ? "لا توجد طلبات معلقة" : "No pending approvals"}
+          emptyMessage={t("approvals.noPendingApprovals")}
           onRowClick={(item) => router.push(`/${locale}/approvals/${item.request.id}`)}
         />
       ) : (
@@ -331,6 +325,7 @@ export default function ApprovalsPage() {
 }
 
 function KanbanView({ approvals }: { approvals: PendingApproval[] }) {
+  const t = useTranslations();
   const locale = useLocale();
   const isRTL = locale === "ar";
 
@@ -339,23 +334,15 @@ function KanbanView({ approvals }: { approvals: PendingApproval[] }) {
   const normalItems = approvals.filter((a) => !a.isEscalated && a.daysPending <= 3);
 
   const getTypeLabel = (type: string) => {
-    const labels: Record<string, { en: string; ar: string }> = {
-      NEW: { en: "Initial", ar: "أولي" },
-      RENEWAL: { en: "Renewal", ar: "تجديد" },
-      EXPANSION: { en: "Expansion", ar: "توسيع" },
-      TEMPORARY: { en: "Temporary", ar: "مؤقت" },
-    };
-    return isRTL ? labels[type]?.ar || type : labels[type]?.en || type;
+    return t(`request.types.${type}`);
   };
 
   const KanbanColumn = ({
     title,
-    titleAr,
     items,
     variant,
   }: {
     title: string;
-    titleAr: string;
     items: PendingApproval[];
     variant: "error" | "warning" | "default";
   }) => {
@@ -369,7 +356,7 @@ function KanbanView({ approvals }: { approvals: PendingApproval[] }) {
       <div className={`rounded-xl border-2 ${colors[variant]} p-4`}>
         <div className="mb-4 flex items-center justify-between">
           <h3 className="font-semibold text-neutral-900 dark:text-white">
-            {isRTL ? titleAr : title}
+            {title}
           </h3>
           <Badge variant={variant === "error" ? "error" : variant === "warning" ? "warning" : "secondary"}>
             {items.length}
@@ -398,7 +385,7 @@ function KanbanView({ approvals }: { approvals: PendingApproval[] }) {
                     {getTypeLabel(item.request.type)}
                   </Badge>
                   <span className="text-neutral-500">
-                    {item.daysPending} {isRTL ? "أيام" : "days"}
+                    {item.daysPending} {t("approvals.time.days")}
                   </span>
                 </div>
               </LiquidGlassCard>
@@ -406,7 +393,7 @@ function KanbanView({ approvals }: { approvals: PendingApproval[] }) {
           ))}
           {items.length === 0 && (
             <p className="py-8 text-center text-sm text-neutral-500">
-              {isRTL ? "لا توجد عناصر" : "No items"}
+              {t("approvals.noItems")}
             </p>
           )}
         </div>
@@ -417,20 +404,17 @@ function KanbanView({ approvals }: { approvals: PendingApproval[] }) {
   return (
     <div className="grid gap-4 md:grid-cols-3">
       <KanbanColumn
-        title="Urgent / Escalated"
-        titleAr="عاجل / مصعد"
+        title={t("approvals.kanban.urgentEscalated")}
         items={urgentItems}
         variant="error"
       />
       <KanbanColumn
-        title="High Priority"
-        titleAr="أولوية عالية"
+        title={t("approvals.kanban.highPriority")}
         items={highItems}
         variant="warning"
       />
       <KanbanColumn
-        title="Normal"
-        titleAr="عادي"
+        title={t("approvals.kanban.normal")}
         items={normalItems}
         variant="default"
       />

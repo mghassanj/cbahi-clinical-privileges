@@ -137,15 +137,7 @@ export default function ProfilePage() {
   };
 
   const getRoleLabel = (role: string) => {
-    const labels: Record<string, { en: string; ar: string }> = {
-      EMPLOYEE: { en: "Employee", ar: "موظف" },
-      HEAD_OF_SECTION: { en: "Head of Section", ar: "رئيس قسم" },
-      HEAD_OF_DEPT: { en: "Head of Department", ar: "رئيس إدارة" },
-      COMMITTEE_MEMBER: { en: "Committee Member", ar: "عضو لجنة" },
-      MEDICAL_DIRECTOR: { en: "Medical Director", ar: "المدير الطبي" },
-      ADMIN: { en: "Administrator", ar: "مسؤول" },
-    };
-    return isRTL ? labels[role]?.ar || role : labels[role]?.en || role;
+    return t(`admin.userManagement.roles.${role}`);
   };
 
   const getRoleBadgeVariant = (role: string): "default" | "secondary" | "warning" => {
@@ -177,7 +169,7 @@ export default function ProfilePage() {
             {t("profile.title")}
           </h1>
           <p className="mt-1 text-neutral-500 dark:text-neutral-400">
-            {isRTL ? "عرض وتحديث معلومات ملفك الشخصي" : "View and update your profile information"}
+            {t("profile.description")}
           </p>
         </div>
         {hasChanges && (
@@ -255,7 +247,7 @@ export default function ProfilePage() {
                   <div className="flex items-center gap-3">
                     <Calendar className="h-5 w-5 text-neutral-400" />
                     <div>
-                      <p className="text-sm text-neutral-500">{isRTL ? "تاريخ التعيين" : "Joining Date"}</p>
+                      <p className="text-sm text-neutral-500">{t("profile.joiningDate")}</p>
                       <p className="font-medium">
                         {profile.joiningDate ? formatDate(new Date(profile.joiningDate), locale) : "-"}
                       </p>
@@ -266,9 +258,7 @@ export default function ProfilePage() {
 
               <div className="mt-4 rounded-lg bg-neutral-50 p-4 dark:bg-neutral-800/50">
                 <p className="text-sm text-neutral-500">
-                  {isRTL
-                    ? "المعلومات الشخصية يتم مزامنتها من نظام جسر للموارد البشرية. لتحديث هذه المعلومات، يرجى التواصل مع قسم الموارد البشرية."
-                    : "Personal information is synced from Jisr HR system. To update this information, please contact HR department."}
+                  {t("profile.syncedFromJisr")}
                 </p>
               </div>
             </LiquidGlassCardContent>
@@ -294,16 +284,16 @@ export default function ProfilePage() {
                     icon={<Shield className="h-4 w-4" />}
                   />
                   <p className="mt-1 text-xs text-neutral-500">
-                    {isRTL ? "صيغة: XX-XXXXXX" : "Format: XX-XXXXXX"}
+                    {t("profile.scfhsFormat")}
                   </p>
                 </div>
                 <div>
                   <label className="mb-2 block text-sm font-medium text-neutral-700 dark:text-neutral-300">
-                    {isRTL ? "حالة الحساب" : "Account Status"}
+                    {t("profile.accountStatus")}
                   </label>
                   <div className="flex h-10 items-center gap-2">
                     <Badge variant={profile.isActive ? "success" : "error"}>
-                      {profile.isActive ? (isRTL ? "نشط" : "Active") : (isRTL ? "غير نشط" : "Inactive")}
+                      {profile.isActive ? t("admin.userManagement.status.ACTIVE") : t("admin.userManagement.status.INACTIVE")}
                     </Badge>
                   </div>
                 </div>
@@ -380,7 +370,7 @@ export default function ProfilePage() {
           <LiquidGlassCard>
             <LiquidGlassCardHeader>
               <LiquidGlassCardTitle>
-                {isRTL ? "إحصائيات طلباتي" : "My Request Statistics"}
+                {t("profile.statistics.myRequests")}
               </LiquidGlassCardTitle>
             </LiquidGlassCardHeader>
             <LiquidGlassCardContent className="space-y-4">
@@ -388,7 +378,7 @@ export default function ProfilePage() {
                 <div className="flex items-center gap-2">
                   <Award className="h-5 w-5 text-neutral-400" />
                   <span className="text-sm text-neutral-600 dark:text-neutral-400">
-                    {isRTL ? "إجمالي الطلبات" : "Total Requests"}
+                    {t("profile.statistics.totalRequests")}
                   </span>
                 </div>
                 <span className="text-lg font-semibold text-neutral-900 dark:text-white">
@@ -403,13 +393,13 @@ export default function ProfilePage() {
             <LiquidGlassCard>
               <LiquidGlassCardHeader>
                 <LiquidGlassCardTitle>
-                  {isRTL ? "إحصائيات الموافقات" : "Approval Statistics"}
+                  {t("profile.statistics.approvalStats")}
                 </LiquidGlassCardTitle>
               </LiquidGlassCardHeader>
               <LiquidGlassCardContent className="space-y-4">
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-neutral-600 dark:text-neutral-400">
-                    {isRTL ? "إجمالي الموافقات" : "Total Approvals Given"}
+                    {t("profile.statistics.totalApprovals")}
                   </span>
                   <span className="text-lg font-semibold text-neutral-900 dark:text-white">
                     {profile._count.approvals}

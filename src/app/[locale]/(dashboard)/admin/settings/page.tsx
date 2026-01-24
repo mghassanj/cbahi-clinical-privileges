@@ -36,8 +36,6 @@ interface SettingsFormState {
 
 export default function SettingsPage() {
   const t = useTranslations();
-  const locale = useLocale();
-  const isRTL = locale === "ar";
 
   const [activeTab, setActiveTab] = React.useState("general");
   const [formState, setFormState] = React.useState<SettingsFormState>({
@@ -61,11 +59,11 @@ export default function SettingsPage() {
         throw new Error("Failed to save settings");
       }
 
-      toast.success(isRTL ? "تم حفظ الإعدادات بنجاح" : "Settings saved successfully");
+      toast.success(t("admin.settings.messages.saveSuccess"));
       setFormState({ isDirty: false, isSaving: false });
     } catch (err) {
       console.error("Error saving settings:", err);
-      toast.error(isRTL ? "فشل في حفظ الإعدادات" : "Failed to save settings");
+      toast.error(t("admin.settings.messages.saveFailed"));
       setFormState((prev) => ({ ...prev, isSaving: false }));
     }
   };
@@ -85,9 +83,7 @@ export default function SettingsPage() {
             {t("admin.settings.title")}
           </h1>
           <p className="mt-1 text-neutral-500 dark:text-neutral-400">
-            {isRTL
-              ? "تكوين إعدادات النظام والتكاملات"
-              : "Configure system settings and integrations"}
+            {t("admin.settings.description")}
           </p>
         </div>
         {formState.isDirty && (
@@ -103,44 +99,44 @@ export default function SettingsPage() {
         <TabsList className="flex-wrap">
           <TabsTrigger value="general">
             <Settings className="mr-2 h-4 w-4 rtl:ml-2 rtl:mr-0" />
-            {isRTL ? "عام" : "General"}
+            {t("admin.settings.tabs.general")}
           </TabsTrigger>
           <TabsTrigger value="jisr">
             <Building2 className="mr-2 h-4 w-4 rtl:ml-2 rtl:mr-0" />
-            {isRTL ? "موارد بشرية (جسر)" : "Jisr HR"}
+            {t("admin.settings.tabs.jisr")}
           </TabsTrigger>
           <TabsTrigger value="email">
             <Mail className="mr-2 h-4 w-4 rtl:ml-2 rtl:mr-0" />
-            {isRTL ? "البريد الإلكتروني" : "Email"}
+            {t("admin.settings.tabs.email")}
           </TabsTrigger>
           <TabsTrigger value="google">
             <FileText className="mr-2 h-4 w-4 rtl:ml-2 rtl:mr-0" />
-            {isRTL ? "Google Drive" : "Google"}
+            {t("admin.settings.tabs.google")}
           </TabsTrigger>
           <TabsTrigger value="escalation">
             <AlertTriangle className="mr-2 h-4 w-4 rtl:ml-2 rtl:mr-0" />
-            {isRTL ? "التصعيد" : "Escalation"}
+            {t("admin.settings.tabs.escalation")}
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="general" className="mt-6">
-          <GeneralSettings onDirty={markDirty} isRTL={isRTL} />
+          <GeneralSettings onDirty={markDirty} />
         </TabsContent>
 
         <TabsContent value="jisr" className="mt-6">
-          <JisrSettings onDirty={markDirty} isRTL={isRTL} />
+          <JisrSettings onDirty={markDirty} />
         </TabsContent>
 
         <TabsContent value="email" className="mt-6">
-          <EmailSettings onDirty={markDirty} isRTL={isRTL} />
+          <EmailSettings onDirty={markDirty} />
         </TabsContent>
 
         <TabsContent value="google" className="mt-6">
-          <GoogleSettings onDirty={markDirty} isRTL={isRTL} />
+          <GoogleSettings onDirty={markDirty} />
         </TabsContent>
 
         <TabsContent value="escalation" className="mt-6">
-          <EscalationSettings onDirty={markDirty} isRTL={isRTL} />
+          <EscalationSettings onDirty={markDirty} />
         </TabsContent>
       </Tabs>
     </div>
@@ -150,11 +146,10 @@ export default function SettingsPage() {
 // General Settings Tab
 function GeneralSettings({
   onDirty,
-  isRTL,
 }: {
   onDirty: () => void;
-  isRTL: boolean;
 }) {
+  const t = useTranslations();
   const [appName, setAppName] = React.useState("CBAHI Clinical Privileges");
   const [appNameAr, setAppNameAr] = React.useState("امتيازات سباهي السريرية");
   const [defaultLanguage, setDefaultLanguage] = React.useState("en");
@@ -166,14 +161,14 @@ function GeneralSettings({
       <LiquidGlassCardHeader>
         <LiquidGlassCardTitle>
           <Settings className="mr-2 h-5 w-5 rtl:ml-2 rtl:mr-0" />
-          {isRTL ? "الإعدادات العامة" : "General Settings"}
+          {t("admin.settings.generalSettings.title")}
         </LiquidGlassCardTitle>
       </LiquidGlassCardHeader>
       <LiquidGlassCardContent className="space-y-6">
         <div className="grid gap-6 md:grid-cols-2">
           <div>
             <label className="mb-2 block text-sm font-medium text-neutral-700 dark:text-neutral-300">
-              {isRTL ? "اسم التطبيق (الإنجليزية)" : "Application Name (English)"}
+              {t("admin.settings.generalSettings.appNameEn")}
             </label>
             <Input
               value={appName}
@@ -185,7 +180,7 @@ function GeneralSettings({
           </div>
           <div>
             <label className="mb-2 block text-sm font-medium text-neutral-700 dark:text-neutral-300">
-              {isRTL ? "اسم التطبيق (العربية)" : "Application Name (Arabic)"}
+              {t("admin.settings.generalSettings.appNameAr")}
             </label>
             <Input
               value={appNameAr}
@@ -198,7 +193,7 @@ function GeneralSettings({
           </div>
           <div>
             <label className="mb-2 block text-sm font-medium text-neutral-700 dark:text-neutral-300">
-              {isRTL ? "اللغة الافتراضية" : "Default Language"}
+              {t("admin.settings.generalSettings.defaultLanguage")}
             </label>
             <Select
               value={defaultLanguage}
@@ -213,7 +208,7 @@ function GeneralSettings({
           </div>
           <div>
             <label className="mb-2 block text-sm font-medium text-neutral-700 dark:text-neutral-300">
-              {isRTL ? "مهلة الجلسة (بالدقائق)" : "Session Timeout (minutes)"}
+              {t("admin.settings.generalSettings.sessionTimeout")}
             </label>
             <Input
               type="number"
@@ -228,7 +223,7 @@ function GeneralSettings({
           </div>
           <div>
             <label className="mb-2 block text-sm font-medium text-neutral-700 dark:text-neutral-300">
-              {isRTL ? "تنسيق التاريخ" : "Date Format"}
+              {t("admin.settings.generalSettings.dateFormat")}
             </label>
             <Select
               value={dateFormat}
@@ -251,11 +246,11 @@ function GeneralSettings({
 // Jisr HR Settings Tab
 function JisrSettings({
   onDirty,
-  isRTL,
 }: {
   onDirty: () => void;
-  isRTL: boolean;
 }) {
+  const t = useTranslations();
+  const locale = useLocale();
   const [apiUrl, setApiUrl] = React.useState("https://api.jisr.net/v1");
   const [apiKey, setApiKey] = React.useState("••••••••••••••••");
   const [showApiKey, setShowApiKey] = React.useState(false);
@@ -281,15 +276,11 @@ function JisrSettings({
       const result = await response.json();
       setLastSync(new Date());
       setSyncStatus("success");
-      toast.success(
-        isRTL
-          ? `تمت المزامنة بنجاح. تم تحديث ${result.data?.users?.recordsUpdated || 0} سجل.`
-          : `Sync completed. Updated ${result.data?.users?.recordsUpdated || 0} records.`
-      );
+      toast.success(t("admin.settings.jisrSettings.syncSuccess", { count: result.data?.users?.recordsUpdated || 0 }));
     } catch (err) {
       console.error("Sync error:", err);
       setSyncStatus("error");
-      toast.error(isRTL ? "فشل في المزامنة" : "Sync failed");
+      toast.error(t("admin.settings.jisrSettings.syncFailed"));
     } finally {
       setIsSyncing(false);
     }
@@ -300,7 +291,7 @@ function JisrSettings({
       <LiquidGlassCardHeader>
         <LiquidGlassCardTitle>
           <Building2 className="mr-2 h-5 w-5 rtl:ml-2 rtl:mr-0" />
-          {isRTL ? "تكامل جسر للموارد البشرية" : "Jisr HR Integration"}
+          {t("admin.settings.jisrSettings.title")}
         </LiquidGlassCardTitle>
       </LiquidGlassCardHeader>
       <LiquidGlassCardContent className="space-y-6">
@@ -316,38 +307,28 @@ function JisrSettings({
             )}
             <div>
               <p className="font-medium text-neutral-900 dark:text-white">
-                {isRTL ? "حالة الاتصال" : "Connection Status"}
+                {t("admin.settings.jisrSettings.connectionStatus")}
               </p>
               <p className="text-sm text-neutral-500">
                 {lastSync
-                  ? isRTL
-                    ? `آخر مزامنة: ${lastSync.toLocaleTimeString("ar-SA")}`
-                    : `Last sync: ${lastSync.toLocaleTimeString()}`
-                  : isRTL
-                  ? "لم تتم المزامنة بعد"
-                  : "Never synced"}
+                  ? `${t("admin.settings.jisrSettings.lastSync")} ${lastSync.toLocaleTimeString(locale === "ar" ? "ar-SA" : undefined)}`
+                  : t("admin.settings.jisrSettings.neverSynced")}
               </p>
             </div>
           </div>
           <Badge variant={syncStatus === "success" ? "success" : syncStatus === "error" ? "error" : "warning"}>
             {syncStatus === "success"
-              ? isRTL
-                ? "متصل"
-                : "Connected"
+              ? t("admin.settings.jisrSettings.connected")
               : syncStatus === "error"
-              ? isRTL
-                ? "خطأ"
-                : "Error"
-              : isRTL
-              ? "جاري المزامنة"
-              : "Syncing"}
+              ? t("admin.settings.jisrSettings.error")
+              : t("admin.settings.jisrSettings.syncing")}
           </Badge>
         </div>
 
         <div className="grid gap-6 md:grid-cols-2">
           <div className="md:col-span-2">
             <label className="mb-2 block text-sm font-medium text-neutral-700 dark:text-neutral-300">
-              {isRTL ? "رابط واجهة برمجة التطبيقات" : "API URL"}
+              {t("admin.settings.jisrSettings.apiUrl")}
             </label>
             <Input
               value={apiUrl}
@@ -360,7 +341,7 @@ function JisrSettings({
           </div>
           <div className="md:col-span-2">
             <label className="mb-2 block text-sm font-medium text-neutral-700 dark:text-neutral-300">
-              {isRTL ? "مفتاح واجهة برمجة التطبيقات" : "API Key"}
+              {t("admin.settings.jisrSettings.apiKey")}
             </label>
             <div className="flex gap-2">
               <Input
@@ -387,7 +368,7 @@ function JisrSettings({
           </div>
           <div>
             <label className="mb-2 block text-sm font-medium text-neutral-700 dark:text-neutral-300">
-              {isRTL ? "فترة المزامنة (بالدقائق)" : "Sync Interval (minutes)"}
+              {t("admin.settings.jisrSettings.syncInterval")}
             </label>
             <Select
               value={syncInterval}
@@ -396,13 +377,13 @@ function JisrSettings({
                 onDirty();
               }}
             >
-              <option value="15">15 {isRTL ? "دقيقة" : "minutes"}</option>
-              <option value="30">30 {isRTL ? "دقيقة" : "minutes"}</option>
-              <option value="60">1 {isRTL ? "ساعة" : "hour"}</option>
-              <option value="120">2 {isRTL ? "ساعة" : "hours"}</option>
-              <option value="360">6 {isRTL ? "ساعات" : "hours"}</option>
-              <option value="720">12 {isRTL ? "ساعة" : "hours"}</option>
-              <option value="1440">24 {isRTL ? "ساعة" : "hours"}</option>
+              <option value="15">15 {t("admin.settings.time.minutes")}</option>
+              <option value="30">30 {t("admin.settings.time.minutes")}</option>
+              <option value="60">1 {t("admin.settings.time.hour")}</option>
+              <option value="120">2 {t("admin.settings.time.hours")}</option>
+              <option value="360">6 {t("admin.settings.time.hours")}</option>
+              <option value="720">12 {t("admin.settings.time.hours")}</option>
+              <option value="1440">24 {t("admin.settings.time.hours")}</option>
             </Select>
           </div>
           <div className="flex items-end">
@@ -413,7 +394,7 @@ function JisrSettings({
               className="w-full"
             >
               <RefreshCw className="mr-2 h-4 w-4 rtl:ml-2 rtl:mr-0" />
-              {isRTL ? "مزامنة الآن" : "Sync Now"}
+              {t("admin.settings.jisrSettings.syncNow")}
             </Button>
           </div>
         </div>
@@ -425,11 +406,10 @@ function JisrSettings({
 // Email Settings Tab
 function EmailSettings({
   onDirty,
-  isRTL,
 }: {
   onDirty: () => void;
-  isRTL: boolean;
 }) {
+  const t = useTranslations();
   const [provider, setProvider] = React.useState("smtp");
   const [smtpHost, setSmtpHost] = React.useState("smtp.office365.com");
   const [smtpPort, setSmtpPort] = React.useState("587");
@@ -465,11 +445,11 @@ function EmailSettings({
       }
 
       setTestResult("success");
-      toast.success(isRTL ? "تم إرسال البريد التجريبي بنجاح" : "Test email sent successfully");
+      toast.success(t("admin.settings.emailSettings.testEmailSuccess"));
     } catch (err) {
       console.error("Test email error:", err);
       setTestResult("error");
-      toast.error(isRTL ? "فشل في إرسال البريد التجريبي" : "Failed to send test email");
+      toast.error(t("admin.settings.emailSettings.testEmailFailed"));
     } finally {
       setIsTesting(false);
     }
@@ -480,13 +460,13 @@ function EmailSettings({
       <LiquidGlassCardHeader>
         <LiquidGlassCardTitle>
           <Mail className="mr-2 h-5 w-5 rtl:ml-2 rtl:mr-0" />
-          {isRTL ? "إعدادات البريد الإلكتروني" : "Email Settings"}
+          {t("admin.settings.emailSettings.title")}
         </LiquidGlassCardTitle>
       </LiquidGlassCardHeader>
       <LiquidGlassCardContent className="space-y-6">
         <div>
           <label className="mb-2 block text-sm font-medium text-neutral-700 dark:text-neutral-300">
-            {isRTL ? "مزود البريد الإلكتروني" : "Email Provider"}
+            {t("admin.settings.emailSettings.provider")}
           </label>
           <Select
             value={provider}
@@ -504,7 +484,7 @@ function EmailSettings({
           <div className="grid gap-6 md:grid-cols-2">
             <div>
               <label className="mb-2 block text-sm font-medium text-neutral-700 dark:text-neutral-300">
-                {isRTL ? "خادم SMTP" : "SMTP Host"}
+                {t("admin.settings.emailSettings.smtpHost")}
               </label>
               <Input
                 value={smtpHost}
@@ -517,7 +497,7 @@ function EmailSettings({
             </div>
             <div>
               <label className="mb-2 block text-sm font-medium text-neutral-700 dark:text-neutral-300">
-                {isRTL ? "منفذ SMTP" : "SMTP Port"}
+                {t("admin.settings.emailSettings.smtpPort")}
               </label>
               <Input
                 value={smtpPort}
@@ -530,7 +510,7 @@ function EmailSettings({
             </div>
             <div>
               <label className="mb-2 block text-sm font-medium text-neutral-700 dark:text-neutral-300">
-                {isRTL ? "اسم المستخدم" : "Username"}
+                {t("admin.settings.emailSettings.username")}
               </label>
               <Input
                 value={smtpUser}
@@ -543,7 +523,7 @@ function EmailSettings({
             </div>
             <div>
               <label className="mb-2 block text-sm font-medium text-neutral-700 dark:text-neutral-300">
-                {isRTL ? "كلمة المرور" : "Password"}
+                {t("admin.settings.emailSettings.password")}
               </label>
               <div className="flex gap-2">
                 <Input
@@ -573,7 +553,7 @@ function EmailSettings({
           <div className="grid gap-6 md:grid-cols-2">
             <div className="md:col-span-2">
               <label className="mb-2 block text-sm font-medium text-neutral-700 dark:text-neutral-300">
-                {isRTL ? "معرف المستأجر" : "Tenant ID"}
+                {t("admin.settings.emailSettings.tenantId")}
               </label>
               <Input
                 value={graphTenantId}
@@ -586,7 +566,7 @@ function EmailSettings({
             </div>
             <div>
               <label className="mb-2 block text-sm font-medium text-neutral-700 dark:text-neutral-300">
-                {isRTL ? "معرف العميل" : "Client ID"}
+                {t("admin.settings.emailSettings.clientId")}
               </label>
               <Input
                 value={graphClientId}
@@ -599,7 +579,7 @@ function EmailSettings({
             </div>
             <div>
               <label className="mb-2 block text-sm font-medium text-neutral-700 dark:text-neutral-300">
-                {isRTL ? "سر العميل" : "Client Secret"}
+                {t("admin.settings.emailSettings.clientSecret")}
               </label>
               <Input
                 type="password"
@@ -618,7 +598,7 @@ function EmailSettings({
         <div className="grid gap-6 md:grid-cols-2">
           <div>
             <label className="mb-2 block text-sm font-medium text-neutral-700 dark:text-neutral-300">
-              {isRTL ? "البريد الإلكتروني للمرسل" : "From Email"}
+              {t("admin.settings.emailSettings.fromEmail")}
             </label>
             <Input
               value={fromEmail}
@@ -631,7 +611,7 @@ function EmailSettings({
           </div>
           <div>
             <label className="mb-2 block text-sm font-medium text-neutral-700 dark:text-neutral-300">
-              {isRTL ? "اسم المرسل" : "From Name"}
+              {t("admin.settings.emailSettings.fromName")}
             </label>
             <Input
               value={fromName}
@@ -651,13 +631,13 @@ function EmailSettings({
             isLoading={isTesting}
           >
             <Send className="mr-2 h-4 w-4 rtl:ml-2 rtl:mr-0" />
-            {isRTL ? "إرسال بريد تجريبي" : "Send Test Email"}
+            {t("admin.settings.emailSettings.sendTestEmail")}
           </Button>
           {testResult === "success" && (
             <div className="flex items-center gap-2 text-success-600">
               <CheckCircle className="h-4 w-4" />
               <span className="text-sm">
-                {isRTL ? "تم إرسال البريد بنجاح" : "Test email sent successfully"}
+                {t("admin.settings.emailSettings.testEmailSuccess")}
               </span>
             </div>
           )}
@@ -665,7 +645,7 @@ function EmailSettings({
             <div className="flex items-center gap-2 text-error-600">
               <XCircle className="h-4 w-4" />
               <span className="text-sm">
-                {isRTL ? "فشل إرسال البريد" : "Failed to send test email"}
+                {t("admin.settings.emailSettings.testEmailFailed")}
               </span>
             </div>
           )}
@@ -678,11 +658,10 @@ function EmailSettings({
 // Google Drive Settings Tab
 function GoogleSettings({
   onDirty,
-  isRTL,
 }: {
   onDirty: () => void;
-  isRTL: boolean;
 }) {
+  const t = useTranslations();
   const [serviceAccountEmail, setServiceAccountEmail] = React.useState(
     "cbahi-service@cbahi-project.iam.gserviceaccount.com"
   );
@@ -710,11 +689,11 @@ function GoogleSettings({
       }
 
       setConnectionStatus("connected");
-      toast.success(isRTL ? "تم الاتصال بنجاح" : "Connection successful");
+      toast.success(t("admin.settings.googleSettings.connectionSuccess"));
     } catch (err) {
       console.error("Google connection test error:", err);
       setConnectionStatus("disconnected");
-      toast.error(isRTL ? "فشل في الاتصال" : "Connection failed");
+      toast.error(t("admin.settings.googleSettings.connectionFailed"));
     }
   };
 
@@ -723,7 +702,7 @@ function GoogleSettings({
       <LiquidGlassCardHeader>
         <LiquidGlassCardTitle>
           <FileText className="mr-2 h-5 w-5 rtl:ml-2 rtl:mr-0" />
-          {isRTL ? "تكامل Google Drive" : "Google Drive Integration"}
+          {t("admin.settings.googleSettings.title")}
         </LiquidGlassCardTitle>
       </LiquidGlassCardHeader>
       <LiquidGlassCardContent className="space-y-6">
@@ -739,10 +718,10 @@ function GoogleSettings({
             )}
             <div>
               <p className="font-medium text-neutral-900 dark:text-white">
-                {isRTL ? "حالة الاتصال" : "Connection Status"}
+                {t("admin.settings.googleSettings.connectionStatus")}
               </p>
               <p className="text-sm text-neutral-500">
-                {isRTL ? "حساب الخدمة" : "Service Account"}
+                {t("admin.settings.googleSettings.serviceAccount")}
               </p>
             </div>
           </div>
@@ -757,16 +736,10 @@ function GoogleSettings({
               }
             >
               {connectionStatus === "connected"
-                ? isRTL
-                  ? "متصل"
-                  : "Connected"
+                ? t("admin.settings.googleSettings.connected")
                 : connectionStatus === "disconnected"
-                ? isRTL
-                  ? "غير متصل"
-                  : "Disconnected"
-                : isRTL
-                ? "جاري الاختبار"
-                : "Testing"}
+                ? t("admin.settings.googleSettings.disconnected")
+                : t("admin.settings.googleSettings.testing")}
             </Badge>
             <Button
               variant="outline"
@@ -774,7 +747,7 @@ function GoogleSettings({
               onClick={handleTestConnection}
               disabled={connectionStatus === "testing"}
             >
-              {isRTL ? "اختبار" : "Test"}
+              {t("admin.settings.googleSettings.test")}
             </Button>
           </div>
         </div>
@@ -782,7 +755,7 @@ function GoogleSettings({
         <div className="grid gap-6">
           <div>
             <label className="mb-2 block text-sm font-medium text-neutral-700 dark:text-neutral-300">
-              {isRTL ? "البريد الإلكتروني لحساب الخدمة" : "Service Account Email"}
+              {t("admin.settings.googleSettings.serviceAccountEmail")}
             </label>
             <Input
               value={serviceAccountEmail}
@@ -795,7 +768,7 @@ function GoogleSettings({
           </div>
           <div>
             <label className="mb-2 block text-sm font-medium text-neutral-700 dark:text-neutral-300">
-              {isRTL ? "المفتاح الخاص" : "Private Key"}
+              {t("admin.settings.googleSettings.privateKey")}
             </label>
             <Input
               type="password"
@@ -807,14 +780,12 @@ function GoogleSettings({
               placeholder="-----BEGIN PRIVATE KEY-----"
             />
             <p className="mt-1 text-xs text-neutral-500">
-              {isRTL
-                ? "المفتاح الخاص من ملف JSON لحساب الخدمة"
-                : "Private key from service account JSON file"}
+              {t("admin.settings.googleSettings.privateKeyHint")}
             </p>
           </div>
           <div>
             <label className="mb-2 block text-sm font-medium text-neutral-700 dark:text-neutral-300">
-              {isRTL ? "معرف مجلد Drive" : "Drive Folder ID"}
+              {t("admin.settings.googleSettings.driveFolderId")}
             </label>
             <Input
               value={driveFolderId}
@@ -825,9 +796,7 @@ function GoogleSettings({
               placeholder="1AbCdEfGhIjKlMnOpQrStUvWxYz"
             />
             <p className="mt-1 text-xs text-neutral-500">
-              {isRTL
-                ? "المجلد الذي سيتم تخزين المستندات فيه"
-                : "Folder where documents will be stored"}
+              {t("admin.settings.googleSettings.driveFolderHint")}
             </p>
           </div>
         </div>
@@ -836,12 +805,12 @@ function GoogleSettings({
 
         <div>
           <h3 className="mb-4 font-medium text-neutral-900 dark:text-white">
-            {isRTL ? "معرفات القوالب" : "Template IDs"}
+            {t("admin.settings.googleSettings.templateIds")}
           </h3>
           <div className="grid gap-6 md:grid-cols-2">
             <div>
               <label className="mb-2 block text-sm font-medium text-neutral-700 dark:text-neutral-300">
-                {isRTL ? "قالب الشهادة" : "Certificate Template"}
+                {t("admin.settings.googleSettings.certificateTemplate")}
               </label>
               <Input
                 value={certificateTemplateId}
@@ -854,7 +823,7 @@ function GoogleSettings({
             </div>
             <div>
               <label className="mb-2 block text-sm font-medium text-neutral-700 dark:text-neutral-300">
-                {isRTL ? "قالب التقرير" : "Report Template"}
+                {t("admin.settings.googleSettings.reportTemplate")}
               </label>
               <Input
                 value={reportTemplateId}
@@ -875,11 +844,10 @@ function GoogleSettings({
 // Escalation Settings Tab
 function EscalationSettings({
   onDirty,
-  isRTL,
 }: {
   onDirty: () => void;
-  isRTL: boolean;
 }) {
+  const t = useTranslations();
   const [warningThreshold, setWarningThreshold] = React.useState("3");
   const [escalationThreshold, setEscalationThreshold] = React.useState("5");
   const [hrEscalationEmail, setHrEscalationEmail] = React.useState("hr@hospital.com");
@@ -892,7 +860,7 @@ function EscalationSettings({
       <LiquidGlassCardHeader>
         <LiquidGlassCardTitle>
           <AlertTriangle className="mr-2 h-5 w-5 rtl:ml-2 rtl:mr-0" />
-          {isRTL ? "إعدادات التصعيد" : "Escalation Settings"}
+          {t("admin.settings.escalationSettings.title")}
         </LiquidGlassCardTitle>
       </LiquidGlassCardHeader>
       <LiquidGlassCardContent className="space-y-6">
@@ -901,12 +869,10 @@ function EscalationSettings({
             <AlertTriangle className="h-5 w-5 flex-shrink-0 text-warning-600" />
             <div>
               <p className="font-medium text-warning-800 dark:text-warning-200">
-                {isRTL ? "إعدادات التصعيد" : "Escalation Configuration"}
+                {t("admin.settings.escalationSettings.title")}
               </p>
               <p className="mt-1 text-sm text-warning-700 dark:text-warning-300">
-                {isRTL
-                  ? "تحدد هذه الإعدادات متى يتم تصعيد الطلبات المعلقة إلى مستويات أعلى"
-                  : "These settings determine when pending requests are escalated to higher levels"}
+                {t("admin.settings.escalationSettings.description")}
               </p>
             </div>
           </div>
@@ -915,7 +881,7 @@ function EscalationSettings({
         <div className="grid gap-6 md:grid-cols-2">
           <div>
             <label className="mb-2 block text-sm font-medium text-neutral-700 dark:text-neutral-300">
-              {isRTL ? "حد التحذير (بالأيام)" : "Warning Threshold (days)"}
+              {t("admin.settings.escalationSettings.warningThreshold")}
             </label>
             <Input
               type="number"
@@ -928,14 +894,12 @@ function EscalationSettings({
               max="30"
             />
             <p className="mt-1 text-xs text-neutral-500">
-              {isRTL
-                ? "عدد الأيام قبل إظهار تحذير للمعتمد"
-                : "Days before showing warning to approver"}
+              {t("admin.settings.escalationSettings.warningThresholdHint")}
             </p>
           </div>
           <div>
             <label className="mb-2 block text-sm font-medium text-neutral-700 dark:text-neutral-300">
-              {isRTL ? "حد التصعيد (بالأيام)" : "Escalation Threshold (days)"}
+              {t("admin.settings.escalationSettings.escalationThreshold")}
             </label>
             <Input
               type="number"
@@ -948,14 +912,12 @@ function EscalationSettings({
               max="30"
             />
             <p className="mt-1 text-xs text-neutral-500">
-              {isRTL
-                ? "عدد الأيام قبل التصعيد التلقائي"
-                : "Days before automatic escalation"}
+              {t("admin.settings.escalationSettings.escalationThresholdHint")}
             </p>
           </div>
           <div>
             <label className="mb-2 block text-sm font-medium text-neutral-700 dark:text-neutral-300">
-              {isRTL ? "البريد الإلكتروني للموارد البشرية" : "HR Escalation Email"}
+              {t("admin.settings.escalationSettings.hrEmail")}
             </label>
             <Input
               type="email"
@@ -969,7 +931,7 @@ function EscalationSettings({
           </div>
           <div>
             <label className="mb-2 block text-sm font-medium text-neutral-700 dark:text-neutral-300">
-              {isRTL ? "البريد الإلكتروني للمسؤول" : "Admin Escalation Email"}
+              {t("admin.settings.escalationSettings.adminEmail")}
             </label>
             <Input
               type="email"
@@ -987,18 +949,16 @@ function EscalationSettings({
 
         <div>
           <h3 className="mb-4 font-medium text-neutral-900 dark:text-white">
-            {isRTL ? "التذكيرات التلقائية" : "Automatic Reminders"}
+            {t("admin.settings.escalationSettings.autoReminders")}
           </h3>
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="font-medium text-neutral-900 dark:text-white">
-                  {isRTL ? "تفعيل التذكيرات التلقائية" : "Enable Auto Reminders"}
+                  {t("admin.settings.escalationSettings.enableAutoReminders")}
                 </p>
                 <p className="text-sm text-neutral-500">
-                  {isRTL
-                    ? "إرسال تذكيرات تلقائية للمعتمدين"
-                    : "Send automatic reminders to approvers"}
+                  {t("admin.settings.escalationSettings.enableAutoRemindersHint")}
                 </p>
               </div>
               <button
@@ -1028,7 +988,7 @@ function EscalationSettings({
             {enableAutoReminders && (
               <div>
                 <label className="mb-2 block text-sm font-medium text-neutral-700 dark:text-neutral-300">
-                  {isRTL ? "فترة التذكير (بالساعات)" : "Reminder Interval (hours)"}
+                  {t("admin.settings.escalationSettings.reminderInterval")}
                 </label>
                 <Select
                   value={reminderInterval}
@@ -1038,10 +998,10 @@ function EscalationSettings({
                   }}
                   className="w-48"
                 >
-                  <option value="12">12 {isRTL ? "ساعة" : "hours"}</option>
-                  <option value="24">24 {isRTL ? "ساعة" : "hours"}</option>
-                  <option value="48">48 {isRTL ? "ساعة" : "hours"}</option>
-                  <option value="72">72 {isRTL ? "ساعة" : "hours"}</option>
+                  <option value="12">12 {t("admin.settings.time.hours")}</option>
+                  <option value="24">24 {t("admin.settings.time.hours")}</option>
+                  <option value="48">48 {t("admin.settings.time.hours")}</option>
+                  <option value="72">72 {t("admin.settings.time.hours")}</option>
                 </Select>
               </div>
             )}

@@ -59,22 +59,83 @@
   },
   "common.actions": {
     "filter": "تصفية",
-    "back": "رجوع"
+    "back": "رجوع",
+    "retry": "إعادة المحاولة",
+    "reset": "إعادة تعيين",
+    "cancel": "إلغاء",
+    "delete": "حذف"
   },
   "request": {
     "newRequest": "طلب جديد",
-    "title": "طلبات الامتياز"
+    "title": "طلبات الامتياز",
+    "description": "عرض وإدارة طلبات الامتيازات الخاصة بك",
+    "id": "رقم الطلب",
+    "type": "النوع",
+    "status": "الحالة",
+    "privileges": "الامتيازات",
+    "submitted": "تاريخ الإرسال",
+    "actions": "الإجراءات",
+    "searchPlaceholder": "البحث عن طلب...",
+    "noRequests": "لم تقم بإنشاء أي طلبات بعد",
+    "noMatchingRequests": "لا توجد طلبات تطابق التصفية",
+    "deleteTitle": "حذف الطلب",
+    "deleteDescription": "هل أنت متأكد من حذف هذا الطلب؟ لا يمكن التراجع عن هذا الإجراء.",
+    "deleteSuccess": "تم حذف الطلب بنجاح",
+    "deleteError": "فشل في حذف الطلب",
+    "types": {
+      "NEW": "أولي",
+      "RENEWAL": "تجديد",
+      "EXPANSION": "توسيع",
+      "TEMPORARY": "مؤقت"
+    },
+    "statuses": {
+      "DRAFT": "مسودة",
+      "PENDING": "قيد الانتظار",
+      "IN_REVIEW": "قيد المراجعة",
+      "APPROVED": "موافق عليه",
+      "REJECTED": "مرفوض",
+      "CANCELLED": "ملغى"
+    },
+    "filters": {
+      "allStatus": "كل الحالات",
+      "allTypes": "كل الأنواع"
+    }
   },
   "approvals": {
     "title": "الموافقات",
     "pending": "موافقات معلقة",
     "approved": "موافق عليه",
-    "rejected": "مرفوض"
+    "rejected": "مرفوض",
+    "description": "{count} طلب في انتظار موافقتك",
+    "escalatedCount": "{count} مصعد",
+    "review": "مراجعة",
+    "searchPlaceholder": "البحث عن طلب...",
+    "noPendingApprovals": "لا توجد طلبات معلقة",
+    "noItems": "لا توجد عناصر",
+    "filters": {
+      "allDepartments": "كل الأقسام",
+      "allPriorities": "كل الأولويات"
+    },
+    "priority": {
+      "escalated": "مصعد",
+      "urgent": "عاجل",
+      "high": "عالي",
+      "normal": "عادي"
+    },
+    "kanban": {
+      "urgentEscalated": "عاجل / مصعد",
+      "highPriority": "أولوية عالية",
+      "normal": "عادي"
+    },
+    "time": {
+      "days": "أيام"
+    }
   },
   "admin": {
     "userManagement": {
       "title": "إدارة المستخدمين",
       "users": "إدارة المستخدمين",
+      "description": "إدارة {count} مستخدم مسجل في النظام",
       "assignRole": "تعيين الدور",
       "changeStatus": "تغيير الحالة",
       "viewDetails": "عرض التفاصيل",
@@ -82,14 +143,160 @@
       "deleteUser": "حذف المستخدم",
       "filterByRole": "تصفية حسب الدور",
       "filterByStatus": "تصفية حسب الحالة",
-      "filterByDepartment": "تصفية حسب القسم"
+      "filterByDepartment": "تصفية حسب القسم",
+      "searchPlaceholder": "البحث عن مستخدم...",
+      "noUsers": "لا يوجد مستخدمون",
+      "filters": {
+        "allRoles": "كل الأدوار",
+        "allStatus": "كل الحالات",
+        "allDepartments": "كل الأقسام"
+      },
+      "roles": {
+        "EMPLOYEE": "موظف",
+        "HEAD_OF_SECTION": "رئيس قسم",
+        "HEAD_OF_DEPT": "رئيس إدارة",
+        "COMMITTEE_MEMBER": "عضو لجنة",
+        "MEDICAL_DIRECTOR": "المدير الطبي",
+        "ADMIN": "مسؤول"
+      },
+      "status": {
+        "ACTIVE": "نشط",
+        "INACTIVE": "غير نشط",
+        "PENDING": "معلق"
+      },
+      "lastSync": "آخر مزامنة",
+      "neverSynced": "لم تتم المزامنة",
+      "timeAgo": {
+        "minutes": "منذ {count} دقيقة",
+        "hours": "منذ {count} ساعة",
+        "days": "منذ {count} يوم"
+      },
+      "roleLabel": "الدور",
+      "roleDescriptions": {
+        "ADMIN": "المسؤولون لديهم صلاحية كاملة لإدارة النظام",
+        "MEDICAL_DIRECTOR": "المدير الطبي لديه صلاحية الموافقة النهائية على الطلبات",
+        "APPROVER": "يمكنهم مراجعة والموافقة على طلبات الامتيازات",
+        "EMPLOYEE": "الموظفون يمكنهم تقديم طلبات الامتيازات"
+      }
     },
     "settings": {
       "title": "إعدادات النظام",
+      "description": "تكوين إعدادات النظام والتكاملات",
       "general": "الإعدادات العامة",
       "email": "إعدادات البريد الإلكتروني",
       "notifications": "إعدادات الإشعارات",
-      "security": "إعدادات الأمان"
+      "security": "إعدادات الأمان",
+      "jisr": "موارد بشرية (جسر)",
+      "google": "Google",
+      "escalation": "التصعيد",
+      "tabs": {
+        "general": "عام",
+        "jisr": "موارد بشرية (جسر)",
+        "email": "البريد الإلكتروني",
+        "google": "Google Drive",
+        "escalation": "التصعيد"
+      },
+      "generalSettings": {
+        "title": "الإعدادات العامة",
+        "appNameEn": "اسم التطبيق (الإنجليزية)",
+        "appNameAr": "اسم التطبيق (العربية)",
+        "defaultLanguage": "اللغة الافتراضية",
+        "sessionTimeout": "مهلة الجلسة (بالدقائق)",
+        "dateFormat": "تنسيق التاريخ"
+      },
+      "jisrSettings": {
+        "title": "تكامل جسر للموارد البشرية",
+        "connectionStatus": "حالة الاتصال",
+        "apiUrl": "رابط واجهة برمجة التطبيقات",
+        "apiKey": "مفتاح واجهة برمجة التطبيقات",
+        "syncInterval": "فترة المزامنة (بالدقائق)",
+        "syncNow": "مزامنة الآن",
+        "lastSync": "آخر مزامنة",
+        "neverSynced": "لم تتم المزامنة بعد",
+        "connected": "متصل",
+        "disconnected": "غير متصل",
+        "syncing": "جاري المزامنة",
+        "error": "خطأ",
+        "syncSuccess": "تمت المزامنة بنجاح. تم تحديث {count} سجل.",
+        "syncFailed": "فشل في المزامنة"
+      },
+      "emailSettings": {
+        "title": "إعدادات البريد الإلكتروني",
+        "provider": "مزود البريد الإلكتروني",
+        "smtpHost": "خادم SMTP",
+        "smtpPort": "منفذ SMTP",
+        "username": "اسم المستخدم",
+        "password": "كلمة المرور",
+        "tenantId": "معرف المستأجر",
+        "clientId": "معرف العميل",
+        "clientSecret": "سر العميل",
+        "fromEmail": "البريد الإلكتروني للمرسل",
+        "fromName": "اسم المرسل",
+        "sendTestEmail": "إرسال بريد تجريبي",
+        "testEmailSuccess": "تم إرسال البريد التجريبي بنجاح",
+        "testEmailFailed": "فشل في إرسال البريد التجريبي"
+      },
+      "googleSettings": {
+        "title": "تكامل Google Drive",
+        "connectionStatus": "حالة الاتصال",
+        "serviceAccount": "حساب الخدمة",
+        "serviceAccountEmail": "البريد الإلكتروني لحساب الخدمة",
+        "privateKey": "المفتاح الخاص",
+        "privateKeyHint": "المفتاح الخاص من ملف JSON لحساب الخدمة",
+        "driveFolderId": "معرف مجلد Drive",
+        "driveFolderHint": "المجلد الذي سيتم تخزين المستندات فيه",
+        "templateIds": "معرفات القوالب",
+        "certificateTemplate": "قالب الشهادة",
+        "reportTemplate": "قالب التقرير",
+        "test": "اختبار",
+        "testing": "جاري الاختبار",
+        "connected": "متصل",
+        "disconnected": "غير متصل",
+        "connectionSuccess": "تم الاتصال بنجاح",
+        "connectionFailed": "فشل في الاتصال"
+      },
+      "escalationSettings": {
+        "title": "إعدادات التصعيد",
+        "description": "تحدد هذه الإعدادات متى يتم تصعيد الطلبات المعلقة إلى مستويات أعلى",
+        "warningThreshold": "حد التحذير (بالأيام)",
+        "warningThresholdHint": "عدد الأيام قبل إظهار تحذير للمعتمد",
+        "escalationThreshold": "حد التصعيد (بالأيام)",
+        "escalationThresholdHint": "عدد الأيام قبل التصعيد التلقائي",
+        "hrEmail": "البريد الإلكتروني للموارد البشرية",
+        "adminEmail": "البريد الإلكتروني للمسؤول",
+        "autoReminders": "التذكيرات التلقائية",
+        "enableAutoReminders": "تفعيل التذكيرات التلقائية",
+        "enableAutoRemindersHint": "إرسال تذكيرات تلقائية للمعتمدين",
+        "reminderInterval": "فترة التذكير (بالساعات)"
+      },
+      "messages": {
+        "saveSuccess": "تم حفظ الإعدادات بنجاح",
+        "saveFailed": "فشل في حفظ الإعدادات"
+      },
+      "time": {
+        "minutes": "دقيقة",
+        "hour": "ساعة",
+        "hours": "ساعات"
+      }
+    },
+    "privileges": {
+      "title": "الصلاحيات",
+      "description": "إدارة كتالوج الصلاحيات السريرية",
+      "add": "إضافة صلاحية",
+      "edit": "تعديل صلاحية",
+      "code": "الرمز",
+      "nameEn": "الاسم (إنجليزي)",
+      "nameAr": "الاسم (عربي)",
+      "category": "الفئة",
+      "privilegeDescription": "الوصف",
+      "specialQualification": "يتطلب تأهيل خاص",
+      "active": "نشط",
+      "inactive": "غير نشط",
+      "status": "الحالة",
+      "actions": "الإجراءات",
+      "confirmDelete": "هل أنت متأكد من حذف هذه الصلاحية؟",
+      "deactivated": "تم إلغاء تنشيط الصلاحية (قيد الاستخدام)",
+      "deleted": "تم حذف الصلاحية"
     }
   },
   "auth": {
@@ -173,5 +380,26 @@
     "unauthorized": "غير مصرح لك بتنفيذ هذا الإجراء",
     "sessionExpired": "انتهت صلاحية جلستك. يرجى تسجيل الدخول مرة أخرى.",
     "networkError": "خطأ في الشبكة. يرجى التحقق من اتصالك."
+  },
+  "profile": {
+    "title": "ملفي الشخصي",
+    "description": "عرض وتحديث معلومات ملفك الشخصي",
+    "personalInfo": "المعلومات الشخصية",
+    "contactInfo": "معلومات الاتصال",
+    "credentials": "المؤهلات",
+    "preferences": "التفضيلات",
+    "notificationPreferences": "تفضيلات الإشعارات",
+    "emailNotifications": "إشعارات البريد الإلكتروني",
+    "systemNotifications": "إشعارات النظام",
+    "joiningDate": "تاريخ التعيين",
+    "accountStatus": "حالة الحساب",
+    "scfhsFormat": "صيغة: XX-XXXXXX",
+    "syncedFromJisr": "المعلومات الشخصية يتم مزامنتها من نظام جسر للموارد البشرية. لتحديث هذه المعلومات، يرجى التواصل مع قسم الموارد البشرية.",
+    "statistics": {
+      "myRequests": "إحصائيات طلباتي",
+      "totalRequests": "إجمالي الطلبات",
+      "approvalStats": "إحصائيات الموافقات",
+      "totalApprovals": "إجمالي الموافقات"
+    }
   }
 }
