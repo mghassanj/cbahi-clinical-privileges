@@ -180,21 +180,20 @@ export async function middleware(request: NextRequest) {
   }
 
   // Get session token
-  // Use explicit secret and secureCookie setting for Edge Runtime compatibility
+  // Detect if we're on HTTPS by checking the request URL
+  const isSecure = request.nextUrl.protocol === "https:";
+
+  // Use explicit cookie name based on protocol
+  // next-auth uses "__Secure-next-auth.session-token" for HTTPS, "next-auth.session-token" for HTTP
+  const cookieName = isSecure
+    ? "__Secure-next-auth.session-token"
+    : "next-auth.session-token";
+
   const token = await getToken({
     req: request,
     secret: secret,
-    secureCookie: process.env.NODE_ENV === "production",
+    cookieName: cookieName,
   });
-
-  // Debug logging for auth issues (remove in production)
-  if (requiresAuth(pathname)) {
-    console.log("[Middleware] Path:", pathname);
-    console.log("[Middleware] Token exists:", !!token);
-    console.log("[Middleware] Secret exists:", !!secret);
-    console.log("[Middleware] NODE_ENV:", process.env.NODE_ENV);
-    console.log("[Middleware] Cookies:", request.cookies.getAll().map(c => c.name));
-  }
 
   // Redirect to login if not authenticated and accessing protected route
   if (requiresAuth(pathname) && !token) {
