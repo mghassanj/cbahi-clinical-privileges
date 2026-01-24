@@ -4,6 +4,11 @@ const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Environment variables available to Edge Runtime (middleware)
+  env: {
+    NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET,
+  },
+
   // Enable experimental features
   experimental: {
     // Optimize package imports
