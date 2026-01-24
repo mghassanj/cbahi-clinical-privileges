@@ -496,7 +496,7 @@ async function syncUsers(client: JisrClient): Promise<{
         await prisma.user.create({
           data: {
             ...userData,
-            role: UserRole.PRACTITIONER,
+            role: UserRole.EMPLOYEE,
           },
         });
         added++;
