@@ -253,33 +253,82 @@ function LoginPageContent() {
               <ErrorAlert message={error || errorMessage!} />
             )}
 
-            {/* Form */}
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="space-y-2">
-                <label
-                  htmlFor="email"
-                  className="block text-sm font-medium text-gray-700"
-                >
-                  {t.emailLabel}
-                </label>
-                <input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder={t.emailPlaceholder}
-                  disabled={isPending}
-                  autoComplete="email"
-                  autoFocus
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-colors disabled:bg-gray-100 disabled:cursor-not-allowed text-gray-900 placeholder-gray-400"
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={isPending || !email}
-                className="w-full py-3 px-4 bg-teal-600 hover:bg-teal-700 text-white font-medium rounded-lg transition-colors disabled:bg-teal-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            {/* Email Input - shared by both forms */}
+            <div className="space-y-2">
+              <label
+                htmlFor="email"
+                className="block text-sm font-medium text-gray-700"
               >
+                {t.emailLabel}
+              </label>
+              <input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder={t.emailPlaceholder}
+                disabled={isPending}
+                autoComplete="email"
+                autoFocus
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-colors disabled:bg-gray-100 disabled:cursor-not-allowed text-gray-900 placeholder-gray-400"
+              />
+            </div>
+
+            {/* Testing Mode: Show test login button */}
+            {testingMode ? (
+              <div className="space-y-4">
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                  <p className="text-sm text-yellow-700 font-medium">
+                    Testing Mode Enabled
+                  </p>
+                  <p className="text-xs text-yellow-600 mt-1">
+                    Click below to login directly without email verification
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    if (!email || !isValidEmail(email)) {
+                      setError(t.errorInvalidEmail);
+                      return;
+                    }
+                    setError(null);
+                    startTransition(async () => {
+                      try {
+                        const callbackUrl = searchParams.get("callbackUrl") || `/${locale}/dashboard`;
+                        const result = await signIn("test-login", {
+                          email,
+                          callbackUrl,
+                          redirect: false,
+                        });
+                        if (result?.error) {
+                          if (result.error === "CredentialsSignin") {
+                            setError(t.errorUserNotFound);
+                          } else {
+                            setError(t.errorGeneric);
+                          }
+                        } else if (result?.ok) {
+                          window.location.href = callbackUrl;
+                        }
+                      } catch {
+                        setError(t.errorGeneric);
+                      }
+                    });
+                  }}
+                  disabled={isPending || !email}
+                  className="w-full py-3 px-4 bg-yellow-500 hover:bg-yellow-600 text-white font-medium rounded-lg transition-colors disabled:bg-yellow-300 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  {isPending ? t.loadingButton : "Test Login (Bypass Email)"}
+                </button>
+              </div>
+            ) : (
+              /* Production Mode: Show magic link form */
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <button
+                  type="submit"
+                  disabled={isPending || !email}
+                  className="w-full py-3 px-4 bg-teal-600 hover:bg-teal-700 text-white font-medium rounded-lg transition-colors disabled:bg-teal-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
                 {isPending ? (
                   <>
                     <svg
@@ -323,46 +372,11 @@ function LoginPageContent() {
                   </>
                 )}
               </button>
-            </form>
+              </form>
+            )}
 
             {/* Footer */}
             <p className="text-center text-xs text-gray-500">{t.footerText}</p>
-
-            {/* Test Login Section - Only visible in testing mode */}
-            {testingMode && (
-              <div className="mt-6 pt-6 border-t border-gray-200">
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
-                  <p className="text-sm text-yellow-700 font-medium">
-                    Testing Mode Enabled
-                  </p>
-                  <p className="text-xs text-yellow-600 mt-1">
-                    Click below to login directly without email verification
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={async () => {
-                    if (!email || !isValidEmail(email)) {
-                      setError(t.errorInvalidEmail);
-                      return;
-                    }
-                    const callbackUrl = searchParams.get("callbackUrl") || `/${locale}/dashboard`;
-                    const result = await signIn("test-login", {
-                      email,
-                      callbackUrl,
-                      redirect: true,
-                    });
-                    if (result?.error) {
-                      setError(t.errorGeneric);
-                    }
-                  }}
-                  disabled={!email}
-                  className="w-full py-3 px-4 bg-yellow-500 hover:bg-yellow-600 text-white font-medium rounded-lg transition-colors disabled:bg-yellow-300 disabled:cursor-not-allowed"
-                >
-                  Test Login (Bypass Email)
-                </button>
-              </div>
-            )}
           </div>
         </div>
       </div>
