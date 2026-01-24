@@ -377,18 +377,17 @@ export class JisrClient {
    * @returns Promise<JisrEmployee[]>
    */
   public async getEmployees(): Promise<JisrEmployee[]> {
-    const response = await this.request<JisrApiResponse<JisrEmployee[]> | JisrPaginatedResponse<JisrEmployee>>(
+    const response = await this.request<{ data: { employees: JisrEmployee[] } }>(
       '/employees/get_all'
     );
 
-    // Handle both response formats
-    if ('data' in response) {
-      if (Array.isArray(response.data)) {
-        return response.data;
-      }
-      if ('data' in response.data && Array.isArray(response.data.data)) {
-        return response.data.data;
-      }
+    // Handle nested response format: { data: { employees: [...] } }
+    if (response?.data?.employees && Array.isArray(response.data.employees)) {
+      return response.data.employees.map(emp => ({
+        ...emp,
+        full_name: emp.name_i18n || emp.full_name || (emp as Record<string, unknown>).name as string,
+        job_title_name: emp.job_title_i18n || emp.job_title_name,
+      }));
     }
 
     return [];
@@ -417,18 +416,18 @@ export class JisrClient {
    * @returns Promise<JisrDepartment[]>
    */
   public async getDepartments(): Promise<JisrDepartment[]> {
-    const response = await this.request<JisrApiResponse<JisrDepartment[]> | JisrPaginatedResponse<JisrDepartment>>(
+    const response = await this.request<{ data: { departments: JisrDepartment[] } }>(
       '/departments'
     );
 
-    // Handle both response formats
-    if ('data' in response) {
-      if (Array.isArray(response.data)) {
-        return response.data;
-      }
-      if ('data' in response.data && Array.isArray(response.data.data)) {
-        return response.data.data;
-      }
+    // Handle nested response format: { data: { departments: [...] } }
+    if (response?.data?.departments && Array.isArray(response.data.departments)) {
+      return response.data.departments.map(dept => ({
+        ...dept,
+        name: dept.name_i18n || dept.name,
+        manager_id: (dept.manager as { id?: number })?.id,
+        manager_name: (dept.manager as { name_i18n?: string })?.name_i18n,
+      }));
     }
 
     return [];
@@ -444,31 +443,46 @@ export class JisrClient {
    * @returns Promise<JisrLocation[]>
    */
   public async getLocations(): Promise<JisrLocation[]> {
-    const response = await this.request<JisrApiResponse<JisrCountry[]>>(
+    const response = await this.request<{ data: { countries: JisrCountry[] } }>(
       '/organizations/countries'
     );
 
     const locations: JisrLocation[] = [];
-    const countries = Array.isArray(response.data) ? response.data : [];
+    const countries = response?.data?.countries || [];
 
     // Flatten the nested structure
     for (const country of countries) {
+      const countryName = (country as { name_i18n?: string }).name_i18n || country.name;
       if (country.areas) {
         for (const area of country.areas) {
+          const areaName = (area as { name_i18n?: string }).name_i18n || area.name;
           if (area.locations) {
             for (const location of area.locations) {
               locations.push({
                 id: location.id,
-                name: location.name,
+                name: (location as { name_i18n?: string }).name_i18n || location.name,
                 name_ar: location.name_ar,
                 address: location.address,
                 area_id: area.id,
-                area_name: area.name,
+                area_name: areaName,
                 country_id: country.id,
-                country_name: country.name,
+                country_name: countryName,
                 is_active: location.is_active,
               });
             }
+          }
+          // If no locations under area, treat area as location
+          if (!area.locations || area.locations.length === 0) {
+            locations.push({
+              id: area.id,
+              name: areaName,
+              name_ar: area.name_ar,
+              area_id: area.id,
+              area_name: areaName,
+              country_id: country.id,
+              country_name: countryName,
+              is_active: true,
+            });
           }
         }
       }
@@ -498,40 +512,33 @@ export class JisrClient {
    * @returns Promise<JisrJobTitle[]>
    */
   public async getJobTitles(): Promise<JisrJobTitle[]> {
-    const response = await this.request<JisrApiResponse<JisrJobTitleItem[] | JisrJobTitleCategory[]>>(
+    interface JobTitleResponse {
+      id: number;
+      name: string;
+      name_ar?: string;
+      name_i18n?: string;
+      category?: {
+        id: number;
+        name_en?: string;
+        name_ar?: string;
+        name_i18n?: string;
+      };
+    }
+
+    const response = await this.request<{ data: { job_titles: JobTitleResponse[] } }>(
       '/job_titles/'
     );
 
-    const data = response.data;
+    const jobTitles = response?.data?.job_titles || [];
 
-    if (!Array.isArray(data)) {
-      return [];
-    }
-
-    // Check if response is categorized or flat
-    const firstItem = data[0];
-    if (firstItem && 'job_titles' in firstItem) {
-      // Categorized response - flatten it
-      const jobTitles: JisrJobTitle[] = [];
-      for (const category of data as JisrJobTitleCategory[]) {
-        if (category.job_titles) {
-          for (const jobTitle of category.job_titles) {
-            jobTitles.push({
-              id: jobTitle.id,
-              name: jobTitle.name,
-              name_ar: jobTitle.name_ar,
-              category_id: category.id,
-              category_name: category.name,
-              is_active: jobTitle.is_active,
-            });
-          }
-        }
-      }
-      return jobTitles;
-    }
-
-    // Flat response
-    return data as JisrJobTitle[];
+    return jobTitles.map(jt => ({
+      id: jt.id,
+      name: jt.name_i18n || jt.name,
+      name_ar: jt.name_ar,
+      category_id: jt.category?.id,
+      category_name: jt.category?.name_i18n || jt.category?.name_en,
+      is_active: true,
+    }));
   }
 
   /**
