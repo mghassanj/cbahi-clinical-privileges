@@ -12,6 +12,27 @@ import { prisma } from "@/lib/db";
 import { RequestStatus, RequestType, PrivilegeRequestType } from "@prisma/client";
 
 // ============================================================================
+// Helper: Convert frontend privilege IDs to database IDs
+// ============================================================================
+
+async function getPrivilegeDbIds(frontendIds: string[]): Promise<string[]> {
+  if (!frontendIds || frontendIds.length === 0) return [];
+  
+  // Frontend sends IDs like 'core-001', convert to codes like 'CORE-001'
+  const privilegeCodes = frontendIds.map(id => id.toUpperCase());
+  
+  const privileges = await prisma.privilege.findMany({
+    where: {
+      code: { in: privilegeCodes },
+      isActive: true,
+    },
+    select: { id: true },
+  });
+  
+  return privileges.map(p => p.id);
+}
+
+// ============================================================================
 // Types
 // ============================================================================
 
@@ -76,6 +97,11 @@ export async function POST(request: NextRequest) {
         ? RequestType.REAPPLICATION
         : RequestType.NEW;
 
+    // Convert frontend privilege IDs to database IDs
+    const privilegeDbIds = await getPrivilegeDbIds(
+      body.privileges?.selectedPrivileges || []
+    );
+
     // Create draft request
     const draft = await prisma.privilegeRequest.create({
       data: {
@@ -85,11 +111,11 @@ export async function POST(request: NextRequest) {
         reapplicationReason: body.applicationType?.reapplicationReason,
         hospitalCenter: body.personalInfo?.hospitalCenter,
         status: RequestStatus.DRAFT,
-        // Store additional draft data as JSON in metadata or handle privileges separately
-        requestedPrivileges: body.privileges?.selectedPrivileges?.length
+        // Create privileges with validated database IDs
+        requestedPrivileges: privilegeDbIds.length > 0
           ? {
               createMany: {
-                data: body.privileges.selectedPrivileges.map((privilegeId) => ({
+                data: privilegeDbIds.map((privilegeId) => ({
                   privilegeId,
                 })),
               },
@@ -178,6 +204,11 @@ export async function PUT(request: NextRequest) {
         ? RequestType.REAPPLICATION
         : RequestType.NEW;
 
+    // Convert frontend privilege IDs to database IDs
+    const privilegeDbIds = await getPrivilegeDbIds(
+      body.privileges?.selectedPrivileges || []
+    );
+
     // Update draft in a transaction
     const draft = await prisma.$transaction(async (tx) => {
       // Delete existing privileges if we're updating them
@@ -195,18 +226,16 @@ export async function PUT(request: NextRequest) {
           reapplicationReason: body.applicationType?.reapplicationReason,
           hospitalCenter: body.personalInfo?.hospitalCenter,
           updatedAt: new Date(),
-          // Re-create privileges
-          requestedPrivileges:
-            body.privileges?.selectedPrivileges &&
-            body.privileges.selectedPrivileges.length > 0
-              ? {
-                  createMany: {
-                    data: body.privileges.selectedPrivileges.map((privilegeId) => ({
-                      privilegeId,
-                    })),
-                  },
-                }
-              : undefined,
+          // Re-create privileges with validated database IDs
+          requestedPrivileges: privilegeDbIds.length > 0
+            ? {
+                createMany: {
+                  data: privilegeDbIds.map((privilegeId) => ({
+                    privilegeId,
+                  })),
+                },
+              }
+            : undefined,
         },
         select: {
           id: true,
