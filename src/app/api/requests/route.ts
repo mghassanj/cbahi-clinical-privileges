@@ -274,15 +274,21 @@ export async function POST(request: NextRequest) {
     const body: CreateRequestBody = await request.json();
 
     // Validate privileges if provided
+    // Frontend sends IDs like 'core-001', convert to codes like 'CORE-001'
+    let validatedPrivilegeIds: string[] = [];
     if (body.privileges && body.privileges.length > 0) {
-      const privilegeCount = await prisma.privilege.count({
+      // Convert frontend IDs to database codes (uppercase)
+      const privilegeCodes = body.privileges.map(id => id.toUpperCase());
+      
+      const privileges = await prisma.privilege.findMany({
         where: {
-          id: { in: body.privileges },
+          code: { in: privilegeCodes },
           isActive: true,
         },
+        select: { id: true, code: true },
       });
 
-      if (privilegeCount !== body.privileges.length) {
+      if (privileges.length !== body.privileges.length) {
         return NextResponse.json(
           {
             error: "Invalid privileges",
@@ -291,6 +297,9 @@ export async function POST(request: NextRequest) {
           { status: 400 }
         );
       }
+      
+      // Use the actual database IDs for creating relations
+      validatedPrivilegeIds = privileges.map(p => p.id);
     }
 
     // Check for existing draft or pending request
@@ -328,10 +337,10 @@ export async function POST(request: NextRequest) {
         },
       });
 
-      // Add requested privileges
-      if (body.privileges && body.privileges.length > 0) {
+      // Add requested privileges using validated database IDs
+      if (validatedPrivilegeIds.length > 0) {
         await tx.requestedPrivilege.createMany({
-          data: body.privileges.map((privilegeId) => ({
+          data: validatedPrivilegeIds.map((privilegeId) => ({
             requestId: createdRequest.id,
             privilegeId,
           })),
