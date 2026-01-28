@@ -182,6 +182,7 @@
         "experienceLetterDesc": "Upload experience letters from previous employers",
         "trainingCertificate": "Training Certificate",
         "trainingCertificateDesc": "Upload relevant training certificates",
+        "removeFile": "Remove file",
         "googleDriveNote": "Documents are automatically uploaded to Google Drive for secure storage"
       },
       "review": {

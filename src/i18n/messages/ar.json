@@ -182,6 +182,7 @@
         "experienceLetterDesc": "ارفع خطابات الخبرة من أصحاب العمل السابقين",
         "trainingCertificate": "شهادة التدريب",
         "trainingCertificateDesc": "ارفع شهادات التدريب ذات الصلة",
+        "removeFile": "إزالة الملف",
         "googleDriveNote": "يتم رفع المستندات تلقائياً إلى Google Drive للتخزين الآمن"
       },
       "review": {
