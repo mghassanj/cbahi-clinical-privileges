@@ -107,7 +107,7 @@ export interface WizardActions {
   updateDocuments: (data: Partial<DocumentsData>) => void;
   updateReview: (data: Partial<ReviewData>) => void;
   validateCurrentStep: () => Promise<boolean>;
-  saveDraft: () => Promise<void>;
+  saveDraft: () => Promise<string | null>;
   submit: () => Promise<void>;
   loadDraft: (draftId: string) => Promise<void>;
   reset: () => void;
@@ -343,7 +343,7 @@ export function usePrivilegeRequest(
     }
   }, [state]);
 
-  const saveDraft = useCallback(async (): Promise<void> => {
+  const saveDraft = useCallback(async (): Promise<string | null> => {
     setState((prev) => ({ ...prev, isSubmitting: true, error: null }));
 
     try {
@@ -385,12 +385,15 @@ export function usePrivilegeRequest(
         draftId: data.id,
         isSubmitting: false,
       }));
+      
+      return data.id; // Return the draft ID for callers who need it immediately
     } catch (error) {
       setState((prev) => ({
         ...prev,
         isSubmitting: false,
         error: error instanceof Error ? error.message : "Failed to save draft",
       }));
+      throw error; // Re-throw so callers can handle the failure
     }
   }, [state]);
 

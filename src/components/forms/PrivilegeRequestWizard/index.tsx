@@ -105,10 +105,14 @@ export function PrivilegeRequestWizard({
       // This is especially important before Step 4 (Documents) where we need the requestId for uploads
       try {
         await wizard.saveDraft();
+        // Small delay to ensure state update has propagated
+        await new Promise(resolve => setTimeout(resolve, 100));
+        wizard.nextStep();
       } catch (error) {
         console.error("Failed to save draft:", error);
+        // Don't proceed if save failed - user needs the draftId for document uploads
+        // The error will be displayed by the wizard's error state
       }
-      wizard.nextStep();
     }
   };
 
@@ -117,8 +121,13 @@ export function PrivilegeRequestWizard({
   };
 
   const handleSaveDraft = async () => {
-    await wizard.saveDraft();
-    onSaveDraft?.();
+    try {
+      await wizard.saveDraft();
+      onSaveDraft?.();
+    } catch (error) {
+      // Error is already set in wizard state, will be displayed to user
+      console.error("Failed to save draft:", error);
+    }
   };
 
   const handleSubmit = async () => {
