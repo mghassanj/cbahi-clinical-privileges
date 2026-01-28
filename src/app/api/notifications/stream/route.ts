@@ -147,13 +147,15 @@ export async function GET(request: NextRequest) {
   });
 
   // Return the SSE response
+  const origin = process.env.NEXT_PUBLIC_APP_URL || request.headers.get("origin") || "https://cbahi-web-production.up.railway.app";
+  
   return new Response(stream, {
     headers: {
       "Content-Type": "text/event-stream",
       "Cache-Control": "no-cache, no-transform",
       Connection: "keep-alive",
       "X-Accel-Buffering": "no", // Disable nginx buffering
-      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Origin": origin,
       "Access-Control-Allow-Credentials": "true",
     },
   });
@@ -163,13 +165,16 @@ export async function GET(request: NextRequest) {
 // OPTIONS - CORS Support
 // ============================================================================
 
-export async function OPTIONS() {
+export async function OPTIONS(request: NextRequest) {
+  const origin = process.env.NEXT_PUBLIC_APP_URL || request.headers.get("origin") || "https://cbahi-web-production.up.railway.app";
+  
   return new Response(null, {
     status: 204,
     headers: {
-      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Origin": origin,
       "Access-Control-Allow-Methods": "GET, OPTIONS",
       "Access-Control-Allow-Headers": "Content-Type, Authorization",
+      "Access-Control-Allow-Credentials": "true",
       "Access-Control-Max-Age": "86400",
     },
   });

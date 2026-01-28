@@ -82,7 +82,9 @@
       "next": "Next",
       "previous": "Previous",
       "saveDraft": "Save Draft",
-      "submit": "Submit"
+      "submit": "Submit",
+      "edit": "Edit",
+      "confirm": "Confirm"
     }
   },
   "request": {
@@ -123,7 +125,9 @@
     "form": {
       "personalInfo": {
         "title": "Personal Information",
+        "description": "Please verify your personal information",
         "fullName": "Full Name",
+        "fullNameAr": "Full Name (Arabic)",
         "employeeCode": "Employee Code",
         "department": "Department",
         "jobTitle": "Job Title",
@@ -179,6 +183,19 @@
         "trainingCertificate": "Training Certificate",
         "trainingCertificateDesc": "Upload relevant training certificates",
         "googleDriveNote": "Documents are automatically uploaded to Google Drive for secure storage"
+      },
+      "review": {
+        "title": "Review & Submit",
+        "description": "Review your application before submitting",
+        "applicationSummary": "Application Summary",
+        "personalInfoSummary": "Personal Information",
+        "privilegesSummary": "Selected Privileges",
+        "documentsSummary": "Uploaded Documents",
+        "declaration": "Declaration",
+        "declarationText": "I hereby declare that all information provided is true and accurate to the best of my knowledge. I understand that any false information may result in the rejection of my application or revocation of privileges.",
+        "agreeTerms": "I agree to the terms and conditions",
+        "submitApplication": "Submit Application",
+        "saveDraft": "Save as Draft"
       }
     }
   },

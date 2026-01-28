@@ -90,7 +90,7 @@
     {
       "status": "PASS",
       "test": "Page load time",
-      "details": "832ms (Good)"
+      "details": "785ms (Good)"
     },
     {
       "status": "PASS",

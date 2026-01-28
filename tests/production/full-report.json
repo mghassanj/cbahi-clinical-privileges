@@ -1,0 +1,41 @@
+{
+  "timestamp": "2026-01-28T21:09:11.585Z",
+  "target": "https://cbahi-web-production.up.railway.app",
+  "suites": [
+    {
+      "name": "🔥 Smoke Tests",
+      "status": "completed",
+      "passed": 19,
+      "failed": 0,
+      "duration": 18884
+    },
+    {
+      "name": "📡 API Tests",
+      "status": "completed",
+      "passed": 16,
+      "failed": 0,
+      "duration": 3551
+    },
+    {
+      "name": "♿ Accessibility Tests",
+      "status": "completed_with_failures",
+      "passed": 0,
+      "failed": 0,
+      "duration": 8000,
+      "error": "Command failed: NODE_OPTIONS='' node /home/ec2-user/clawd/projects/cbahi-clinical-privileges/tests/production/accessibility-test.js"
+    },
+    {
+      "name": "📸 Visual Journey",
+      "status": "completed",
+      "passed": 0,
+      "failed": 0,
+      "duration": 17199
+    }
+  ],
+  "summary": {
+    "totalPassed": 35,
+    "totalFailed": 0,
+    "passRate": "100.0%",
+    "totalDuration": 47634
+  }
+}

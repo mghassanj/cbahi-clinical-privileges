@@ -82,7 +82,9 @@
       "next": "التالي",
       "previous": "السابق",
       "saveDraft": "حفظ كمسودة",
-      "submit": "إرسال"
+      "submit": "إرسال",
+      "edit": "تعديل",
+      "confirm": "تأكيد"
     }
   },
   "request": {
@@ -123,7 +125,9 @@
     "form": {
       "personalInfo": {
         "title": "المعلومات الشخصية",
+        "description": "يرجى التحقق من معلوماتك الشخصية",
         "fullName": "الاسم الكامل",
+        "fullNameAr": "الاسم الكامل (بالعربية)",
         "employeeCode": "رمز الموظف",
         "department": "القسم",
         "jobTitle": "المسمى الوظيفي",
@@ -179,6 +183,19 @@
         "trainingCertificate": "شهادة التدريب",
         "trainingCertificateDesc": "ارفع شهادات التدريب ذات الصلة",
         "googleDriveNote": "يتم رفع المستندات تلقائياً إلى Google Drive للتخزين الآمن"
+      },
+      "review": {
+        "title": "المراجعة والإرسال",
+        "description": "راجع طلبك قبل الإرسال",
+        "applicationSummary": "ملخص الطلب",
+        "personalInfoSummary": "المعلومات الشخصية",
+        "privilegesSummary": "الامتيازات المختارة",
+        "documentsSummary": "المستندات المرفوعة",
+        "declaration": "الإقرار",
+        "declarationText": "أقر بموجب هذا أن جميع المعلومات المقدمة صحيحة ودقيقة على حد علمي. أفهم أن أي معلومات خاطئة قد تؤدي إلى رفض طلبي أو إلغاء الامتيازات.",
+        "agreeTerms": "أوافق على الشروط والأحكام",
+        "submitApplication": "إرسال الطلب",
+        "saveDraft": "حفظ كمسودة"
       }
     }
   },

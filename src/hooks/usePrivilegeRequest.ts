@@ -347,20 +347,36 @@ export function usePrivilegeRequest(
     setState((prev) => ({ ...prev, isSubmitting: true, error: null }));
 
     try {
-      const response = await fetch("/api/requests/draft", {
+      const draftPayload = {
+        id: state.draftId,
+        personalInfo: state.personalInfo,
+        applicationType: state.applicationType,
+        privileges: state.privileges,
+        documents: state.documents,
+      };
+
+      let response = await fetch("/api/requests/draft", {
         method: state.draftId ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          id: state.draftId,
-          personalInfo: state.personalInfo,
-          applicationType: state.applicationType,
-          privileges: state.privileges,
-          documents: state.documents,
-        }),
+        body: JSON.stringify(draftPayload),
       });
 
+      // If PUT returns 404 (stale draft ID), clear it and retry with POST
+      if (response.status === 404 && state.draftId) {
+        console.warn("Draft not found, creating new draft instead");
+        response = await fetch("/api/requests/draft", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            ...draftPayload,
+            id: undefined, // Clear the stale ID
+          }),
+        });
+      }
+
       if (!response.ok) {
-        throw new Error("Failed to save draft");
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || "Failed to save draft");
       }
 
       const data = await response.json();
@@ -391,13 +407,15 @@ export function usePrivilegeRequest(
 
       // If we have an existing draft, save it first then submit it
       // Otherwise create a new request and submit directly
-      if (state.draftId) {
+      let currentDraftId = state.draftId;
+      
+      if (currentDraftId) {
         // First, save the latest draft data
-        const saveResponse = await fetch("/api/requests/draft", {
+        let saveResponse = await fetch("/api/requests/draft", {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            id: state.draftId,
+            id: currentDraftId,
             personalInfo: state.personalInfo,
             applicationType: state.applicationType,
             privileges: state.privileges,
@@ -405,12 +423,32 @@ export function usePrivilegeRequest(
           }),
         });
 
-        if (!saveResponse.ok) {
+        // If PUT returns 404 (stale draft ID), create a new draft instead
+        if (saveResponse.status === 404) {
+          console.warn("Draft not found during submission, creating new draft");
+          saveResponse = await fetch("/api/requests/draft", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              personalInfo: state.personalInfo,
+              applicationType: state.applicationType,
+              privileges: state.privileges,
+              documents: state.documents,
+            }),
+          });
+
+          if (!saveResponse.ok) {
+            throw new Error("Failed to create draft before submission");
+          }
+
+          const newDraft = await saveResponse.json();
+          currentDraftId = newDraft.id;
+        } else if (!saveResponse.ok) {
           throw new Error("Failed to save draft before submission");
         }
 
-        // Then submit the existing draft
-        const submitResponse = await fetch(`/api/requests/${state.draftId}/submit`, {
+        // Then submit the draft
+        const submitResponse = await fetch(`/api/requests/${currentDraftId}/submit`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
         });
