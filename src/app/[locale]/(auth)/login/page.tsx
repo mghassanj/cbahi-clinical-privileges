@@ -230,12 +230,12 @@ function LoginPageContent() {
       dir={isRTL ? "rtl" : "ltr"}
     >
       {/* Language Switcher */}
-      <div className="absolute top-6 end-6">
+      <header className="absolute top-6 end-6">
         <LanguageSwitcher locale={locale} t={t} />
-      </div>
+      </header>
 
       {/* Main Content */}
-      <div className="flex-1 flex items-center justify-center px-4 py-12">
+      <main className="flex-1 flex items-center justify-center px-4 py-12">
         <div className="w-full max-w-md">
           {/* Card */}
           <div className="bg-white rounded-2xl shadow-xl p-8 space-y-8">
@@ -281,7 +281,7 @@ function LoginPageContent() {
                   <p className="text-sm text-yellow-700 font-medium">
                     Testing Mode Enabled
                   </p>
-                  <p className="text-xs text-yellow-600 mt-1">
+                  <p className="text-xs text-amber-800 mt-1">
                     Click below to login directly without email verification
                   </p>
                 </div>
@@ -379,15 +379,15 @@ function LoginPageContent() {
             <p className="text-center text-xs text-gray-500">{t.footerText}</p>
           </div>
         </div>
-      </div>
+      </main>
 
       {/* Bottom Branding */}
-      <div className="text-center py-6 text-gray-400 text-sm">
+      <footer className="text-center py-6 text-gray-400 text-sm">
         <p>CBAHI Clinical Privileges Management System</p>
         <p className="mt-1">
           نظام إدارة الامتيازات السريرية - المركز السعودي لاعتماد المنشآت الصحية
         </p>
-      </div>
+      </footer>
     </div>
   );
 }
