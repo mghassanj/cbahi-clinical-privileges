@@ -1,0 +1,60 @@
+{
+  "screenshots": [
+    {
+      "page": "Login (EN)",
+      "device": "Desktop",
+      "file": "desktop-login--en-.png"
+    },
+    {
+      "page": "Login (AR)",
+      "device": "Desktop",
+      "file": "desktop-login--ar-.png"
+    },
+    {
+      "page": "Login Error",
+      "device": "Desktop",
+      "file": "desktop-login-error.png"
+    },
+    {
+      "page": "Login Verify",
+      "device": "Desktop",
+      "file": "desktop-login-verify.png"
+    },
+    {
+      "page": "Login (EN)",
+      "device": "Mobile",
+      "file": "mobile-login--en-.png"
+    },
+    {
+      "page": "Login (AR)",
+      "device": "Mobile",
+      "file": "mobile-login--ar-.png"
+    },
+    {
+      "page": "Login (EN)",
+      "device": "Tablet",
+      "file": "tablet-login--en-.png"
+    },
+    {
+      "page": "Hover State",
+      "device": "Desktop",
+      "file": "state-hover.png"
+    },
+    {
+      "page": "Focus State",
+      "device": "Desktop",
+      "file": "state-focus.png"
+    },
+    {
+      "page": "Error State",
+      "device": "Desktop",
+      "file": "state-error.png"
+    },
+    {
+      "page": "Valid State",
+      "device": "Desktop",
+      "file": "state-valid.png"
+    }
+  ],
+  "timestamp": "2026-01-28T20:59:19.573Z"
+}

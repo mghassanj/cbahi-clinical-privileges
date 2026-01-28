@@ -1,0 +1,101 @@
+{
+  "passed": 19,
+  "failed": 0,
+  "tests": [
+    {
+      "status": "PASS",
+      "test": "App loads",
+      "details": "Status: 200"
+    },
+    {
+      "status": "PASS",
+      "test": "Login form renders",
+      "details": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Branding visible",
+      "details": ""
+    },
+    {
+      "status": "PASS",
+      "test": "English → Arabic switch",
+      "details": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Arabic RTL layout",
+      "details": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Arabic → English switch",
+      "details": ""
+    },
+    {
+      "status": "PASS",
+      "test": "API Health endpoint",
+      "details": "Status: ok"
+    },
+    {
+      "status": "PASS",
+      "test": "Protected route /en",
+      "details": "Redirects to login"
+    },
+    {
+      "status": "PASS",
+      "test": "Protected route /en/requests",
+      "details": "Redirects to login"
+    },
+    {
+      "status": "PASS",
+      "test": "Protected route /en/approvals",
+      "details": "Redirects to login"
+    },
+    {
+      "status": "PASS",
+      "test": "Protected route /en/admin",
+      "details": "Redirects to login"
+    },
+    {
+      "status": "PASS",
+      "test": "Protected route /en/profile",
+      "details": "Redirects to login"
+    },
+    {
+      "status": "PASS",
+      "test": "Empty form validation",
+      "details": "Button disabled when empty (correct)"
+    },
+    {
+      "status": "PASS",
+      "test": "Invalid email validation",
+      "details": "Shows error"
+    },
+    {
+      "status": "PASS",
+      "test": "Mobile (375x812)",
+      "details": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Tablet (768x1024)",
+      "details": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Desktop (1920x1080)",
+      "details": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Page load time",
+      "details": "857ms (Good)"
+    },
+    {
+      "status": "PASS",
+      "test": "No console errors",
+      "details": ""
+    }
+  ]
+}

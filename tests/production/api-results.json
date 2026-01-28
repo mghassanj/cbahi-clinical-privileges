@@ -1,0 +1,86 @@
+{
+  "passed": 16,
+  "failed": 0,
+  "tests": [
+    {
+      "status": "PASS",
+      "test": "GET /api/health",
+      "details": "Status: 200, Response: {\"status\":\"ok\",\"timestamp\":\"2026-01-28T20:58:20.983Z\"}"
+    },
+    {
+      "status": "PASS",
+      "test": "GET /api/config",
+      "details": "Keys: testingMode"
+    },
+    {
+      "status": "PASS",
+      "test": "GET /api/requests (no auth)",
+      "details": "Status: 401 (correctly protected)"
+    },
+    {
+      "status": "PASS",
+      "test": "POST /api/requests (no auth)",
+      "details": "Status: 401 (correctly protected)"
+    },
+    {
+      "status": "PASS",
+      "test": "GET /api/approvals (no auth)",
+      "details": "Status: 401 (correctly protected)"
+    },
+    {
+      "status": "PASS",
+      "test": "GET /api/users (no auth)",
+      "details": "Status: 401 (correctly protected)"
+    },
+    {
+      "status": "PASS",
+      "test": "GET /api/admin/privileges (no auth)",
+      "details": "Status: 401 (correctly protected)"
+    },
+    {
+      "status": "PASS",
+      "test": "POST /api/sync (no auth)",
+      "details": "Status: 401 (correctly protected)"
+    },
+    {
+      "status": "PASS",
+      "test": "Malformed JSON handling",
+      "details": "Status: 401"
+    },
+    {
+      "status": "PASS",
+      "test": "SQL injection in query params",
+      "details": "Status: 200 (endpoint still works)"
+    },
+    {
+      "status": "PASS",
+      "test": "XSS in headers",
+      "details": "Status: 200"
+    },
+    {
+      "status": "PASS",
+      "test": "Rapid requests (10x)",
+      "details": "All requests succeeded"
+    },
+    {
+      "status": "PASS",
+      "test": "CORS headers",
+      "details": "Not set (same-origin)"
+    },
+    {
+      "status": "PASS",
+      "test": "Security header: x-frame-options",
+      "details": "DENY"
+    },
+    {
+      "status": "PASS",
+      "test": "Security header: x-content-type-options",
+      "details": "nosniff"
+    },
+    {
+      "status": "PASS",
+      "test": "Average API response time",
+      "details": "105ms (5 requests)"
+    }
+  ]
+}
