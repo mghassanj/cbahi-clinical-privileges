@@ -30,6 +30,28 @@ enum UserStatus {
   TERMINATED
 }
 
+// Practitioner classification per CBAHI requirements
+enum PractitionerType {
+  GP                // General Practitioner (طبيب عام)
+  SPECIALIST        // Specialist (أخصائي)
+  CONSULTANT        // Consultant (استشاري)
+}
+
+// Dental specialties for approval routing
+enum DentalSpecialty {
+  GENERAL_DENTISTRY
+  PEDODONTICS           // طب أسنان الأطفال
+  PROSTHODONTICS        // تركيبات الأسنان
+  ENDODONTICS           // علاج جذور الأسنان
+  ORTHODONTICS          // تقويم الأسنان
+  RESTORATIVE           // إصلاح الأسنان
+  PERIODONTICS          // علاج اللثة
+  ORAL_SURGERY          // جراحة الفم والوجه والفكين
+  ORAL_MEDICINE         // طب الفم
+  IMPLANTS              // زراعة الأسنان
+  ADVANCED_GENERAL      // طب أسنان عام متقدم
+}
+
 enum EmailProvider {
   SMTP
   MICROSOFT_GRAPH
@@ -195,6 +217,14 @@ model User {
   // Dental Practitioner Specific
   scfhsNo         String?    // Saudi Commission for Health Specialties number
 
+  // CBAHI Privileges Fields (per government requirements)
+  practitionerType    PractitionerType?    // GP, Specialist, or Consultant
+  specialty           DentalSpecialty?     // Primary dental specialty
+  additionalSpecialties DentalSpecialty[]  // Additional specialties they can approve
+  isCommitteeMember   Boolean    @default(false)  // Member of privileges committee
+  isCommitteeChair    Boolean    @default(false)  // Chair of privileges committee
+  canApprovePrivileges Boolean   @default(false)  // Can approve privilege requests
+
   // Sync Information
   isActive        Boolean    @default(true)
   lastSyncedAt    DateTime?
@@ -322,6 +352,11 @@ model Privilege {
   requiresSpecialQualification Boolean          @default(false)
   description                 String?
 
+  // CBAHI Approval Requirements
+  requiredSpecialty           DentalSpecialty?  // Specialty required to perform this privilege
+  isCore                      Boolean           @default(false)  // Core privilege (auto-approved)
+  minPractitionerType         PractitionerType? // Minimum practitioner level required
+
   // Status
   isActive                    Boolean           @default(true)
 
@@ -335,6 +370,7 @@ model Privilege {
   @@index([code])
   @@index([category])
   @@index([isActive])
+  @@index([requiredSpecialty])
   @@map("privileges")
 }
 
@@ -592,6 +628,43 @@ model AuditLog {
   @@index([entityId])
   @@index([createdAt])
   @@map("audit_logs")
+}
+
+// ============================================================================
+// CBAHI APPROVAL REQUIREMENTS (per government MOH guidelines)
+// ============================================================================
+
+/// Approval requirements based on practitioner type and privilege category
+/// This implements the CBAHI/MOH matrix for clinical privileges approval
+model ApprovalRequirement {
+  id                      String               @id @default(cuid())
+  
+  // Matching criteria
+  privilegeType           PrivilegeRequestType // CORE, NON_CORE, EXTRA
+  practitionerType        PractitionerType     // GP, SPECIALIST, CONSULTANT
+  sameSpecialty           Boolean              // Is the privilege in the applicant's specialty?
+  
+  // Approval requirements
+  requiredConsultants     Int                  @default(0)  // Number of consultant approvals needed
+  requiresCommittee       Boolean              @default(false)  // Requires committee review
+  requiresMedicalDirector Boolean              @default(true)   // Requires MD final approval
+  autoApprove             Boolean              @default(false)  // Auto-approve (core privileges)
+  
+  // Description
+  descriptionEn           String?
+  descriptionAr           String?
+  
+  // Status
+  isActive                Boolean              @default(true)
+  
+  // Timestamps
+  createdAt               DateTime             @default(now())
+  updatedAt               DateTime             @updatedAt
+
+  @@unique([privilegeType, practitionerType, sameSpecialty])
+  @@index([privilegeType])
+  @@index([practitionerType])
+  @@map("approval_requirements")
 }
 
 // ============================================================================

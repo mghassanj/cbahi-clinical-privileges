@@ -2,18 +2,32 @@
  * CBAHI Clinical Privileges - Request Approval API
  *
  * POST - Submit approval decision for a privilege request
+ * GET - Get approval progress and requirements
+ * 
+ * Implements CBAHI/MOH approval matrix:
+ * - Core privileges: Auto-approved
+ * - Non-core (same specialty): 1 consultant + Medical Director
+ * - Non-core (different specialty): 2 consultants + committee + Medical Director
+ * - Additional: 2 consultants + committee + Medical Director
  */
 
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { ApprovalLevel, ApprovalStatus, PrivilegeStatus, RequestStatus, UserRole } from "@prisma/client";
+import { RequestStatus } from "@prisma/client";
 import {
   notifyRequestApproved,
   notifyRequestRejected,
   notifyModificationsRequested,
 } from "@/lib/notifications/broadcast";
+import {
+  canUserApprove,
+  processApproval,
+  getApprovalProgress,
+  getApprovalRequirements,
+  isSameSpecialty,
+} from "@/lib/approval-workflow";
 
 // ============================================================================
 // Types
@@ -31,6 +45,104 @@ interface ApprovalRequestBody {
 
 interface RouteParams {
   params: Promise<{ id: string }>;
+}
+
+// ============================================================================
+// GET - Get Approval Progress
+// ============================================================================
+
+export async function GET(request: NextRequest, { params }: RouteParams) {
+  try {
+    const session = await getServerSession(authOptions);
+
+    if (!session?.user?.id) {
+      return NextResponse.json(
+        { error: "Unauthorized", message: "Please sign in to continue" },
+        { status: 401 }
+      );
+    }
+
+    const { id: requestId } = await params;
+
+    // Get request details
+    const privilegeRequest = await prisma.privilegeRequest.findUnique({
+      where: { id: requestId },
+      include: {
+        applicant: true,
+        requestedPrivileges: {
+          include: {
+            privilege: true,
+          },
+        },
+      },
+    });
+
+    if (!privilegeRequest) {
+      return NextResponse.json(
+        { error: "Not found", message: "Request not found" },
+        { status: 404 }
+      );
+    }
+
+    // Get approval progress
+    const progress = await getApprovalProgress(requestId);
+
+    // Check if current user can approve
+    const userCanApprove = await canUserApprove(session.user.id, requestId);
+
+    // Determine if same specialty
+    const privilegeSpecialties = privilegeRequest.requestedPrivileges
+      .map(rp => rp.privilege.requiredSpecialty)
+      .filter(Boolean);
+    
+    const sameSpecialty = privilegeSpecialties.length === 0 || 
+      privilegeSpecialties.every(ps => 
+        isSameSpecialty(
+          privilegeRequest.applicant.specialty,
+          ps,
+          privilegeRequest.applicant.additionalSpecialties as any[]
+        )
+      );
+
+    // Get requirements
+    const requirements = await getApprovalRequirements(
+      privilegeRequest.applicant.practitionerType || 'GP',
+      privilegeRequest.requestType,
+      sameSpecialty
+    );
+
+    return NextResponse.json({
+      success: true,
+      data: {
+        requestId,
+        requestType: privilegeRequest.requestType,
+        applicant: {
+          id: privilegeRequest.applicant.id,
+          nameEn: privilegeRequest.applicant.nameEn,
+          nameAr: privilegeRequest.applicant.nameAr,
+          practitionerType: privilegeRequest.applicant.practitionerType,
+          specialty: privilegeRequest.applicant.specialty,
+        },
+        progress,
+        requirements,
+        sameSpecialty,
+        currentUser: {
+          canApprove: userCanApprove.canApprove,
+          reason: userCanApprove.reason,
+          level: userCanApprove.level,
+        },
+      },
+    });
+  } catch (error) {
+    console.error("Error getting approval progress:", error);
+    return NextResponse.json(
+      {
+        error: "Internal server error",
+        message: "An error occurred while getting approval progress",
+      },
+      { status: 500 }
+    );
+  }
 }
 
 // ============================================================================
@@ -63,7 +175,14 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     // Get the user
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
-      select: { id: true, role: true, nameEn: true },
+      select: { 
+        id: true, 
+        role: true, 
+        nameEn: true,
+        canApprovePrivileges: true,
+        practitionerType: true,
+        specialty: true,
+      },
     });
 
     if (!user) {
@@ -73,18 +192,11 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    // Check if user has approval permissions
-    const approverRoles: UserRole[] = [
-      UserRole.HEAD_OF_SECTION,
-      UserRole.HEAD_OF_DEPT,
-      UserRole.COMMITTEE_MEMBER,
-      UserRole.MEDICAL_DIRECTOR,
-      UserRole.ADMIN,
-    ];
-
-    if (!approverRoles.includes(user.role)) {
+    // Check if user can approve this specific request
+    const userCanApprove = await canUserApprove(session.user.id, requestId);
+    if (!userCanApprove.canApprove) {
       return NextResponse.json(
-        { error: "Forbidden", message: "You do not have permission to approve requests" },
+        { error: "Forbidden", message: userCanApprove.reason || "You cannot approve this request" },
         { status: 403 }
       );
     }
@@ -93,12 +205,6 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     const privilegeRequest = await prisma.privilegeRequest.findUnique({
       where: { id: requestId },
       include: {
-        approvals: {
-          where: { approverId: user.id },
-          orderBy: { createdAt: "desc" },
-          take: 1,
-        },
-        requestedPrivileges: true,
         applicant: {
           select: {
             id: true,
@@ -130,150 +236,103 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    // Find existing approval record for this user
-    const existingApproval = privilegeRequest.approvals[0];
-
-    // Map status to ApprovalStatus enum
-    // Note: RETURNED maps to REJECTED at the approval level, but PENDING at the request level
-    const approvalStatusMap: Record<string, ApprovalStatus> = {
-      APPROVED: ApprovalStatus.APPROVED,
-      REJECTED: ApprovalStatus.REJECTED,
-      RETURNED: ApprovalStatus.REJECTED, // Returned for modifications is treated as rejected at approval level
-    };
-
-    // Map user role to approval level
-    const roleToLevelMap: Partial<Record<UserRole, ApprovalLevel>> = {
-      [UserRole.HEAD_OF_SECTION]: ApprovalLevel.HEAD_OF_SECTION,
-      [UserRole.HEAD_OF_DEPT]: ApprovalLevel.HEAD_OF_DEPT,
-      [UserRole.COMMITTEE_MEMBER]: ApprovalLevel.COMMITTEE,
-      [UserRole.MEDICAL_DIRECTOR]: ApprovalLevel.MEDICAL_DIRECTOR,
-      [UserRole.ADMIN]: ApprovalLevel.MEDICAL_DIRECTOR, // Admin acts as Medical Director
-    };
-
-    const approvalLevel = roleToLevelMap[user.role];
-    if (!approvalLevel) {
-      return NextResponse.json(
-        { error: "Invalid role", message: "Your role cannot approve requests" },
-        { status: 403 }
-      );
-    }
-
-    // Start a transaction
-    const result = await prisma.$transaction(async (tx) => {
-      // Update or create approval record
-      let approval;
-      if (existingApproval) {
-        approval = await tx.approval.update({
-          where: { id: existingApproval.id },
-          data: {
-            status: approvalStatusMap[status],
-            comments,
-            approvedAt: new Date(),
-          },
-        });
-      } else {
-        approval = await tx.approval.create({
-          data: {
-            requestId,
-            approverId: user.id,
-            level: approvalLevel,
-            status: approvalStatusMap[status],
-            comments,
-            approvedAt: new Date(),
-          },
-        });
-      }
-
-      // Update privilege decisions if provided
-      if (privilegeDecisions && privilegeDecisions.length > 0) {
-        for (const decision of privilegeDecisions) {
-          await tx.requestedPrivilege.updateMany({
-            where: {
-              requestId,
-              privilegeId: decision.privilegeId,
-            },
-            data: {
-              status: decision.approved ? PrivilegeStatus.APPROVED : PrivilegeStatus.REJECTED,
-              comments: decision.comments || null,
-            },
-          });
-        }
-      }
-
-      // Determine the new request status based on the decision
-      let newRequestStatus: RequestStatus;
-
-      if (status === "REJECTED") {
-        newRequestStatus = RequestStatus.REJECTED;
-      } else if (status === "RETURNED") {
-        newRequestStatus = RequestStatus.PENDING; // Back to pending for modifications
-      } else {
-        // For APPROVED, check if this is the final approval level
-        // Medical Director is the final level
-        if (user.role === UserRole.MEDICAL_DIRECTOR || user.role === UserRole.ADMIN) {
-          newRequestStatus = RequestStatus.APPROVED;
-        } else {
-          // Still needs more approvals
-          newRequestStatus = RequestStatus.IN_REVIEW;
-        }
-      }
-
-      // Update request status
-      const updatedRequest = await tx.privilegeRequest.update({
+    // Handle RETURNED status (modifications requested)
+    if (status === "RETURNED") {
+      await prisma.privilegeRequest.update({
         where: { id: requestId },
         data: {
-          status: newRequestStatus,
-          completedAt: newRequestStatus === RequestStatus.APPROVED || newRequestStatus === RequestStatus.REJECTED
-            ? new Date()
-            : undefined,
+          status: RequestStatus.PENDING,
         },
       });
 
-      return { approval, request: updatedRequest, newRequestStatus };
-    });
-
-    // Send real-time notifications to the applicant
-    try {
-      const applicantId = privilegeRequest.applicant.id;
-      // Use request ID as display reference since requestNumber doesn't exist in schema
+      // Send notification
       const requestRef = requestId.slice(-8).toUpperCase();
-
-      if (status === "APPROVED") {
-        const isFinalApproval = result.newRequestStatus === RequestStatus.APPROVED;
-        notifyRequestApproved(
-          applicantId,
-          requestId,
-          requestRef,
-          user.nameEn,
-          user.nameEn, // Using English name for Arabic as well since we only have nameEn
-          isFinalApproval
-        );
-      } else if (status === "REJECTED") {
-        notifyRequestRejected(
-          applicantId,
-          requestId,
-          requestRef,
-          comments || "No reason provided",
-          comments || "لم يتم تقديم سبب"
-        );
-      } else if (status === "RETURNED") {
+      try {
         notifyModificationsRequested(
-          applicantId,
+          privilegeRequest.applicant.id,
           requestId,
           requestRef,
           comments || "Please review and update your request",
           comments || "يرجى مراجعة وتحديث طلبك"
         );
+      } catch (e) {
+        console.error("Notification error:", e);
+      }
+
+      return NextResponse.json({
+        success: true,
+        message: "Request returned for modifications",
+        data: { newStatus: RequestStatus.PENDING },
+      });
+    }
+
+    // Process the approval using the workflow service
+    const result = await processApproval(
+      requestId,
+      session.user.id,
+      status as 'APPROVED' | 'REJECTED',
+      comments
+    );
+
+    if (!result.success) {
+      return NextResponse.json(
+        { error: "Approval failed", message: result.message },
+        { status: 400 }
+      );
+    }
+
+    // Update individual privilege decisions if provided
+    if (privilegeDecisions && privilegeDecisions.length > 0) {
+      for (const decision of privilegeDecisions) {
+        await prisma.requestedPrivilege.updateMany({
+          where: {
+            requestId,
+            privilegeId: decision.privilegeId,
+          },
+          data: {
+            status: decision.approved ? 'APPROVED' : 'REJECTED',
+            comments: decision.comments || null,
+          },
+        });
+      }
+    }
+
+    // Send notifications
+    const requestRef = requestId.slice(-8).toUpperCase();
+    try {
+      if (status === "APPROVED") {
+        const isFinalApproval = result.newStatus === RequestStatus.APPROVED;
+        notifyRequestApproved(
+          privilegeRequest.applicant.id,
+          requestId,
+          requestRef,
+          user.nameEn,
+          user.nameEn,
+          isFinalApproval
+        );
+      } else if (status === "REJECTED") {
+        notifyRequestRejected(
+          privilegeRequest.applicant.id,
+          requestId,
+          requestRef,
+          comments || "No reason provided",
+          comments || "لم يتم تقديم سبب"
+        );
       }
     } catch (notificationError) {
-      // Log but don't fail the request if notification fails
-      console.error("Failed to send real-time notification:", notificationError);
+      console.error("Failed to send notification:", notificationError);
     }
+
+    // Get updated progress for response
+    const progress = await getApprovalProgress(requestId);
 
     return NextResponse.json({
       success: true,
-      message: `Request ${status.toLowerCase()} successfully`,
-      data: result,
+      message: result.message,
+      data: {
+        newStatus: result.newStatus,
+        progress,
+      },
     });
   } catch (error) {
     console.error("Error processing approval:", error);

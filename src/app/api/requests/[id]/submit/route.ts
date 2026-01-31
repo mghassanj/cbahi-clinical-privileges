@@ -2,8 +2,11 @@
  * CBAHI Clinical Privileges - Submit Request API
  *
  * POST - Submit draft request for approval
- *        Creates approval chain based on applicant's department hierarchy
- *        Sends notification to first approver
+ *        Creates approval chain based on CBAHI requirements:
+ *        - Core privileges: Auto-approved
+ *        - Non-core (same specialty): 1 consultant + Medical Director
+ *        - Non-core (different specialty): 2 consultants + committee + Medical Director
+ *        - Additional: 2 consultants + committee + Medical Director
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -14,8 +17,17 @@ import {
   RequestStatus,
   UserRole,
   ApprovalLevel,
+  PractitionerType,
+  DentalSpecialty,
+  PrivilegeRequestType,
 } from "@prisma/client";
 import { notifyApprovalRequired } from "@/lib/notifications/broadcast";
+import {
+  autoApproveIfEligible,
+  getApprovalRequirements,
+  isSameSpecialty,
+  getApprovalProgress,
+} from "@/lib/approval-workflow";
 
 // ============================================================================
 // Types
@@ -30,6 +42,7 @@ interface ApproverInfo {
   level: ApprovalLevel;
   email: string;
   nameEn: string;
+  specialty?: DentalSpecialty | null;
 }
 
 // ============================================================================
@@ -57,17 +70,9 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         nameEn: true,
         email: true,
         departmentId: true,
-        lineManagerId: true,
-        lineManager: {
-          select: {
-            id: true,
-            role: true,
-            email: true,
-            nameEn: true,
-            isActive: true,
-            status: true,
-          },
-        },
+        practitionerType: true,
+        specialty: true,
+        additionalSpecialties: true,
       },
     });
 
@@ -82,7 +87,11 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     const privilegeRequest = await prisma.privilegeRequest.findUnique({
       where: { id },
       include: {
-        requestedPrivileges: true,
+        requestedPrivileges: {
+          include: {
+            privilege: true,
+          },
+        },
         approvals: true,
       },
     });
@@ -127,8 +136,79 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    // Build approval chain
-    const approvers = await buildApprovalChain(user);
+    // Determine if privileges are in same specialty
+    const privilegeSpecialties = privilegeRequest.requestedPrivileges
+      .map(rp => rp.privilege.requiredSpecialty)
+      .filter(Boolean) as DentalSpecialty[];
+    
+    const sameSpecialty = privilegeSpecialties.length === 0 || 
+      privilegeSpecialties.every(ps => 
+        isSameSpecialty(
+          user.specialty,
+          ps,
+          user.additionalSpecialties as DentalSpecialty[]
+        )
+      );
+
+    // Get approval requirements based on CBAHI matrix
+    const requirements = await getApprovalRequirements(
+      user.practitionerType || PractitionerType.GP,
+      privilegeRequest.requestType,
+      sameSpecialty
+    );
+
+    // Check for auto-approval (core privileges)
+    if (requirements.autoApprove) {
+      const autoResult = await autoApproveIfEligible(id);
+      
+      if (autoResult.autoApproved) {
+        // Log audit
+        await prisma.auditLog.create({
+          data: {
+            userId: user.id,
+            action: "AUTO_APPROVE",
+            entityType: "privilege_requests",
+            entityId: id,
+            newValues: {
+              status: RequestStatus.APPROVED,
+              reason: "Core privileges auto-approved per CBAHI requirements",
+            },
+          },
+        });
+
+        const updatedRequest = await prisma.privilegeRequest.findUnique({
+          where: { id },
+          include: {
+            applicant: {
+              select: { id: true, nameEn: true, nameAr: true, email: true },
+            },
+            requestedPrivileges: {
+              include: {
+                privilege: {
+                  select: { id: true, code: true, nameEn: true, category: true },
+                },
+              },
+            },
+          },
+        });
+
+        return NextResponse.json({
+          message: "Request auto-approved (core privileges)",
+          data: updatedRequest,
+          autoApproved: true,
+          requirements,
+        });
+      }
+    }
+
+    // Build approval chain based on CBAHI requirements
+    const approvers = await buildCbahiApprovalChain(
+      user,
+      privilegeRequest.requestType,
+      sameSpecialty,
+      privilegeSpecialties[0] || null,
+      requirements
+    );
 
     if (approvers.length === 0) {
       return NextResponse.json(
@@ -151,7 +231,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         },
       });
 
-      // Delete any existing approvals (in case of resubmission after rejection)
+      // Delete any existing approvals (in case of resubmission)
       await tx.approval.deleteMany({
         where: { requestId: id },
       });
@@ -161,15 +241,17 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         where: { requestId: id },
       });
 
-      // Create approval records
-      await tx.approval.createMany({
-        data: approvers.map((approver) => ({
-          requestId: id,
-          approverId: approver.approverId,
-          level: approver.level,
-          status: "PENDING",
-        })),
-      });
+      // Create approval records for each approver
+      for (const approver of approvers) {
+        await tx.approval.create({
+          data: {
+            requestId: id,
+            approverId: approver.approverId,
+            level: approver.level,
+            status: "PENDING",
+          },
+        });
+      }
 
       // Get first approval for escalation tracking
       const firstApproval = await tx.approval.findFirst({
@@ -189,22 +271,26 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         });
       }
 
-      // Create notification log for first approver
-      await tx.notificationLog.create({
-        data: {
-          requestId: id,
-          type: "APPROVAL_REQUIRED",
-          recipientEmail: approvers[0].email,
-          recipientName: approvers[0].nameEn,
-          subject: `Clinical Privilege Request Awaiting Your Approval - ${user.nameEn}`,
-          status: "PENDING",
-          metadata: {
-            applicantName: user.nameEn,
-            applicantEmail: user.email,
-            approvalLevel: approvers[0].level,
+      // Create notification logs
+      for (const approver of approvers) {
+        await tx.notificationLog.create({
+          data: {
+            requestId: id,
+            type: "APPROVAL_REQUIRED",
+            recipientEmail: approver.email,
+            recipientName: approver.nameEn,
+            subject: `Clinical Privilege Request Awaiting Your Approval - ${user.nameEn}`,
+            status: "PENDING",
+            metadata: {
+              applicantName: user.nameEn,
+              applicantEmail: user.email,
+              approvalLevel: approver.level,
+              requestType: privilegeRequest.requestType,
+              sameSpecialty,
+            },
           },
-        },
-      });
+        });
+      }
 
       // Create notification for applicant
       await tx.notificationLog.create({
@@ -216,45 +302,33 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
           subject: "Your Clinical Privilege Request Has Been Submitted",
           status: "PENDING",
           metadata: {
-            firstApprover: approvers[0].nameEn,
-            approvalLevel: approvers[0].level,
+            approvers: approvers.map(a => a.nameEn),
+            requirements: {
+              requiredConsultants: requirements.requiredConsultants,
+              requiresCommittee: requirements.requiresCommittee,
+              requiresMedicalDirector: requirements.requiresMedicalDirector,
+            },
           },
         },
       });
 
-      // Fetch updated request with all relations
       return tx.privilegeRequest.findUnique({
         where: { id },
         include: {
           applicant: {
-            select: {
-              id: true,
-              nameEn: true,
-              nameAr: true,
-              email: true,
-            },
+            select: { id: true, nameEn: true, nameAr: true, email: true },
           },
           requestedPrivileges: {
             include: {
               privilege: {
-                select: {
-                  id: true,
-                  code: true,
-                  nameEn: true,
-                  category: true,
-                },
+                select: { id: true, code: true, nameEn: true, category: true },
               },
             },
           },
           approvals: {
             include: {
               approver: {
-                select: {
-                  id: true,
-                  nameEn: true,
-                  nameAr: true,
-                  role: true,
-                },
+                select: { id: true, nameEn: true, nameAr: true, role: true, specialty: true },
               },
             },
             orderBy: { createdAt: "asc" },
@@ -272,38 +346,42 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         entityId: id,
         newValues: {
           status: RequestStatus.PENDING,
+          requestType: privilegeRequest.requestType,
+          sameSpecialty,
+          requirements,
           approvers: approvers.map((a) => ({
             level: a.level,
             name: a.nameEn,
+            specialty: a.specialty,
           })),
         },
       },
     });
 
-    // Send real-time notification to first approver
+    // Send real-time notifications to all pending approvers
     try {
-      if (approvers.length > 0 && updatedRequest) {
-        // Use request ID as display reference since requestNumber doesn't exist in schema
-        const requestRef = id.slice(-8).toUpperCase();
+      const requestRef = id.slice(-8).toUpperCase();
+      for (const approver of approvers) {
         notifyApprovalRequired(
-          approvers[0].approverId,
+          approver.approverId,
           id,
           requestRef,
           user.nameEn,
-          user.nameEn // Using English name for Arabic as well
+          user.nameEn
         );
       }
     } catch (notificationError) {
-      // Log but don't fail the request if notification fails
       console.error("Failed to send real-time notification:", notificationError);
     }
 
     return NextResponse.json({
       message: "Request submitted successfully",
       data: updatedRequest,
+      requirements,
       approvalChain: approvers.map((a) => ({
         level: a.level,
         approverName: a.nameEn,
+        specialty: a.specialty,
       })),
     });
   } catch (error) {
@@ -319,111 +397,166 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 // Helper Functions
 // ============================================================================
 
-interface UserWithLineManager {
+interface UserForApprovalChain {
   id: string;
   role: UserRole;
   departmentId: number | null;
-  lineManagerId: string | null;
-  lineManager: {
-    id: string;
-    role: UserRole;
-    email: string;
-    nameEn: string;
-    isActive: boolean;
-    status: string;
-  } | null;
+  practitionerType: PractitionerType | null;
+  specialty: DentalSpecialty | null;
+  additionalSpecialties: DentalSpecialty[];
+}
+
+interface ApprovalRequirementsInput {
+  requiredConsultants: number;
+  requiresCommittee: boolean;
+  requiresMedicalDirector: boolean;
+  autoApprove: boolean;
 }
 
 /**
- * Build approval chain based on user's department hierarchy
+ * Build approval chain based on CBAHI requirements
  */
-async function buildApprovalChain(user: UserWithLineManager): Promise<ApproverInfo[]> {
+async function buildCbahiApprovalChain(
+  user: UserForApprovalChain,
+  requestType: PrivilegeRequestType,
+  sameSpecialty: boolean,
+  targetSpecialty: DentalSpecialty | null,
+  requirements: ApprovalRequirementsInput
+): Promise<ApproverInfo[]> {
   const approvers: ApproverInfo[] = [];
 
-  // 1. Head of Section (if line manager has that role)
-  if (
-    user.lineManager &&
-    user.lineManager.role === UserRole.HEAD_OF_SECTION &&
-    user.lineManager.isActive &&
-    user.lineManager.status === "ACTIVE"
-  ) {
-    approvers.push({
-      approverId: user.lineManager.id,
-      level: ApprovalLevel.HEAD_OF_SECTION,
-      email: user.lineManager.email,
-      nameEn: user.lineManager.nameEn,
-    });
-  }
-
-  // 2. Head of Department
-  const headOfDept = await prisma.user.findFirst({
-    where: {
-      role: UserRole.HEAD_OF_DEPT,
-      departmentId: user.departmentId,
+  // 1. Get consultant approvers from the required specialty
+  if (requirements.requiredConsultants > 0) {
+    const consultantQuery: any = {
+      canApprovePrivileges: true,
+      practitionerType: PractitionerType.CONSULTANT,
       isActive: true,
       status: "ACTIVE",
       id: { not: user.id }, // Exclude self
-    },
-    select: {
-      id: true,
-      email: true,
-      nameEn: true,
-    },
-  });
+    };
 
-  if (headOfDept) {
-    approvers.push({
-      approverId: headOfDept.id,
-      level: ApprovalLevel.HEAD_OF_DEPT,
-      email: headOfDept.email,
-      nameEn: headOfDept.nameEn,
+    // Prefer consultants from the privilege's specialty
+    if (targetSpecialty) {
+      consultantQuery.OR = [
+        { specialty: targetSpecialty },
+        { additionalSpecialties: { has: targetSpecialty } },
+      ];
+    }
+
+    const consultants = await prisma.user.findMany({
+      where: consultantQuery,
+      take: requirements.requiredConsultants,
+      select: {
+        id: true,
+        email: true,
+        nameEn: true,
+        specialty: true,
+      },
     });
+
+    for (const consultant of consultants) {
+      approvers.push({
+        approverId: consultant.id,
+        level: ApprovalLevel.COMMITTEE, // Consultants approve at committee level
+        email: consultant.email,
+        nameEn: consultant.nameEn,
+        specialty: consultant.specialty,
+      });
+    }
+
+    // If not enough consultants from specific specialty, get any consultants
+    if (consultants.length < requirements.requiredConsultants) {
+      const additionalConsultants = await prisma.user.findMany({
+        where: {
+          canApprovePrivileges: true,
+          practitionerType: PractitionerType.CONSULTANT,
+          isActive: true,
+          status: "ACTIVE",
+          id: { 
+            notIn: [user.id, ...consultants.map(c => c.id)],
+          },
+        },
+        take: requirements.requiredConsultants - consultants.length,
+        select: {
+          id: true,
+          email: true,
+          nameEn: true,
+          specialty: true,
+        },
+      });
+
+      for (const consultant of additionalConsultants) {
+        approvers.push({
+          approverId: consultant.id,
+          level: ApprovalLevel.COMMITTEE,
+          email: consultant.email,
+          nameEn: consultant.nameEn,
+          specialty: consultant.specialty,
+        });
+      }
+    }
   }
 
-  // 3. Committee Member
-  const committeeMember = await prisma.user.findFirst({
-    where: {
-      role: UserRole.COMMITTEE_MEMBER,
-      isActive: true,
-      status: "ACTIVE",
-    },
-    select: {
-      id: true,
-      email: true,
-      nameEn: true,
-    },
-  });
-
-  if (committeeMember) {
-    approvers.push({
-      approverId: committeeMember.id,
-      level: ApprovalLevel.COMMITTEE,
-      email: committeeMember.email,
-      nameEn: committeeMember.nameEn,
+  // 2. Add committee members if required
+  if (requirements.requiresCommittee) {
+    // Get committee members who aren't already in the list
+    const existingIds = new Set(approvers.map(a => a.approverId));
+    
+    const committeeMembers = await prisma.user.findMany({
+      where: {
+        isCommitteeMember: true,
+        isActive: true,
+        status: "ACTIVE",
+        id: { 
+          notIn: [user.id, ...Array.from(existingIds)],
+        },
+      },
+      take: 3, // Committee typically has 3 members for review
+      select: {
+        id: true,
+        email: true,
+        nameEn: true,
+        specialty: true,
+      },
     });
+
+    for (const member of committeeMembers) {
+      approvers.push({
+        approverId: member.id,
+        level: ApprovalLevel.COMMITTEE,
+        email: member.email,
+        nameEn: member.nameEn,
+        specialty: member.specialty,
+      });
+    }
   }
 
-  // 4. Medical Director (final approval)
-  const medicalDirector = await prisma.user.findFirst({
-    where: {
-      role: UserRole.MEDICAL_DIRECTOR,
-      isActive: true,
-      status: "ACTIVE",
-    },
-    select: {
-      id: true,
-      email: true,
-      nameEn: true,
-    },
-  });
-
-  if (medicalDirector) {
-    approvers.push({
-      approverId: medicalDirector.id,
-      level: ApprovalLevel.MEDICAL_DIRECTOR,
-      email: medicalDirector.email,
-      nameEn: medicalDirector.nameEn,
+  // 3. Add Medical Director for final approval
+  if (requirements.requiresMedicalDirector) {
+    const medicalDirector = await prisma.user.findFirst({
+      where: {
+        role: UserRole.MEDICAL_DIRECTOR,
+        isActive: true,
+        status: "ACTIVE",
+        id: { not: user.id },
+      },
+      select: {
+        id: true,
+        email: true,
+        nameEn: true,
+        specialty: true,
+      },
     });
+
+    if (medicalDirector) {
+      approvers.push({
+        approverId: medicalDirector.id,
+        level: ApprovalLevel.MEDICAL_DIRECTOR,
+        email: medicalDirector.email,
+        nameEn: medicalDirector.nameEn,
+        specialty: medicalDirector.specialty,
+      });
+    }
   }
 
   return approvers;
