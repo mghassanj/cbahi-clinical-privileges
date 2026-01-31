@@ -440,8 +440,7 @@ export async function processApproval(
   }
 
   // Create/update approval record
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const _approval = await prisma.approval.upsert({
+  await prisma.approval.upsert({
     where: {
       requestId_level: {
         requestId,
