@@ -15,7 +15,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { RequestStatus } from "@prisma/client";
+import { RequestStatus, DentalSpecialty } from "@prisma/client";
 import {
   notifyRequestApproved,
   notifyRequestRejected,
@@ -100,7 +100,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         isSameSpecialty(
           privilegeRequest.applicant.specialty,
           ps,
-          privilegeRequest.applicant.additionalSpecialties as string[]
+          privilegeRequest.applicant.additionalSpecialties as DentalSpecialty[]
         )
       );
 
