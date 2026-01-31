@@ -75,3 +75,4 @@ const nextConfig = {
 };
 
 export default withNextIntl(nextConfig);
+// Force rebuild Sat Jan 31 11:03:29 UTC 2026
