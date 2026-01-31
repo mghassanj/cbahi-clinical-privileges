@@ -259,7 +259,7 @@ async function getPendingApprovers(
       canApprovePrivileges: true,
       practitionerType: PractitionerType.CONSULTANT,
       id: {
-        notIn: [...approvedUserIds, request.applicantId], // Exclude already approved and applicant
+        notIn: [...Array.from(approvedUserIds), request.applicantId], // Exclude already approved and applicant
       },
     };
 
@@ -299,7 +299,7 @@ async function getPendingApprovers(
       where: {
         isCommitteeMember: true,
         id: {
-          notIn: [...approvedUserIds, request.applicantId],
+          notIn: [...Array.from(approvedUserIds), request.applicantId],
         },
       },
     });
@@ -332,7 +332,7 @@ async function getPendingApprovers(
         where: {
           role: UserRole.MEDICAL_DIRECTOR,
           id: {
-            notIn: [...approvedUserIds, request.applicantId],
+            notIn: [...Array.from(approvedUserIds), request.applicantId],
           },
         },
       });
