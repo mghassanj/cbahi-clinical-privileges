@@ -109,6 +109,7 @@ export async function POST(request: NextRequest) {
           create: req,
         });
         results.approvalRequirements.created++;
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       } catch (_e) {
         results.approvalRequirements.updated++;
       }
