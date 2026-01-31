@@ -26,7 +26,6 @@ import {
   autoApproveIfEligible,
   getApprovalRequirements,
   isSameSpecialty,
-  getApprovalProgress,
 } from "@/lib/approval-workflow";
 
 // ============================================================================
@@ -427,7 +426,7 @@ async function buildCbahiApprovalChain(
 
   // 1. Get consultant approvers from the required specialty
   if (requirements.requiredConsultants > 0) {
-    const consultantQuery: any = {
+    const consultantQuery: Record<string, unknown> = {
       canApprovePrivileges: true,
       practitionerType: PractitionerType.CONSULTANT,
       isActive: true,

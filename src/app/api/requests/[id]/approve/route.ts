@@ -100,7 +100,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         isSameSpecialty(
           privilegeRequest.applicant.specialty,
           ps,
-          privilegeRequest.applicant.additionalSpecialties as any[]
+          privilegeRequest.applicant.additionalSpecialties as string[]
         )
       );
 

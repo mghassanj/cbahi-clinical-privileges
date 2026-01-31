@@ -14,7 +14,6 @@ import {
   Privilege,
   PrivilegeRequest,
   Approval,
-  ApprovalRequirement,
   PractitionerType,
   DentalSpecialty,
   PrivilegeRequestType,
@@ -256,7 +255,7 @@ async function getPendingApprovers(
 
   if (consultantApprovals < requirements.requiredConsultants) {
     // Find consultants who can approve
-    const consultantQuery: any = {
+    const consultantQuery: Record<string, unknown> = {
       canApprovePrivileges: true,
       practitionerType: PractitionerType.CONSULTANT,
       id: {
@@ -441,7 +440,7 @@ export async function processApproval(
   }
 
   // Create/update approval record
-  const approval = await prisma.approval.upsert({
+  const _approval = await prisma.approval.upsert({
     where: {
       requestId_level: {
         requestId,

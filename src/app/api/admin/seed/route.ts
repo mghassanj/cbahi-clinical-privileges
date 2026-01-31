@@ -109,7 +109,7 @@ export async function POST(request: NextRequest) {
           create: req,
         });
         results.approvalRequirements.created++;
-      } catch (e) {
+      } catch (_e) {
         results.approvalRequirements.updated++;
       }
     }
