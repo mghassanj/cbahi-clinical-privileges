@@ -343,7 +343,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         action: "SUBMIT",
         entityType: "privilege_requests",
         entityId: id,
-        newValues: {
+        newValues: JSON.parse(JSON.stringify({
           status: RequestStatus.PENDING,
           requestType: privilegeRequest.requestType,
           sameSpecialty,
@@ -353,7 +353,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
             name: a.nameEn,
             specialty: a.specialty,
           })),
-        },
+        })),
       },
     });
 
