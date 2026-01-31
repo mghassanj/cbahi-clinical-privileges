@@ -8,7 +8,8 @@
 # Install only production dependencies
 # -----------------------------------------------------------------------------
 FROM node:20-alpine AS deps
-RUN apk add --no-cache libc6-compat openssl
+RUN apk add --no-cache libc6-compat openssl && \
+    npm install -g npm@11.8.0
 
 WORKDIR /app
 
@@ -25,7 +26,8 @@ RUN npm ci --only=production --ignore-scripts && \
 # Build the Next.js application
 # -----------------------------------------------------------------------------
 FROM node:20-alpine AS builder
-RUN apk add --no-cache libc6-compat openssl
+RUN apk add --no-cache libc6-compat openssl && \
+    npm install -g npm@11.8.0
 
 WORKDIR /app
 
