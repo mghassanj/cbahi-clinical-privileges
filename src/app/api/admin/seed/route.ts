@@ -98,6 +98,17 @@ export async function POST(request: NextRequest) {
       committeeMembers: { updated: 0, notFound: 0, notFoundEmails: [] as string[] },
     };
 
+    // 0a. Ensure new enum values exist in DB (ADD VALUE can't run in Prisma migration transactions)
+    try {
+      await prisma.$executeRawUnsafe(`ALTER TYPE "PrivilegeCategory" ADD VALUE IF NOT EXISTS 'ORTHODONTICS'`);
+      await prisma.$executeRawUnsafe(`ALTER TYPE "PrivilegeCategory" ADD VALUE IF NOT EXISTS 'ENDODONTICS'`);
+      await prisma.$executeRawUnsafe(`ALTER TYPE "PrivilegeCategory" ADD VALUE IF NOT EXISTS 'PERIODONTICS'`);
+      await prisma.$executeRawUnsafe(`ALTER TYPE "PrivilegeCategory" ADD VALUE IF NOT EXISTS 'PROSTHODONTICS'`);
+      await prisma.$executeRawUnsafe(`ALTER TYPE "PrivilegeCategory" ADD VALUE IF NOT EXISTS 'RADIOLOGY'`);
+    } catch (enumError) {
+      console.log("Enum values already exist or added:", enumError);
+    }
+
     // 0. Seed privilege catalog from dentalPrivileges
     const categoryMap: Record<string, PrivilegeCategory> = {
       [TSPrivilegeCategory.CORE]: PrivilegeCategory.CORE,
