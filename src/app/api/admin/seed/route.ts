@@ -11,8 +11,11 @@ import {
   UserRole, 
   PractitionerType, 
   DentalSpecialty, 
-  PrivilegeRequestType 
+  PrivilegeRequestType,
+  PrivilegeCategory,
 } from "@prisma/client";
+import { dentalPrivileges } from "@/data/privileges";
+import { PrivilegeCategory as TSPrivilegeCategory } from "@/data/privileges";
 
 // ============================================================================
 // Approval Requirements (per CBAHI/MOH documents)
@@ -90,9 +93,63 @@ export async function POST(request: NextRequest) {
     }
 
     const results = {
+      privileges: { created: 0, updated: 0 },
       approvalRequirements: { created: 0, updated: 0 },
       committeeMembers: { updated: 0, notFound: 0, notFoundEmails: [] as string[] },
     };
+
+    // 0. Seed privilege catalog from dentalPrivileges
+    const categoryMap: Record<string, PrivilegeCategory> = {
+      [TSPrivilegeCategory.CORE]: PrivilegeCategory.CORE,
+      [TSPrivilegeCategory.RESTORATIVE]: PrivilegeCategory.RESTORATIVE,
+      [TSPrivilegeCategory.PEDIATRIC]: PrivilegeCategory.PEDIATRIC,
+      [TSPrivilegeCategory.ORTHODONTICS]: PrivilegeCategory.ORTHODONTICS,
+      [TSPrivilegeCategory.ENDODONTICS]: PrivilegeCategory.ENDODONTICS,
+      [TSPrivilegeCategory.PERIODONTICS]: PrivilegeCategory.PERIODONTICS,
+      [TSPrivilegeCategory.PROSTHODONTICS]: PrivilegeCategory.PROSTHODONTICS,
+      [TSPrivilegeCategory.ORAL_SURGERY]: PrivilegeCategory.ORAL_SURGERY,
+      [TSPrivilegeCategory.ORAL_MEDICINE]: PrivilegeCategory.ORAL_MEDICINE,
+      [TSPrivilegeCategory.RADIOLOGY]: PrivilegeCategory.RADIOLOGY,
+    };
+
+    for (const priv of dentalPrivileges) {
+      const prismaCategory = categoryMap[priv.category] || PrivilegeCategory.OTHER;
+      const isCore = priv.category === TSPrivilegeCategory.CORE;
+      
+      const existing = await prisma.privilege.findUnique({
+        where: { code: priv.code },
+      });
+
+      if (existing) {
+        await prisma.privilege.update({
+          where: { code: priv.code },
+          data: {
+            nameEn: priv.nameEn,
+            nameAr: priv.nameAr,
+            category: prismaCategory,
+            requiresSpecialQualification: priv.requiresSpecialQualification,
+            description: priv.description,
+            isCore,
+            isActive: true,
+          },
+        });
+        results.privileges.updated++;
+      } else {
+        await prisma.privilege.create({
+          data: {
+            code: priv.code,
+            nameEn: priv.nameEn,
+            nameAr: priv.nameAr,
+            category: prismaCategory,
+            requiresSpecialQualification: priv.requiresSpecialQualification,
+            description: priv.description,
+            isCore,
+            isActive: true,
+          },
+        });
+        results.privileges.created++;
+      }
+    }
 
     // 1. Seed approval requirements
     for (const req of approvalRequirements) {
