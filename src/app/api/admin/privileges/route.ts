@@ -17,8 +17,8 @@ const createPrivilegeSchema = z.object({
   nameEn: z.string().min(1).max(200),
   nameAr: z.string().min(1).max(200),
   category: z.enum([
-    'CORE', 'RESTORATIVE', 'PEDIATRIC', 'ORTHODONTIC', 'ENDODONTIC',
-    'PERIODONTIC', 'PROSTHODONTIC', 'ORAL_SURGERY', 'ORAL_MEDICINE',
+    'CORE', 'RESTORATIVE', 'PEDIATRIC', 'ORTHODONTICS', 'ENDODONTICS',
+    'PERIODONTICS', 'PROSTHODONTICS', 'ORAL_SURGERY', 'ORAL_MEDICINE',
     'DIAGNOSTIC', 'PREVENTIVE', 'IMPLANT', 'COSMETIC', 'OTHER'
   ]),
   description: z.string().optional(),

@@ -14,9 +14,9 @@ const updatePrivilegeSchema = z.object({
   nameEn: z.string().min(1).max(200).optional(),
   nameAr: z.string().min(1).max(200).optional(),
   category: z.enum([
-    'CORE', 'RESTORATIVE', 'PEDIATRIC', 'ORTHODONTIC', 'ENDODONTIC',
-    'PERIODONTIC', 'PROSTHODONTIC', 'ORAL_SURGERY', 'ORAL_MEDICINE',
-    'DIAGNOSTIC', 'PREVENTIVE', 'IMPLANT', 'COSMETIC', 'OTHER'
+    'CORE', 'RESTORATIVE', 'PEDIATRIC', 'ORTHODONTICS', 'ENDODONTICS',
+    'PERIODONTICS', 'PROSTHODONTICS', 'ORAL_SURGERY', 'ORAL_MEDICINE',
+    'RADIOLOGY', 'DIAGNOSTIC', 'PREVENTIVE', 'IMPLANT', 'COSMETIC', 'OTHER'
   ]).optional(),
   description: z.string().optional(),
   requiresSpecialQualification: z.boolean().optional(),
