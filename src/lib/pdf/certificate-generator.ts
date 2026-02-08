@@ -350,17 +350,10 @@ export function isEligibleForCertificate(request: {
   status: string;
   approvals: Array<{ status: string }>;
 }): boolean {
-  // Request must be approved
-  if (request.status !== "APPROVED") {
-    return false;
-  }
-
-  // At least one approval must be completed
-  const hasApprovedApproval = request.approvals.some(
-    (a) => a.status === "APPROVED"
-  );
-
-  return hasApprovedApproval;
+  // Request must be fully approved
+  // The status is only set to APPROVED when ALL required approvals are complete
+  // So we ONLY need to check the status, not individual approvals
+  return request.status === "APPROVED";
 }
 
 /**

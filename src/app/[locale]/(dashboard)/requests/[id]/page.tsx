@@ -244,25 +244,49 @@ export default function RequestDetailsPage() {
             : "border-l-neutral-300"
         }`}
       >
-        <LiquidGlassCardContent className="flex items-center gap-4 p-4">
-          <div
-            className={`flex h-12 w-12 items-center justify-center rounded-full ${statusConfig[request.status]?.bg || "bg-neutral-100"}`}
-          >
-            <StatusIcon className={`h-6 w-6 ${statusConfig[request.status]?.color || "text-neutral-600"}`} />
-          </div>
-          <div>
-            <p className="font-medium text-neutral-900 dark:text-white">
-              {request.status === "IN_REVIEW" && currentStep >= 0
-                ? isRTL
-                  ? `قيد المراجعة من قبل ${levelLabels[request.approvals[currentStep]?.level]?.ar || request.approvals[currentStep]?.level}`
-                  : `Under review by ${levelLabels[request.approvals[currentStep]?.level]?.en || request.approvals[currentStep]?.level}`
-                : t(`common.status.${request.status.toLowerCase()}`)}
-            </p>
-            {request.submittedAt && (
-              <p className="text-sm text-neutral-500">
-                {isRTL ? "تم الإرسال" : "Submitted"} {formatDate(new Date(request.submittedAt), locale)}
+        <LiquidGlassCardContent className="p-4">
+          <div className="flex items-center gap-4">
+            <div
+              className={`flex h-12 w-12 items-center justify-center rounded-full ${statusConfig[request.status]?.bg || "bg-neutral-100"}`}
+            >
+              <StatusIcon className={`h-6 w-6 ${statusConfig[request.status]?.color || "text-neutral-600"}`} />
+            </div>
+            <div className="flex-1">
+              <p className="font-medium text-neutral-900 dark:text-white">
+                {request.status === "IN_REVIEW" && currentStep >= 0
+                  ? isRTL
+                    ? `قيد المراجعة من قبل ${levelLabels[request.approvals[currentStep]?.level]?.ar || request.approvals[currentStep]?.level}`
+                    : `Under review by ${levelLabels[request.approvals[currentStep]?.level]?.en || request.approvals[currentStep]?.level}`
+                  : t(`common.status.${request.status.toLowerCase()}`)}
               </p>
-            )}
+              {request.submittedAt && (
+                <p className="text-sm text-neutral-500">
+                  {isRTL ? "تم الإرسال" : "Submitted"} {formatDate(new Date(request.submittedAt), locale)}
+                </p>
+              )}
+              
+              {/* Certificate Status Message */}
+              {request.status === "APPROVED" && (
+                <div className="mt-2 flex items-center gap-2 text-sm text-success-600">
+                  <Award className="h-4 w-4" />
+                  <span>
+                    {isRTL 
+                      ? "✓ الشهادة متاحة للتحميل" 
+                      : "✓ Certificate available for download"}
+                  </span>
+                </div>
+              )}
+              {(request.status === "PENDING" || request.status === "IN_REVIEW") && (
+                <div className="mt-2 flex items-center gap-2 text-sm text-warning-600">
+                  <Clock className="h-4 w-4" />
+                  <span>
+                    {isRTL 
+                      ? "ستكون الشهادة متاحة بعد اكتمال جميع الموافقات المطلوبة" 
+                      : "Certificate will be available once all required approvals are complete"}
+                  </span>
+                </div>
+              )}
+            </div>
           </div>
         </LiquidGlassCardContent>
       </LiquidGlassCard>
@@ -446,6 +470,27 @@ export default function RequestDetailsPage() {
               <LiquidGlassCardTitle>
                 {t("approvals.details.approvalWorkflow")}
               </LiquidGlassCardTitle>
+              {/* Progress Summary */}
+              {request.approvals.length > 0 && (
+                <div className="mt-2 flex items-center gap-2 text-sm">
+                  <div className="flex items-center gap-1">
+                    <CheckCircle className="h-4 w-4 text-success-600" />
+                    <span className="text-neutral-600">
+                      {request.approvals.filter(a => a.status === "APPROVED").length}
+                    </span>
+                  </div>
+                  <span className="text-neutral-400">/</span>
+                  <div className="flex items-center gap-1">
+                    <Clock className="h-4 w-4 text-neutral-400" />
+                    <span className="text-neutral-600">
+                      {request.approvals.length}
+                    </span>
+                  </div>
+                  <span className="text-neutral-500 text-xs ml-1">
+                    {isRTL ? "موافقات" : "approvals"}
+                  </span>
+                </div>
+              )}
             </LiquidGlassCardHeader>
             <LiquidGlassCardContent>
               {request.approvals.length === 0 ? (
@@ -492,16 +537,36 @@ export default function RequestDetailsPage() {
 
                         {/* Step Content */}
                         <div className="flex-1 min-w-0">
-                          <p className="font-medium text-neutral-900 dark:text-white">
-                            {isRTL ? levelLabels[step.level]?.ar || step.level : levelLabels[step.level]?.en || step.level}
-                          </p>
+                          <div className="flex items-center gap-2">
+                            <p className="font-medium text-neutral-900 dark:text-white">
+                              {isRTL ? levelLabels[step.level]?.ar || step.level : levelLabels[step.level]?.en || step.level}
+                            </p>
+                            {step.status === "PENDING" && index === currentStep && (
+                              <Badge variant="warning" className="text-xs">
+                                {isRTL ? "قيد الانتظار" : "Pending"}
+                              </Badge>
+                            )}
+                          </div>
                           {step.approver ? (
                             <p className="text-sm text-neutral-500">
                               {isRTL ? step.approver.nameAr : step.approver.nameEn}
+                              {step.approver.jobTitleEn && (
+                                <span className="text-neutral-400">
+                                  {" • "}
+                                  {isRTL ? step.approver.jobTitleAr : step.approver.jobTitleEn}
+                                </span>
+                              )}
                             </p>
                           ) : (
                             <p className="text-sm text-neutral-400 italic">
                               {isRTL ? "لم يتم التعيين بعد" : "Not yet assigned"}
+                            </p>
+                          )}
+                          {step.status === "PENDING" && index === currentStep && (
+                            <p className="mt-1 text-xs text-warning-600 font-medium">
+                              {isRTL 
+                                ? "← الموافقة المطلوبة من هذا المستوى" 
+                                : "← Approval needed from this level"}
                             </p>
                           )}
                           {step.decidedAt && (
