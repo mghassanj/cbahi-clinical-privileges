@@ -20,17 +20,21 @@ import {
 // Font Registration
 // ============================================================================
 
+import path from "path";
+
 // Register custom fonts for bilingual support
-// Using system fonts for initial setup - can be replaced with custom fonts
+// Using local fonts to avoid network issues
+const fontsDir = path.join(process.cwd(), "public", "fonts");
+
 Font.register({
   family: "Roboto",
   fonts: [
     {
-      src: "https://fonts.gstatic.com/s/roboto/v30/KFOmCnqEu92Fr1Me5Q.ttf",
+      src: path.join(fontsDir, "Roboto-Regular.ttf"),
       fontWeight: 400,
     },
     {
-      src: "https://fonts.gstatic.com/s/roboto/v30/KFOlCnqEu92Fr1MmWUlvAw.ttf",
+      src: path.join(fontsDir, "Roboto-Bold.ttf"),
       fontWeight: 700,
     },
   ],
@@ -40,11 +44,11 @@ Font.register({
   family: "Amiri",
   fonts: [
     {
-      src: "https://fonts.gstatic.com/s/amiri/v27/J7aRnpd8CGxBHqUpvrIw74NL.ttf",
+      src: path.join(fontsDir, "Amiri-Regular.ttf"),
       fontWeight: 400,
     },
     {
-      src: "https://fonts.gstatic.com/s/amiri/v27/J7acnpd8CGxBHp2VkZY4xK9CGyAa.ttf",
+      src: path.join(fontsDir, "Amiri-Bold.ttf"),
       fontWeight: 700,
     },
   ],
