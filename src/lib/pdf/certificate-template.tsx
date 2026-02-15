@@ -21,10 +21,33 @@ import {
 // ============================================================================
 
 import path from "path";
+import fs from "fs";
 
 // Register custom fonts for bilingual support
 // Using local fonts to avoid network issues
-const fontsDir = path.join(process.cwd(), "public", "fonts");
+
+// Find the correct public/fonts directory
+const findFontsDir = () => {
+  const possiblePaths = [
+    path.join(process.cwd(), "public", "fonts"),
+    path.join(process.cwd(), ".next", "server", "public", "fonts"),
+    path.join(__dirname, "..", "public", "fonts"),
+    path.join(__dirname, "..", "..", "public", "fonts"),
+    path.resolve("./public/fonts")
+  ];
+
+  for (const p of possiblePaths) {
+    if (fs.existsSync(p)) {
+      console.log(`Found fonts directory at: ${p}`);
+      return p;
+    }
+  }
+  
+  console.warn("Could not find fonts directory! Defaulting to process.cwd()/public/fonts");
+  return path.join(process.cwd(), "public", "fonts");
+};
+
+const fontsDir = findFontsDir();
 
 Font.register({
   family: "Roboto",
