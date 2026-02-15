@@ -276,7 +276,7 @@ export default function UsersPage() {
           <Button
             variant="outline"
             size="sm"
-            onClick={(e) => {
+            onClick={(e: React.MouseEvent) => {
               e.stopPropagation();
               handleAssignRole(item);
             }}

@@ -29,53 +29,68 @@ import fs from "fs";
 // Find the correct public/fonts directory
 const findFontsDir = () => {
   const possiblePaths = [
+    // Railway/Docker standalone build - public is copied to root
     path.join(process.cwd(), "public", "fonts"),
+    // Development mode
+    path.resolve("./public/fonts"),
+    // Next.js server build
     path.join(process.cwd(), ".next", "server", "public", "fonts"),
+    // Relative to this file
+    path.join(__dirname, "..", "..", "..", "public", "fonts"),
     path.join(__dirname, "..", "public", "fonts"),
-    path.join(__dirname, "..", "..", "public", "fonts"),
-    path.resolve("./public/fonts")
   ];
 
   for (const p of possiblePaths) {
     if (fs.existsSync(p)) {
-      console.log(`Found fonts directory at: ${p}`);
-      return p;
+      console.log(`✓ Found fonts directory at: ${p}`);
+      // Verify at least one font file exists
+      const testFont = path.join(p, "Roboto-Regular.ttf");
+      if (fs.existsSync(testFont)) {
+        console.log(`✓ Verified font file: ${testFont}`);
+        return p;
+      }
     }
   }
   
-  console.warn("Could not find fonts directory! Defaulting to process.cwd()/public/fonts");
+  console.error("❌ Could not find fonts directory! Checked paths:", possiblePaths);
+  // Fallback - will likely fail but provides clear error
   return path.join(process.cwd(), "public", "fonts");
 };
 
 const fontsDir = findFontsDir();
 
-Font.register({
-  family: "Roboto",
-  fonts: [
-    {
-      src: path.join(fontsDir, "Roboto-Regular.ttf"),
-      fontWeight: 400,
-    },
-    {
-      src: path.join(fontsDir, "Roboto-Bold.ttf"),
-      fontWeight: 700,
-    },
-  ],
-});
+// Helper to safely register font with error handling
+const registerFontSafely = (family: string, regular: string, bold: string) => {
+  try {
+    const regularPath = path.join(fontsDir, regular);
+    const boldPath = path.join(fontsDir, bold);
+    
+    // Check if files exist before registering
+    if (!fs.existsSync(regularPath)) {
+      throw new Error(`Font file not found: ${regularPath}`);
+    }
+    if (!fs.existsSync(boldPath)) {
+      throw new Error(`Font file not found: ${boldPath}`);
+    }
+    
+    Font.register({
+      family,
+      fonts: [
+        { src: regularPath, fontWeight: 400 },
+        { src: boldPath, fontWeight: 700 },
+      ],
+    });
+    
+    console.log(`✓ Registered font family: ${family}`);
+  } catch (error) {
+    console.error(`❌ Failed to register ${family} font:`, error);
+    throw error; // Re-throw to prevent silent failures
+  }
+};
 
-Font.register({
-  family: "Amiri",
-  fonts: [
-    {
-      src: path.join(fontsDir, "Amiri-Regular.ttf"),
-      fontWeight: 400,
-    },
-    {
-      src: path.join(fontsDir, "Amiri-Bold.ttf"),
-      fontWeight: 700,
-    },
-  ],
-});
+// Register fonts with error handling
+registerFontSafely("Roboto", "Roboto-Regular.ttf", "Roboto-Bold.ttf");
+registerFontSafely("Amiri", "Amiri-Regular.ttf", "Amiri-Bold.ttf");
 
 // ============================================================================
 // Types

@@ -212,7 +212,7 @@ export default function RequestsPage() {
                 variant="ghost"
                 size="icon"
                 className="h-8 w-8 text-error-600 hover:text-error-700"
-                onClick={(e) => {
+                onClick={(e: React.MouseEvent) => {
                   e.stopPropagation();
                   setRequestToDelete(item.id);
                   setDeleteDialogOpen(true);
