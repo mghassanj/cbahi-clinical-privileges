@@ -8,7 +8,7 @@
 # Install only production dependencies
 # -----------------------------------------------------------------------------
 FROM node:20-alpine AS deps
-RUN apk add --no-cache libc6-compat openssl && \
+RUN apk add --no-cache libc6-compat openssl fontconfig liberation-fonts && \
     npm install -g npm@11.8.0
 
 WORKDIR /app
@@ -26,7 +26,7 @@ RUN npm ci --only=production --ignore-scripts && \
 # Build the Next.js application
 # -----------------------------------------------------------------------------
 FROM node:20-alpine AS builder
-RUN apk add --no-cache libc6-compat openssl && \
+RUN apk add --no-cache libc6-compat openssl fontconfig liberation-fonts && \
     npm install -g npm@11.8.0
 
 WORKDIR /app
@@ -54,8 +54,8 @@ FROM node:20-alpine AS runner
 
 WORKDIR /app
 
-# Install necessary system packages
-RUN apk add --no-cache libc6-compat openssl curl
+# Install necessary system packages including font support
+RUN apk add --no-cache libc6-compat openssl curl fontconfig liberation-fonts
 
 # Set environment
 ENV NODE_ENV=production
