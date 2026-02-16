@@ -90,7 +90,8 @@ const registerFontSafely = (family: string, regular: string, bold: string) => {
 
 // Register fonts with error handling
 registerFontSafely("Roboto", "Roboto-Regular.ttf", "Roboto-Bold.ttf");
-registerFontSafely("Amiri", "Amiri-Regular.ttf", "Amiri-Bold.ttf");
+// Use Noto Sans Arabic instead of Amiri for better fontkit compatibility
+registerFontSafely("Amiri", "NotoSansArabic-Regular.ttf", "NotoSansArabic-Bold.ttf");
 
 // ============================================================================
 // Types
