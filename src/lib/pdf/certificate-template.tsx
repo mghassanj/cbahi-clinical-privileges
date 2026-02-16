@@ -90,7 +90,26 @@ const registerFontSafely = (family: string, regular: string, bold: string) => {
 
 // Register fonts with error handling
 registerFontSafely("Roboto", "Roboto-Regular.ttf", "Roboto-Bold.ttf");
-registerFontSafely("Amiri", "Amiri-Regular.ttf", "Amiri-Bold.ttf");
+
+// Register Noto Naskh Arabic (variable weight font — use same file for both weights)
+// Replaces Amiri which had fontkit GPOS anchor crashes with @react-pdf/renderer
+try {
+  const notoPath = path.join(fontsDir, "NotoNaskhArabic-Regular.ttf");
+  if (!fs.existsSync(notoPath)) {
+    throw new Error(`Font file not found: ${notoPath}`);
+  }
+  Font.register({
+    family: "Amiri",
+    fonts: [
+      { src: notoPath, fontWeight: 400 },
+      { src: notoPath, fontWeight: 700 },
+    ],
+  });
+  console.log("✓ Registered font family: Amiri (using NotoNaskhArabic)");
+} catch (error) {
+  console.error("❌ Failed to register Arabic font:", error);
+  throw error;
+}
 
 // ============================================================================
 // Types
