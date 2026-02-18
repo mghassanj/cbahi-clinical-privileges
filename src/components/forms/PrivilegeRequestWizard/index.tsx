@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { usePrivilegeRequest } from "@/hooks/usePrivilegeRequest";
 import { StepProgress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 import {
   LiquidGlassCard,
   LiquidGlassCardContent,
@@ -76,6 +77,7 @@ export function PrivilegeRequestWizard({
   };
 
   const wizard = usePrivilegeRequest(draftId);
+  const [isSubmitPending, setIsSubmitPending] = React.useState(false);
 
   // Initialize with user data from Jisr if provided
   /* eslint-disable react-hooks/exhaustive-deps */
@@ -131,10 +133,25 @@ export function PrivilegeRequestWizard({
   };
 
   const handleSubmit = async () => {
-    await wizard.submit();
-    if (!wizard.error && !wizard.isDraft) {
-      onSubmitSuccess?.(wizard.draftId || "");
+    if (isSubmitPending || wizard.isSubmitting) return;
+
+    setIsSubmitPending(true);
+    const result = await wizard.submit();
+
+    if (result.success) {
+      toast.success(tCommon("messages.success"));
+      const submittedId = result.requestId || wizard.draftId || "";
+      if (submittedId) {
+        onSubmitSuccess?.(submittedId);
+      }
+    } else {
+      const errorMessage =
+        translateError(result.error || wizard.error) ||
+        tCommon("messages.submitFailed");
+      toast.error(errorMessage);
     }
+
+    setIsSubmitPending(false);
   };
 
   const renderStep = () => {
@@ -192,6 +209,7 @@ export function PrivilegeRequestWizard({
 
   const isFirstStep = wizard.currentStep === 0;
   const isLastStep = wizard.currentStep === WIZARD_STEPS.length - 1;
+  const isSubmitting = wizard.isSubmitting || isSubmitPending;
 
   return (
     <div
@@ -257,7 +275,7 @@ export function PrivilegeRequestWizard({
             <Button
               variant="outline"
               onClick={handlePrevious}
-              disabled={wizard.isSubmitting}
+              disabled={isSubmitting}
             >
               {isRTL ? (
                 <ChevronRight className="h-4 w-4 ml-2" />
@@ -270,7 +288,7 @@ export function PrivilegeRequestWizard({
           <Button
             variant="ghost"
             onClick={handleSaveDraft}
-            disabled={wizard.isSubmitting}
+            disabled={isSubmitting}
           >
             <Save className="h-4 w-4 mr-2 rtl:mr-0 rtl:ml-2" />
             {tCommon("actions.saveDraft")}
@@ -280,7 +298,7 @@ export function PrivilegeRequestWizard({
         {/* Right Side - Next or Submit */}
         <div>
           {!isLastStep ? (
-            <Button onClick={handleNext} disabled={wizard.isSubmitting}>
+            <Button onClick={handleNext} disabled={isSubmitting}>
               {tCommon("actions.next")}
               {isRTL ? (
                 <ChevronLeft className="h-4 w-4 mr-2" />
@@ -291,8 +309,8 @@ export function PrivilegeRequestWizard({
           ) : (
             <Button
               onClick={handleSubmit}
-              disabled={wizard.isSubmitting}
-              isLoading={wizard.isSubmitting}
+              disabled={isSubmitting}
+              isLoading={isSubmitting}
             >
               {t("form.review.submitApplication")}
             </Button>

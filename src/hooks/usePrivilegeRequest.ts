@@ -108,7 +108,7 @@ export interface WizardActions {
   updateReview: (data: Partial<ReviewData>) => void;
   validateCurrentStep: () => Promise<boolean>;
   saveDraft: () => Promise<string | null>;
-  submit: () => Promise<void>;
+  submit: () => Promise<{ success: boolean; requestId?: string; error?: string }>;
   loadDraft: (draftId: string) => Promise<void>;
   reset: () => void;
 }
@@ -397,7 +397,7 @@ export function usePrivilegeRequest(
     }
   }, [state]);
 
-  const submit = useCallback(async (): Promise<void> => {
+  const submit = useCallback(async (): Promise<{ success: boolean; requestId?: string; error?: string }> => {
     setState((prev) => ({ ...prev, isSubmitting: true, error: null }));
 
     try {
@@ -405,13 +405,14 @@ export function usePrivilegeRequest(
       const isValid = await validateCurrentStep();
       if (!isValid) {
         setState((prev) => ({ ...prev, isSubmitting: false }));
-        return;
+        return { success: false, error: "Validation failed" };
       }
 
       // If we have an existing draft, save it first then submit it
       // Otherwise create a new request and submit directly
       let currentDraftId = state.draftId;
-      
+      let requestId: string | undefined = currentDraftId || undefined;
+
       if (currentDraftId) {
         // First, save the latest draft data
         let saveResponse = await fetch("/api/requests/draft", {
@@ -446,6 +447,7 @@ export function usePrivilegeRequest(
 
           const newDraft = await saveResponse.json();
           currentDraftId = newDraft.id;
+          requestId = newDraft.id;
         } else if (!saveResponse.ok) {
           throw new Error("Failed to save draft before submission");
         }
@@ -460,6 +462,9 @@ export function usePrivilegeRequest(
           const result = await submitResponse.json();
           throw new Error(result.message || "Failed to submit request");
         }
+
+        const submitResult = await submitResponse.json().catch(() => ({}));
+        requestId = submitResult?.data?.id || currentDraftId || requestId;
       } else {
         // Create and submit a new request in one go
         const response = await fetch("/api/requests", {
@@ -478,6 +483,9 @@ export function usePrivilegeRequest(
           const result = await response.json();
           throw new Error(result.message || "Failed to submit request");
         }
+
+        const result = await response.json().catch(() => ({}));
+        requestId = result?.data?.id || requestId;
       }
 
       // Clear localStorage on successful submission
@@ -489,14 +497,19 @@ export function usePrivilegeRequest(
         ...prev,
         isSubmitting: false,
         isDraft: false,
+        draftId: requestId || prev.draftId,
       }));
+
+      return { success: true, requestId };
     } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to submit request";
       setState((prev) => ({
         ...prev,
         isSubmitting: false,
-        error:
-          error instanceof Error ? error.message : "Failed to submit request",
+        error: errorMessage,
       }));
+      return { success: false, error: errorMessage };
     }
   }, [state, validateCurrentStep]);
 
